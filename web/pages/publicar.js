@@ -12,44 +12,59 @@ export default function Publicar() {
   const [ciudad, setCiudad] = useState("")
   const [descripcion, setDescripcion] = useState("")
   const [fotos, setFotos] = useState([])
+  const [cargando, setCargando] = useState(false)
 
   async function publicar(e) {
     e.preventDefault()
 
-    let nombresFotos = []
+    try {
+      setCargando(true)
 
-    for (let i = 0; i < fotos.length; i++) {
-      const file = fotos[i]
-      const filename = `${Date.now()}_${i}_${file.name}`
+      const nombresFotos = []
 
-      const { error: uploadError } = await supabase.storage
-        .from("listings")
-        .upload(filename, file)
+      for (let i = 0; i < fotos.length; i++) {
+        const file = fotos[i]
+        const filename = `${Date.now()}_${i}_${file.name}`
 
-      if (!uploadError) {
-        nombresFotos.push(filename)
-      } else {
-        console.log(uploadError)
-      }
-    }
+        const { error: uploadError } = await supabase.storage
+          .from("listings")
+          .upload(filename, file)
 
-    const { error } = await supabase
-      .from("listings")
-      .insert([
-        {
-          title: titulo,
-          price: precio ? Number(precio) : null,
-          city: ciudad,
-          description: descripcion,
-          photos: nombresFotos
+        if (uploadError) {
+          alert("Error subiendo foto: " + (uploadError.message || JSON.stringify(uploadError)))
+          console.log(uploadError)
+          setCargando(false)
+          return
         }
-      ])
 
-    if (!error) {
+        nombresFotos.push(filename)
+      }
+
+      const { error } = await supabase
+        .from("listings")
+        .insert([
+          {
+            title: titulo,
+            price: precio ? Number(precio) : null,
+            city: ciudad,
+            description: descripcion,
+            photos: nombresFotos
+          }
+        ])
+
+      if (error) {
+        alert("Error al publicar: " + (error.message || JSON.stringify(error)))
+        console.log(error)
+        setCargando(false)
+        return
+      }
+
       alert("Publicado correctamente")
       window.location.href = "/"
-    } alert("Error al publicar: " + error.message)
-      console.log(error)
+    } catch (err) {
+      alert("Error inesperado: " + (err.message || JSON.stringify(err)))
+      console.log(err)
+      setCargando(false)
     }
   }
 
@@ -65,7 +80,8 @@ export default function Publicar() {
           onChange={(e) => setTitulo(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <input
           type="number"
@@ -74,7 +90,8 @@ export default function Publicar() {
           onChange={(e) => setPrecio(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <input
           type="text"
@@ -83,7 +100,8 @@ export default function Publicar() {
           onChange={(e) => setCiudad(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <textarea
           placeholder="Descripción"
@@ -91,19 +109,22 @@ export default function Publicar() {
           onChange={(e) => setDescripcion(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <input
           type="file"
-          id="imagenes"
           multiple
           accept="image/*"
           onChange={(e) => setFotos(Array.from(e.target.files || []))}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
-        <button type="submit">Publicar</button>
+        <button type="submit" disabled={cargando}>
+          {cargando ? "Publicando..." : "Publicar"}
+        </button>
       </form>
     </div>
   )
