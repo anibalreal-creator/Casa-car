@@ -14,17 +14,22 @@ export default function Home() {
   }, [])
 
   async function cargar() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("listings")
       .select("*")
       .order("created_at", { ascending: false })
 
+    if (error) {
+      console.log(error)
+      return
+    }
+
     setAnuncios(data || [])
   }
 
-  function fotoUrl(path) {
-    if (!path) return null
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${path}`
+  function fotoUrl(nombre) {
+    if (!nombre) return null
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${nombre}`
   }
 
   return (
@@ -43,7 +48,10 @@ export default function Home() {
         }}
       >
         {anuncios.map((a) => {
-          const foto = fotoUrl(a.foto_principal)
+          const primeraFoto =
+            Array.isArray(a.photos) && a.photos.length > 0 ? a.photos[0] : null
+
+          const foto = fotoUrl(primeraFoto)
 
           return (
             <div
@@ -77,9 +85,9 @@ export default function Home() {
                 </div>
               )}
 
-              <h3>{a.titulo || "Sin título"}</h3>
-              <b>USD {a.precio}</b>
-              <p>{a.ciudad}</p>
+              <h3>{a.title || "Sin título"}</h3>
+              <b>USD {a.price}</b>
+              <p>{a.city}</p>
             </div>
           )
         })}
