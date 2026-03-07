@@ -36,11 +36,23 @@ export default function Home() {
     }
 
     const first = item.photos[0]
-
     if (!first) return null
 
     const { data } = supabase.storage.from("listings").getPublicUrl(first)
     return data?.publicUrl || null
+  }
+
+  function obtenerPrecio(item) {
+    return item.price ?? item.precio ?? 0
+  }
+
+  function obtenerCiudad(item) {
+    return item.city || item.ciudad || "Sin ciudad"
+  }
+
+  function obtenerTelefono(item) {
+    if (!item.telefono) return null
+    return String(item.telefono).replace(/\D/g, "")
   }
 
   return (
@@ -64,6 +76,7 @@ export default function Home() {
         <div style={styles.grid}>
           {items.map((item) => {
             const imageUrl = obtenerImagen(item)
+            const telefono = obtenerTelefono(item)
 
             return (
               <div key={item.id} style={styles.card}>
@@ -83,14 +96,25 @@ export default function Home() {
                   <h3 style={styles.title}>{item.title || "Sin título"}</h3>
 
                   <div style={styles.price}>
-                    USD {item.price ?? item.precio ?? 0}
+                    USD {obtenerPrecio(item)}
                   </div>
 
-                  <div style={styles.city}>{item.city || "Sin ciudad"}</div>
+                  <div style={styles.city}>{obtenerCiudad(item)}</div>
 
                   <div style={styles.description}>
                     {item.description || "Sin descripción"}
                   </div>
+
+                  {telefono && (
+                    <a
+                      href={`https://wa.me/${telefono}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={styles.whatsappBtn}
+                    >
+                      💬 Contactar por WhatsApp
+                    </a>
+                  )}
                 </div>
               </div>
             )
@@ -205,24 +229,16 @@ const styles = {
     color: "#4b5563",
     lineHeight: 1.5,
     fontSize: 15
+  },
+  whatsappBtn: {
+    display: "block",
+    marginTop: 14,
+    background: "#25D366",
+    color: "#fff",
+    padding: "12px 14px",
+    borderRadius: 12,
+    textAlign: "center",
+    textDecoration: "none",
+    fontWeight: "bold"
   }
 }
-{item.telefono && (
-<a
-href={`https://wa.me/${item.telefono.replace(/\D/g,"")}`}
-target="_blank"
-style={{
-display:"block",
-marginTop:12,
-background:"#25D366",
-color:"#fff",
-padding:"10px",
-borderRadius:10,
-textAlign:"center",
-textDecoration:"none",
-fontWeight:"bold"
-}}
->
-💬 Contactar por WhatsApp
-</a>
-)}
