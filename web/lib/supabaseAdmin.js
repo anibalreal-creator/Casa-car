@@ -1,8 +1,14 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js"
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabaseAdmin = createClient(url, service, {
-  auth: { persistSession: false },
-});
+if (!supabaseUrl) {
+  throw new Error("Falta NEXT_PUBLIC_SUPABASE_URL en .env.local")
+}
+
+if (!supabaseKey) {
+  throw new Error("Falta NEXT_PUBLIC_SUPABASE_ANON_KEY en .env.local")
+}
+
+export const supabaseAdmin = createClient(supabaseUrl, supabaseKey)
