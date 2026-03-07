@@ -1,12 +1,17 @@
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
+
+const Map = dynamic(() => import("../../components/Map"), {
+  ssr: false
+})
 
 export default function DetalleAnuncio() {
   const router = useRouter()
@@ -123,7 +128,11 @@ export default function DetalleAnuncio() {
         <div style={styles.galleryCard}>
           <div style={styles.mainImageWrap}>
             {imagenPrincipal ? (
-              <img src={imagenPrincipal} alt={item.title || "Anuncio"} style={styles.mainImage} />
+              <img
+                src={imagenPrincipal}
+                alt={item.title || "Anuncio"}
+                style={styles.mainImage}
+              />
             ) : (
               <div style={styles.noImageBig}>Sin foto</div>
             )}
@@ -137,10 +146,17 @@ export default function DetalleAnuncio() {
                   onClick={() => setImagenActiva(index)}
                   style={{
                     ...styles.thumbButton,
-                    border: imagenActiva === index ? "2px solid #1d4ed8" : "1px solid #d1d5db"
+                    border:
+                      imagenActiva === index
+                        ? "2px solid #1d4ed8"
+                        : "1px solid #d1d5db"
                   }}
                 >
-                  <img src={img} alt={`Foto ${index + 1}`} style={styles.thumbImage} />
+                  <img
+                    src={img}
+                    alt={`Foto ${index + 1}`}
+                    style={styles.thumbImage}
+                  />
                 </button>
               ))}
             </div>
@@ -170,7 +186,7 @@ export default function DetalleAnuncio() {
 
               <div style={styles.sectionTitle}>Descripción</div>
               <p style={styles.description}>
-                {item.description || "Sin descripción"}
+                {item.description || item.descripcion || "Sin descripción"}
               </p>
             </div>
 
@@ -205,7 +221,7 @@ export default function DetalleAnuncio() {
 
                 <div style={styles.specItem}>
                   <div style={styles.specLabel}>Moneda</div>
-                  <div style={styles.specValue}>{item.currency || "USD"}</div>
+                  <div style={styles.specValue}>{item.currency || item.moneda || "USD"}</div>
                 </div>
               </div>
             </div>
@@ -214,9 +230,7 @@ export default function DetalleAnuncio() {
               <div style={styles.sectionTitle}>Ubicación</div>
               <p style={styles.locationText}>{ciudad}</p>
 
-              <div style={styles.mapPlaceholder}>
-                Mapa próximamente
-              </div>
+              <Map city={ciudad} />
             </div>
           </div>
 
@@ -465,16 +479,6 @@ const styles = {
   locationText: {
     margin: "0 0 12px 0",
     color: "#374151"
-  },
-  mapPlaceholder: {
-    height: 300,
-    borderRadius: 14,
-    background: "#e5e7eb",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#6b7280",
-    fontSize: 20
   },
   contactTitle: {
     fontSize: 22,
