@@ -31,8 +31,8 @@ export default function Publicar() {
           .upload(filename, file)
 
         if (uploadError) {
-          alert("Error subiendo foto: " + (uploadError.message || JSON.stringify(uploadError)))
-          console.log(uploadError)
+          alert("ERROR SUBIENDO FOTO: " + (uploadError.message || JSON.stringify(uploadError)))
+          console.log("UPLOAD ERROR:", uploadError)
           setCargando(false)
           return
         }
@@ -40,30 +40,34 @@ export default function Publicar() {
         nombresFotos.push(filename)
       }
 
-      const { error } = await supabase
+      const payload = {
+        title: titulo,
+        price: precio ? Number(precio) : null,
+        city: ciudad,
+        description: descripcion,
+        photos: nombresFotos
+      }
+
+      console.log("PAYLOAD A INSERTAR:", payload)
+
+      const { data, error } = await supabase
         .from("listings")
-        .insert([
-          {
-            title: titulo,
-            price: precio ? Number(precio) : null,
-            city: ciudad,
-            description: descripcion,
-            photos: nombresFotos
-          }
-        ])
+        .insert([payload])
+        .select()
 
       if (error) {
-        alert("Error al publicar: " + (error.message || JSON.stringify(error)))
-        console.log(error)
+        alert("ERROR AL PUBLICAR: " + (error.message || JSON.stringify(error)))
+        console.log("INSERT ERROR:", error)
         setCargando(false)
         return
       }
 
+      console.log("INSERT OK:", data)
       alert("Publicado correctamente")
       window.location.href = "/"
     } catch (err) {
-      alert("Error inesperado: " + (err.message || JSON.stringify(err)))
-      console.log(err)
+      alert("ERROR INESPERADO: " + (err.message || JSON.stringify(err)))
+      console.log("CATCH ERROR:", err)
       setCargando(false)
     }
   }
