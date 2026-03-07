@@ -9,6 +9,7 @@ const supabase = createClient(
 export default function Publicar() {
   const [titulo, setTitulo] = useState("")
   const [precio, setPrecio] = useState("")
+  const [ciudad, setCiudad] = useState("")
   const [descripcion, setDescripcion] = useState("")
   const [fotos, setFotos] = useState([])
   const [cargando, setCargando] = useState(false)
@@ -30,7 +31,7 @@ export default function Publicar() {
           .upload(filename, file)
 
         if (uploadError) {
-          alert("Error subiendo foto: " + (uploadError.message || JSON.stringify(uploadError)))
+          alert("ERROR SUBIENDO FOTO: " + (uploadError.message || JSON.stringify(uploadError)))
           console.log("UPLOAD ERROR:", uploadError)
           setCargando(false)
           return
@@ -39,12 +40,16 @@ export default function Publicar() {
         nombresFotos.push(filename)
       }
 
+      const valorPrecio = precio ? Number(precio) : 0
+
       const payload = {
         title: titulo,
-        price: precio ? Number(precio) : null,
-        currency: "USD",
+        price: valorPrecio,
+        precio: valorPrecio,
+        city: ciudad,
         description: descripcion,
-        photos: nombresFotos
+        photos: nombresFotos,
+        currency: "USD"
       }
 
       const { data, error } = await supabase
@@ -53,7 +58,7 @@ export default function Publicar() {
         .select()
 
       if (error) {
-        alert("Error al publicar: " + (error.message || JSON.stringify(error)))
+        alert("ERROR AL PUBLICAR: " + (error.message || JSON.stringify(error)))
         console.log("INSERT ERROR:", error)
         setCargando(false)
         return
@@ -63,7 +68,7 @@ export default function Publicar() {
       alert("Publicado correctamente")
       window.location.href = "/"
     } catch (err) {
-      alert("Error inesperado: " + (err.message || JSON.stringify(err)))
+      alert("ERROR INESPERADO: " + (err.message || JSON.stringify(err)))
       console.log("CATCH ERROR:", err)
       setCargando(false)
     }
@@ -89,6 +94,16 @@ export default function Publicar() {
           placeholder="Precio"
           value={precio}
           onChange={(e) => setPrecio(e.target.value)}
+        />
+
+        <br />
+        <br />
+
+        <input
+          type="text"
+          placeholder="Ciudad"
+          value={ciudad}
+          onChange={(e) => setCiudad(e.target.value)}
         />
 
         <br />
