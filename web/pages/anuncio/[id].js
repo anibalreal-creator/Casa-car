@@ -1,4 +1,6 @@
-import { useRouter } from "next/router"
+import dynamic from "next/dynamic";
+
+const Map = dynamic(() => import("../../components/Map"), { ssr: false });import { useRouter } from "next/router"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
