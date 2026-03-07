@@ -207,3 +207,22 @@ const styles = {
     fontSize: 15
   }
 }
+{item.telefono && (
+<a
+href={`https://wa.me/${item.telefono.replace(/\D/g,"")}`}
+target="_blank"
+style={{
+display:"block",
+marginTop:12,
+background:"#25D366",
+color:"#fff",
+padding:"10px",
+borderRadius:10,
+textAlign:"center",
+textDecoration:"none",
+fontWeight:"bold"
+}}
+>
+💬 Contactar por WhatsApp
+</a>
+)}
