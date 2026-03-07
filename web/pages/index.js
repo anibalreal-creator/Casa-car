@@ -9,7 +9,7 @@ const supabase = createClient(
 export default function Home() {
 
   const [anuncios, setAnuncios] = useState([])
-  const [fotos, setFotos] = useState({}) // anuncio_id -> path
+  const [fotos, setFotos] = useState({})
 
   useEffect(() => {
     cargar()
@@ -27,70 +27,85 @@ export default function Home() {
     const { data: fotosData } = await supabase
       .from("anuncio_fotos")
       .select("*")
-      .order("orden")
+      .order("orden", { ascending: true })
 
     const mapa = {}
 
-    fotosData?.forEach(f => {
+    ;(fotosData || []).forEach((f) => {
       if (!mapa[f.anuncio_id]) {
         mapa[f.anuncio_id] = f.path
       }
     })
 
     setFotos(mapa)
+
   }
 
   function fotoUrl(path) {
+
     if (!path) return null
+
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${path}`
+
   }
 
   return (
 
-    <div style={{padding:40}}>
+    <div style={{ padding: 40 }}>
 
       <h1>Casa-Car</h1>
 
       <a href="/publicar">+ Publicar anuncio</a>
 
-      <br/><br/>
+      <br /><br />
 
-      <div style={{
-        display:"grid",
-        gridTemplateColumns:"repeat(auto-fill,250px)",
-        gap:20
-      }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill,250px)",
+          gap: 20
+        }}
+      >
 
-        {anuncios.map(a => {
+        {anuncios.map((a) => {
 
           const foto = fotoUrl(fotos[a.id])
 
           return (
 
-            <div key={a.id} style={{
-              border:"1px solid #ddd",
-              padding:10
-            }}>
+            <div
+              key={a.id}
+              style={{
+                border: "1px solid #ddd",
+                padding: 10
+              }}
+            >
 
               {foto ? (
+
                 <img
                   src={foto}
                   style={{
-                    width:"100%",
-                    height:160,
-                    objectFit:"cover"
+                    width: "100%",
+                    height: 160,
+                    objectFit: "cover"
                   }}
                 />
+
               ) : (
-                <div style={{
-                  height:160,
-                  display:"flex",
-                  alignItems:"center",
-                  justifyContent:"center",
-                  background:"#eee"
-                }}>
+
+                <div
+                  style={{
+                    height: 160,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#eee"
+                  }}
+                >
                   Sin foto
                 </div>
+
               )}
 
               <h3>{a.titulo || "Sin título"}</h3>
