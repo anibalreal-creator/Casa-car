@@ -7,32 +7,42 @@ const supabase = createClient(
 )
 
 export default function Publicar() {
-  const [titulo, setTitulo] = useState("")
-  const [precio, setPrecio] = useState("")
-  const [ciudad, setCiudad] = useState("")
-  const [descripcion, setDescripcion] = useState("")
-  const [fotos, setFotos] = useState([])
-  const [cargando, setCargando] = useState(false)
+  const [titulo,setTitulo] = useState("")
+  const [precio,setPrecio] = useState("")
+  const [ciudad,setCiudad] = useState("")
+  const [descripcion,setDescripcion] = useState("")
+  const [fotos,setFotos] = useState([])
+  const [preview,setPreview] = useState(null)
+  const [cargando,setCargando] = useState(false)
 
-  async function publicar(e) {
+  function seleccionarFoto(e){
+    const file = e.target.files[0]
+    if(!file) return
+
+    setFotos([file])
+    setPreview(URL.createObjectURL(file))
+  }
+
+  async function publicar(e){
     e.preventDefault()
+    setCargando(true)
 
-    try {
-      setCargando(true)
+    try{
 
-      const nombresFotos = []
+      let nombresFotos = []
 
-      for (let i = 0; i < fotos.length; i++) {
+      for(let i=0;i<fotos.length;i++){
+
         const file = fotos[i]
-        const filename = `${Date.now()}_${i}_${file.name}`
+        const filename = Date.now()+"_"+file.name
 
-        const { error: uploadError } = await supabase.storage
-          .from("listings")
-          .upload(filename, file)
+        const {error:uploadError} = await supabase
+        .storage
+        .from("listings")
+        .upload(filename,file)
 
-        if (uploadError) {
-          alert("ERROR SUBIENDO FOTO: " + (uploadError.message || JSON.stringify(uploadError)))
-          console.log("UPLOAD ERROR:", uploadError)
+        if(uploadError){
+          alert(uploadError.message)
           setCargando(false)
           return
         }
@@ -40,98 +50,144 @@ export default function Publicar() {
         nombresFotos.push(filename)
       }
 
-      const valorPrecio = precio ? Number(precio) : 0
+      const precioNumero = precio ? Number(precio) : 0
 
       const payload = {
-        title: titulo,
-        price: valorPrecio,
-        precio: valorPrecio,
-        city: ciudad,
-        description: descripcion,
-        photos: nombresFotos,
-        currency: "USD"
+        title:titulo,
+        price:precioNumero,
+        precio:precioNumero,
+        city:ciudad,
+        description:descripcion,
+        photos:nombresFotos,
+        currency:"USD"
       }
 
-      const { data, error } = await supabase
-        .from("listings")
-        .insert([payload])
-        .select()
+      const {error} = await supabase
+      .from("listings")
+      .insert([payload])
 
-      if (error) {
-        alert("ERROR AL PUBLICAR: " + (error.message || JSON.stringify(error)))
-        console.log("INSERT ERROR:", error)
+      if(error){
+        alert(error.message)
         setCargando(false)
         return
       }
 
-      console.log("INSERT OK:", data)
       alert("Publicado correctamente")
-      window.location.href = "/"
-    } catch (err) {
-      alert("ERROR INESPERADO: " + (err.message || JSON.stringify(err)))
-      console.log("CATCH ERROR:", err)
+      window.location.href="/"
+
+    }catch(err){
+      alert(err.message)
       setCargando(false)
     }
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Publicar anuncio</h1>
+  return(
 
-      <form onSubmit={publicar}>
-        <input
-          type="text"
-          placeholder="Título"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-        />
+  <div style={styles.page}>
 
-        <br />
-        <br />
+  <h1 style={styles.title}>Publicar anuncio</h1>
 
-        <input
-          type="number"
-          placeholder="Precio"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-        />
+  <form onSubmit={publicar} style={styles.form}>
 
-        <br />
-        <br />
+  <input
+  placeholder="Título"
+  value={titulo}
+  onChange={e=>setTitulo(e.target.value)}
+  style={styles.input}
+  />
 
-        <input
-          type="text"
-          placeholder="Ciudad"
-          value={ciudad}
-          onChange={(e) => setCiudad(e.target.value)}
-        />
+  <input
+  type="number"
+  placeholder="Precio"
+  value={precio}
+  onChange={e=>setPrecio(e.target.value)}
+  style={styles.input}
+  />
 
-        <br />
-        <br />
+  <input
+  placeholder="Ciudad"
+  value={ciudad}
+  onChange={e=>setCiudad(e.target.value)}
+  style={styles.input}
+  />
 
-        <textarea
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-        />
+  <textarea
+  placeholder="Descripción"
+  value={descripcion}
+  onChange={e=>setDescripcion(e.target.value)}
+  style={styles.textarea}
+  />
 
-        <br />
-        <br />
+  <input
+  type="file"
+  accept="image/*"
+  onChange={seleccionarFoto}
+  />
 
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) => setFotos(Array.from(e.target.files || []))}
-        />
+  {preview && (
+    <img src={preview} style={styles.preview}/>
+  )}
 
-        <br />
-        <br />
+  <button disabled={cargando} style={styles.button}>
+  {cargando ? "Publicando..." : "Publicar anuncio"}
+  </button>
 
-        <button type="submit" disabled={cargando}>
-          {cargando ? "Publicando..." : "Publicar"}
-        </button>
-      </form>
-    </div>
+  </form>
+
+  </div>
   )
+}
+
+const styles = {
+
+page:{
+padding:30,
+maxWidth:600,
+margin:"auto",
+fontFamily:"Arial"
+},
+
+title:{
+fontSize:32,
+marginBottom:20
+},
+
+form:{
+display:"flex",
+flexDirection:"column",
+gap:15
+},
+
+input:{
+padding:14,
+fontSize:16,
+borderRadius:10,
+border:"1px solid #ddd"
+},
+
+textarea:{
+padding:14,
+fontSize:16,
+borderRadius:10,
+border:"1px solid #ddd",
+minHeight:100
+},
+
+button:{
+padding:16,
+fontSize:18,
+borderRadius:12,
+border:"none",
+background:"#111827",
+color:"#fff",
+fontWeight:"bold",
+cursor:"pointer"
+},
+
+preview:{
+marginTop:10,
+width:"100%",
+borderRadius:12
+}
+
 }
