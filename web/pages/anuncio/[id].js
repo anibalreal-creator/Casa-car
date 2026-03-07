@@ -1,6 +1,4 @@
-import dynamic from "next/dynamic";
-
-const Map = dynamic(() => import("../../components/Map"), { ssr: false });import { useRouter } from "next/router"
+import { useRouter } from "next/router"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
@@ -22,23 +20,29 @@ export default function DetalleAnuncio() {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [imagenActiva, setImagenActiva] = useState(0)
+  const [errorMsg, setErrorMsg] = useState("")
 
   useEffect(() => {
     if (!id) return
 
     async function cargarAnuncio() {
       setLoading(true)
+      setErrorMsg("")
 
       const { data, error } = await supabase
         .from("listings")
         .select("*")
         .eq("id", id)
-        .single()
+        .maybeSingle()
 
-      if (!error && data) {
-        setItem(data)
+      if (error) {
+        setErrorMsg(error.message || "Error al cargar el anuncio")
+        setItem(null)
+        setLoading(false)
+        return
       }
 
+      setItem(data || null)
       setLoading(false)
     }
 
@@ -60,11 +64,38 @@ export default function DetalleAnuncio() {
   const imagenPrincipal = imagenes[imagenActiva] || null
 
   function obtenerPrecio() {
-    return Number(item?.price ?? item?.precio ?? 0) || 0
+    return (
+      Number(
+        item?.price ??
+          item?.precio ??
+          0
+      ) || 0
+    )
+  }
+
+  function obtenerTitulo() {
+    return (
+      item?.title ||
+      item?.titulo ||
+      "Sin título"
+    )
+  }
+
+  function obtenerDescripcion() {
+    return (
+      item?.description ||
+      item?.descripcion ||
+      item?.DESCRIPCION ||
+      "Sin descripción"
+    )
   }
 
   function obtenerCiudad() {
-    return item?.city || item?.ciudad || "Sin ciudad"
+    return (
+      item?.city ||
+      item?.ciudad ||
+      "Sin ciudad"
+    )
   }
 
   function obtenerDormitorios() {
@@ -72,12 +103,16 @@ export default function DetalleAnuncio() {
   }
 
   function obtenerBanos() {
-    return Number(item?.banos ?? 0) || 0
+    return Number(item?.banos ?? item?.baños ?? 0) || 0
   }
 
   function obtenerTelefono() {
     if (!item?.telefono) return null
     return String(item.telefono).replace(/\D/g, "")
+  }
+
+  function obtenerMoneda() {
+    return item?.currency || item?.moneda || "USD"
   }
 
   function imprimirFicha() {
@@ -98,10 +133,20 @@ export default function DetalleAnuncio() {
     return (
       <div style={styles.page}>
         <div style={styles.container}>
-          <div style={styles.message}>No se encontró el anuncio.</div>
           <Link href="/" style={styles.backBtn}>
-            Volver al inicio
+            ← Volver
           </Link>
+
+          <div style={{ ...styles.message, marginTop: 16 }}>
+            {errorMsg ? (
+              <>
+                <div style={styles.errorText}>Error: {errorMsg}</div>
+                <div>No existe el anuncio.</div>
+              </>
+            ) : (
+              <div>No existe el anuncio.</div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -109,9 +154,12 @@ export default function DetalleAnuncio() {
 
   const telefono = obtenerTelefono()
   const precio = obtenerPrecio()
+  const titulo = obtenerTitulo()
+  const descripcion = obtenerDescripcion()
   const ciudad = obtenerCiudad()
   const dormitorios = obtenerDormitorios()
   const banos = obtenerBanos()
+  const moneda = obtenerMoneda()
   const pileta = Boolean(item?.pileta)
 
   return (
@@ -132,7 +180,7 @@ export default function DetalleAnuncio() {
             {imagenPrincipal ? (
               <img
                 src={imagenPrincipal}
-                alt={item.title || "Anuncio"}
+                alt={titulo}
                 style={styles.mainImage}
               />
             ) : (
@@ -168,8 +216,8 @@ export default function DetalleAnuncio() {
         <div style={styles.mainGrid}>
           <div style={styles.leftCol}>
             <div style={styles.infoCard}>
-              <div style={styles.price}>USD {precio}</div>
-              <h1 style={styles.title}>{item.title || "Sin título"}</h1>
+              <div style={styles.price}>{moneda} {precio}</div>
+              <h1 style={styles.title}>{titulo}</h1>
               <div style={styles.city}>{ciudad}</div>
 
               <div style={styles.featuresRow}>
@@ -187,9 +235,7 @@ export default function DetalleAnuncio() {
               </div>
 
               <div style={styles.sectionTitle}>Descripción</div>
-              <p style={styles.description}>
-                {item.description || item.descripcion || "Sin descripción"}
-              </p>
+              <p style={styles.description}>{descripcion}</p>
             </div>
 
             <div style={styles.infoCard}>
@@ -198,7 +244,7 @@ export default function DetalleAnuncio() {
               <div style={styles.specGrid}>
                 <div style={styles.specItem}>
                   <div style={styles.specLabel}>Precio</div>
-                  <div style={styles.specValue}>USD {precio}</div>
+                  <div style={styles.specValue}>{moneda} {precio}</div>
                 </div>
 
                 <div style={styles.specItem}>
@@ -223,7 +269,7 @@ export default function DetalleAnuncio() {
 
                 <div style={styles.specItem}>
                   <div style={styles.specLabel}>Moneda</div>
-                  <div style={styles.specValue}>{item.currency || item.moneda || "USD"}</div>
+                  <div style={styles.specValue}>{moneda}</div>
                 </div>
               </div>
             </div>
@@ -231,7 +277,6 @@ export default function DetalleAnuncio() {
             <div style={styles.infoCard}>
               <div style={styles.sectionTitle}>Ubicación</div>
               <p style={styles.locationText}>{ciudad}</p>
-
               <Map city={ciudad} />
             </div>
           </div>
@@ -317,6 +362,11 @@ const styles = {
     borderRadius: 14,
     padding: 24,
     color: "#374151"
+  },
+  errorText: {
+    color: "#b91c1c",
+    marginBottom: 10,
+    fontWeight: 700
   },
   galleryCard: {
     background: "#fff",
