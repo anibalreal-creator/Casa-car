@@ -8,6 +8,7 @@ const supabase = createClient(
 
 export default function Publicar() {
   const [categoria, setCategoria] = useState("propiedad")
+
   const [titulo, setTitulo] = useState("")
   const [precio, setPrecio] = useState("")
   const [descripcion, setDescripcion] = useState("")
@@ -44,8 +45,8 @@ export default function Publicar() {
           ciudad,
           dormitorios: dormitorios ? Number(dormitorios) : null,
           banos: banos ? Number(banos) : null,
-          metros: metros ? Number(metros) : null,
-        },
+          metros: metros ? Number(metros) : null
+        }
       ])
       .select()
       .single()
@@ -57,14 +58,16 @@ export default function Publicar() {
     }
 
     const listingId = data.id
+    let fotoPrincipal = null
 
     if (fotos.length > 0) {
       for (let i = 0; i < fotos.length; i++) {
         const file = fotos[i]
         const ext = file.name.split(".").pop()
-        const path = `${listingId}/${Date.now()}_${i}.${ext}`
+        const path = `${listingId}/${String(i).padStart(2, "0")}_${Date.now()}.${ext}`
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase
+          .storage
           .from("listings")
           .upload(path, file)
 
@@ -73,13 +76,28 @@ export default function Publicar() {
           continue
         }
 
+        if (!fotoPrincipal) {
+          fotoPrincipal = path
+        }
+
         await supabase.from("anuncio_fotos").insert([
           {
             anuncio_id: listingId,
             path,
-            orden: i,
-          },
+            orden: i
+          }
         ])
+      }
+    }
+
+    if (fotoPrincipal) {
+      const { error: updateError } = await supabase
+        .from("listings")
+        .update({ foto_principal: fotoPrincipal })
+        .eq("id", listingId)
+
+      if (updateError) {
+        console.log(updateError)
       }
     }
 
@@ -119,36 +137,6 @@ export default function Publicar() {
 
         <br /><br />
 
-        {categoria === "auto" && (
-          <>
-            <h3>Datos del auto</h3>
-
-            <input
-              placeholder="Marca"
-              value={marca}
-              onChange={(e) => setMarca(e.target.value)}
-            />
-
-            <input
-              placeholder="Modelo"
-              value={modelo}
-              onChange={(e) => setModelo(e.target.value)}
-            />
-
-            <input
-              placeholder="Año"
-              value={anio}
-              onChange={(e) => setAnio(e.target.value)}
-            />
-
-            <input
-              placeholder="Kilometraje"
-              value={kilometraje}
-              onChange={(e) => setKilometraje(e.target.value)}
-            />
-          </>
-        )}
-
         {categoria === "propiedad" && (
           <>
             <h3>Datos de propiedad</h3>
@@ -181,6 +169,36 @@ export default function Publicar() {
               placeholder="Metros"
               value={metros}
               onChange={(e) => setMetros(e.target.value)}
+            />
+          </>
+        )}
+
+        {categoria === "auto" && (
+          <>
+            <h3>Datos del auto</h3>
+
+            <input
+              placeholder="Marca"
+              value={marca}
+              onChange={(e) => setMarca(e.target.value)}
+            />
+
+            <input
+              placeholder="Modelo"
+              value={modelo}
+              onChange={(e) => setModelo(e.target.value)}
+            />
+
+            <input
+              placeholder="Año"
+              value={anio}
+              onChange={(e) => setAnio(e.target.value)}
+            />
+
+            <input
+              placeholder="Kilometraje"
+              value={kilometraje}
+              onChange={(e) => setKilometraje(e.target.value)}
             />
           </>
         )}
