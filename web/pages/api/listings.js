@@ -1,12 +1,15 @@
-import { supabaseAdmin } from "../../lib/supabaseAdmin";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default async function handler(req, res) {
-  try {
-    if (req.method !== "GET") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
 
-    const { data, error } = await supabaseAdmin
+  try {
+
+    const { data, error } = await supabase
       .from("listings")
       .select("*")
       .order("created_at", { ascending: false });
@@ -15,19 +18,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: error.message });
     }
 
-    const mapped = (data || []).map((r) => ({
-      id: r.id,
-      title: r.title ?? r.titulo ?? null,
-      price: r.price ?? r.precio ?? null,
-      currency: r.currency ?? r.moneda ?? null,
-      description: r.description ?? r.descripcion ?? null,
-      created_at: r.created_at ?? null,
-      user_id: r.user_id ?? null,
-      photos: r.photos ?? null,
-    }));
+    res.status(200).json(data);
 
-    return res.status(200).json(mapped);
-  } catch (e) {
-    return res.status(500).json({ error: String(e?.message || e) });
+  } catch (err) {
+
+    res.status(500).json({
+      error: "Error interno",
+      details: err.message
+    });
+
   }
+
 }
