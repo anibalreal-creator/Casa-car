@@ -1,221 +1,51 @@
-import { useState } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "https://esm.sh/@supabase/supabase-js"
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  "https://cdmlyrjcccdxakvbmmbb.supabase.co",
+  "TU_PUBLIC_ANON_KEY"
 )
 
-export default function Publicar() {
-  const [categoria, setCategoria] = useState("propiedad")
+const form = document.querySelector("form")
 
-  const [titulo, setTitulo] = useState("")
-  const [precio, setPrecio] = useState("")
-  const [descripcion, setDescripcion] = useState("")
+form.addEventListener("submit", async (e) => {
+  e.preventDefault()
 
-  const [marca, setMarca] = useState("")
-  const [modelo, setModelo] = useState("")
-  const [anio, setAnio] = useState("")
-  const [kilometraje, setKilometraje] = useState("")
+  const titulo = document.querySelector("#titulo").value
+  const precio = document.querySelector("#precio").value
+  const ciudad = document.querySelector("#ciudad").value
+  const files = document.querySelector("#imagenes").files
 
-  const [tipo, setTipo] = useState("")
-  const [ciudad, setCiudad] = useState("")
-  const [dormitorios, setDormitorios] = useState("")
-  const [banos, setBanos] = useState("")
-  const [metros, setMetros] = useState("")
+  let fotos = []
 
-  const [fotos, setFotos] = useState([])
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const filename = Date.now() + "_" + file.name
 
-  async function publicar(e) {
-    e.preventDefault()
-
-    const { data, error } = await supabase
+    const { data, error } = await supabase.storage
       .from("listings")
-      .insert([
-        {
-          titulo,
-          precio: precio ? Number(precio) : null,
-          descripcion,
-          categoria,
-          marca,
-          modelo,
-          anio: anio ? Number(anio) : null,
-          kilometraje: kilometraje ? Number(kilometraje) : null,
-          tipo,
-          ciudad,
-          dormitorios: dormitorios ? Number(dormitorios) : null,
-          banos: banos ? Number(banos) : null,
-          metros: metros ? Number(metros) : null
-        }
-      ])
-      .select()
-      .single()
+      .upload(filename, file)
 
-    if (error) {
-      alert("Error publicando")
-      console.log(error)
-      return
+    if (!error) {
+      fotos.push(filename)
     }
-
-    const listingId = data.id
-    let fotoPrincipal = null
-
-    if (fotos.length > 0) {
-      for (let i = 0; i < fotos.length; i++) {
-        const file = fotos[i]
-        const ext = file.name.split(".").pop()
-        const path = `${listingId}/${String(i).padStart(2, "0")}_${Date.now()}.${ext}`
-
-        const { error: uploadError } = await supabase
-          .storage
-          .from("listings")
-          .upload(path, file)
-
-        if (uploadError) {
-          console.log(uploadError)
-          continue
-        }
-
-        if (!fotoPrincipal) {
-          fotoPrincipal = path
-        }
-
-        await supabase.from("anuncio_fotos").insert([
-          {
-            anuncio_id: listingId,
-            path,
-            orden: i
-          }
-        ])
-      }
-    }
-
-    if (fotoPrincipal) {
-      const { error: updateError } = await supabase
-        .from("listings")
-        .update({ foto_principal: fotoPrincipal })
-        .eq("id", listingId)
-
-      if (updateError) {
-        console.log(updateError)
-      }
-    }
-
-    alert("Publicado correctamente")
-    window.location.href = "/"
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h1>Publicar anuncio</h1>
+  const { error } = await supabase
+    .from("listings")
+    .insert([
+      {
+        title: titulo,
+        price: precio,
+        city: ciudad,
+        photos: fotos
+      }
+    ])
 
-      <form onSubmit={publicar}>
-        <select value={categoria} onChange={(e) => setCategoria(e.target.value)}>
-          <option value="propiedad">Propiedad</option>
-          <option value="auto">Auto</option>
-        </select>
-
-        <br /><br />
-
-        <input
-          placeholder="Título"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-        />
-
-        <input
-          placeholder="Precio"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-        />
-
-        <textarea
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-        />
-
-        <br /><br />
-
-        {categoria === "propiedad" && (
-          <>
-            <h3>Datos de propiedad</h3>
-
-            <input
-              placeholder="Tipo (casa, depto)"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-            />
-
-            <input
-              placeholder="Ciudad"
-              value={ciudad}
-              onChange={(e) => setCiudad(e.target.value)}
-            />
-
-            <input
-              placeholder="Dormitorios"
-              value={dormitorios}
-              onChange={(e) => setDormitorios(e.target.value)}
-            />
-
-            <input
-              placeholder="Baños"
-              value={banos}
-              onChange={(e) => setBanos(e.target.value)}
-            />
-
-            <input
-              placeholder="Metros"
-              value={metros}
-              onChange={(e) => setMetros(e.target.value)}
-            />
-          </>
-        )}
-
-        {categoria === "auto" && (
-          <>
-            <h3>Datos del auto</h3>
-
-            <input
-              placeholder="Marca"
-              value={marca}
-              onChange={(e) => setMarca(e.target.value)}
-            />
-
-            <input
-              placeholder="Modelo"
-              value={modelo}
-              onChange={(e) => setModelo(e.target.value)}
-            />
-
-            <input
-              placeholder="Año"
-              value={anio}
-              onChange={(e) => setAnio(e.target.value)}
-            />
-
-            <input
-              placeholder="Kilometraje"
-              value={kilometraje}
-              onChange={(e) => setKilometraje(e.target.value)}
-            />
-          </>
-        )}
-
-        <br /><br />
-
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={(e) => setFotos(Array.from(e.target.files || []))}
-        />
-
-        <br /><br />
-
-        <button type="submit">Publicar</button>
-      </form>
-    </div>
-  )
-}
+  if (!error) {
+    alert("Publicado correctamente")
+    window.location.href = "/"
+  } else {
+    alert("Error al publicar")
+    console.log(error)
+  }
+})
