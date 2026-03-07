@@ -24,22 +24,27 @@ export default function Home() {
 
     setAnuncios(listings || [])
 
-    const { data: fotosData } = await supabase
-      .from("anuncio_fotos")
-      .select("*")
-
     const mapa = {}
 
-    ;(fotosData || []).forEach((f) => {
+    if (!listings) return
 
-      if (!mapa[f.anuncio_id]) {
+    for (const anuncio of listings) {
 
-        mapa[f.anuncio_id] =
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${f.path}`
+      const { data: archivos } = await supabase
+        .storage
+        .from("listings")
+        .list(anuncio.id)
+
+      if (archivos && archivos.length > 0) {
+
+        const nombre = archivos[0].name
+
+        mapa[anuncio.id] =
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${anuncio.id}/${nombre}`
 
       }
 
-    })
+    }
 
     setFotos(mapa)
 
