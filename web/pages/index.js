@@ -17,35 +17,36 @@ export default function Home() {
 
   async function cargar() {
 
-    const { data: listings } = await supabase
+    const { data } = await supabase
       .from("listings")
       .select("*")
       .order("created_at", { ascending: false })
 
-    setAnuncios(listings || [])
+    setAnuncios(data || [])
 
-    const { data: fotosData } = await supabase
-      .from("anuncio_fotos")
-      .select("*")
-      .order("orden", { ascending: true })
+    if (!data) return
 
     const mapa = {}
 
-    ;(fotosData || []).forEach((f) => {
-      if (!mapa[f.anuncio_id]) {
-        mapa[f.anuncio_id] = f.path
+    for (const anuncio of data) {
+
+      const { data: files } = await supabase
+        .storage
+        .from("listings")
+        .list(anuncio.id)
+
+      if (files && files.length > 0) {
+
+        const nombre = files[0].name
+
+        mapa[anuncio.id] =
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${anuncio.id}/${nombre}`
+
       }
-    })
+
+    }
 
     setFotos(mapa)
-
-  }
-
-  function fotoUrl(path) {
-
-    if (!path) return null
-
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${path}`
 
   }
 
@@ -67,58 +68,52 @@ export default function Home() {
         }}
       >
 
-        {anuncios.map((a) => {
+        {anuncios.map((a) => (
 
-          const foto = fotoUrl(fotos[a.id])
+          <div
+            key={a.id}
+            style={{
+              border: "1px solid #ddd",
+              padding: 10
+            }}
+          >
 
-          return (
+            {fotos[a.id] ? (
 
-            <div
-              key={a.id}
-              style={{
-                border: "1px solid #ddd",
-                padding: 10
-              }}
-            >
+              <img
+                src={fotos[a.id]}
+                style={{
+                  width: "100%",
+                  height: 160,
+                  objectFit: "cover"
+                }}
+              />
 
-              {foto ? (
+            ) : (
 
-                <img
-                  src={foto}
-                  style={{
-                    width: "100%",
-                    height: 160,
-                    objectFit: "cover"
-                  }}
-                />
+              <div
+                style={{
+                  height: 160,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#eee"
+                }}
+              >
+                Sin foto
+              </div>
 
-              ) : (
+            )}
 
-                <div
-                  style={{
-                    height: 160,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#eee"
-                  }}
-                >
-                  Sin foto
-                </div>
+            <h3>{a.titulo || "Sin título"}</h3>
 
-              )}
+            <b>USD {a.precio}</b>
 
-              <h3>{a.titulo || "Sin título"}</h3>
+            <p>{a.ciudad}</p>
 
-              <b>USD {a.precio}</b>
+          </div>
 
-              <p>{a.ciudad}</p>
-
-            </div>
-
-          )
-
-        })}
+        ))}
 
       </div>
 
