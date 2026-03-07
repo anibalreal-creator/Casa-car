@@ -1,51 +1,111 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js"
+import { useState } from "react"
+import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
-  "https://cdmlyrjcccdxakvbmmbb.supabase.co",
-  "TU_PUBLIC_ANON_KEY"
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
-const form = document.querySelector("form")
+export default function Publicar() {
+  const [titulo, setTitulo] = useState("")
+  const [precio, setPrecio] = useState("")
+  const [ciudad, setCiudad] = useState("")
+  const [descripcion, setDescripcion] = useState("")
+  const [fotos, setFotos] = useState([])
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault()
+  async function publicar(e) {
+    e.preventDefault()
 
-  const titulo = document.querySelector("#titulo").value
-  const precio = document.querySelector("#precio").value
-  const ciudad = document.querySelector("#ciudad").value
-  const files = document.querySelector("#imagenes").files
+    let nombresFotos = []
 
-  let fotos = []
+    for (let i = 0; i < fotos.length; i++) {
+      const file = fotos[i]
+      const filename = `${Date.now()}_${i}_${file.name}`
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    const filename = Date.now() + "_" + file.name
+      const { error: uploadError } = await supabase.storage
+        .from("listings")
+        .upload(filename, file)
 
-    const { data, error } = await supabase.storage
+      if (!uploadError) {
+        nombresFotos.push(filename)
+      } else {
+        console.log(uploadError)
+      }
+    }
+
+    const { error } = await supabase
       .from("listings")
-      .upload(filename, file)
+      .insert([
+        {
+          title: titulo,
+          price: precio ? Number(precio) : null,
+          city: ciudad,
+          description: descripcion,
+          photos: nombresFotos
+        }
+      ])
 
     if (!error) {
-      fotos.push(filename)
+      alert("Publicado correctamente")
+      window.location.href = "/"
+    } else {
+      alert("Error al publicar")
+      console.log(error)
     }
   }
 
-  const { error } = await supabase
-    .from("listings")
-    .insert([
-      {
-        title: titulo,
-        price: precio,
-        city: ciudad,
-        photos: fotos
-      }
-    ])
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>Publicar anuncio</h1>
 
-  if (!error) {
-    alert("Publicado correctamente")
-    window.location.href = "/"
-  } else {
-    alert("Error al publicar")
-    console.log(error)
-  }
-})
+      <form onSubmit={publicar}>
+        <input
+          type="text"
+          placeholder="Título"
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+        />
+
+        <br /><br />
+
+        <input
+          type="number"
+          placeholder="Precio"
+          value={precio}
+          onChange={(e) => setPrecio(e.target.value)}
+        />
+
+        <br /><br />
+
+        <input
+          type="text"
+          placeholder="Ciudad"
+          value={ciudad}
+          onChange={(e) => setCiudad(e.target.value)}
+        />
+
+        <br /><br />
+
+        <textarea
+          placeholder="Descripción"
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+        />
+
+        <br /><br />
+
+        <input
+          type="file"
+          id="imagenes"
+          multiple
+          accept="image/*"
+          onChange={(e) => setFotos(Array.from(e.target.files || []))}
+        />
+
+        <br /><br />
+
+        <button type="submit">Publicar</button>
+      </form>
+    </div>
+  )
+}
