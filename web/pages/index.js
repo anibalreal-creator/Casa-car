@@ -62,7 +62,7 @@ export default function Home() {
   }
 
   function obtenerBanos(item) {
-    return Number(item.banos ?? 0) || 0
+    return Number(item.banos ?? item.baños ?? 0) || 0
   }
 
   function tienePileta(item) {
@@ -133,7 +133,7 @@ export default function Home() {
       <div style={styles.container}>
         <header style={styles.topHeader}>
           <div>
-            <h1 style={styles.logo}>Casa-Car</h1>
+            <h1 style={styles.logo}>Casa-Car NUEVO</h1>
             <p style={styles.subtitle}>Propiedades y vehículos en un solo lugar</p>
           </div>
 
@@ -275,7 +275,7 @@ export default function Home() {
                     </div>
 
                     <p style={styles.cardDescription}>
-                      {item.description || "Sin descripción"}
+                      {item.description || item.descripcion || "Sin descripción"}
                     </p>
                   </div>
 
