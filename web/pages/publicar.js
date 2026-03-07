@@ -48,8 +48,7 @@ export default function Publicar() {
     if (!error) {
       alert("Publicado correctamente")
       window.location.href = "/"
-    } else {
-      alert("Error al publicar")
+    } alert("Error al publicar: " + error.message)
       console.log(error)
     }
   }
