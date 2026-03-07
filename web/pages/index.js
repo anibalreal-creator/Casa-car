@@ -1,64 +1,114 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
 export default function Home() {
-  const [items, setItems] = useState([]);
-  const [err, setErr] = useState("");
 
-  const load = async () => {
-    try {
-      setErr("");
-      const r = await fetch("/api/listings", { cache: "no-store" });
-
-      // Si el server devuelve HTML o error, lo mostramos claro
-      if (!r.ok) {
-        const t = await r.text();
-        throw new Error(`HTTP ${r.status}: ${t.slice(0, 120)}`);
-      }
-
-      const j = await r.json();
-      setItems(Array.isArray(j) ? j : []);
-    } catch (e) {
-      setErr(String(e?.message || e));
-      setItems([]);
-    }
-  };
+  const [anuncios, setAnuncios] = useState([])
+  const [fotos, setFotos] = useState({}) // anuncio_id -> path
 
   useEffect(() => {
-    load();
-  }, []);
+    cargar()
+  }, [])
+
+  async function cargar() {
+
+    const { data: listings } = await supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    setAnuncios(listings || [])
+
+    const { data: fotosData } = await supabase
+      .from("anuncio_fotos")
+      .select("*")
+      .order("orden")
+
+    const mapa = {}
+
+    fotosData?.forEach(f => {
+      if (!mapa[f.anuncio_id]) {
+        mapa[f.anuncio_id] = f.path
+      }
+    })
+
+    setFotos(mapa)
+  }
+
+  function fotoUrl(path) {
+    if (!path) return null
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/listings/${path}`
+  }
 
   return (
-    <div style={{ padding: 16 }}>
+
+    <div style={{padding:40}}>
+
       <h1>Casa-Car</h1>
 
       <a href="/publicar">+ Publicar anuncio</a>
-      <button onClick={load} style={{ marginLeft: 10 }}>
-        Recargar
-      </button>
 
-      {err ? <div style={{ color: "crimson", marginTop: 10 }}>{err}</div> : null}
+      <br/><br/>
 
-      {items.length === 0 && !err ? (
-        <p style={{ marginTop: 16 }}>No hay anuncios todavía.</p>
-      ) : null}
+      <div style={{
+        display:"grid",
+        gridTemplateColumns:"repeat(auto-fill,250px)",
+        gap:20
+      }}>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 20, flexWrap: "wrap" }}>
-        {items.map((it) => (
-          <div key={it.id} style={{ border: "1px solid #ccc", padding: 12, width: 240 }}>
-            <div style={{ height: 90, background: "#eee", display: "grid", placeItems: "center" }}>
-              Sin foto
+        {anuncios.map(a => {
+
+          const foto = fotoUrl(fotos[a.id])
+
+          return (
+
+            <div key={a.id} style={{
+              border:"1px solid #ddd",
+              padding:10
+            }}>
+
+              {foto ? (
+                <img
+                  src={foto}
+                  style={{
+                    width:"100%",
+                    height:160,
+                    objectFit:"cover"
+                  }}
+                />
+              ) : (
+                <div style={{
+                  height:160,
+                  display:"flex",
+                  alignItems:"center",
+                  justifyContent:"center",
+                  background:"#eee"
+                }}>
+                  Sin foto
+                </div>
+              )}
+
+              <h3>{a.titulo || "Sin título"}</h3>
+
+              <b>USD {a.precio}</b>
+
+              <p>{a.ciudad}</p>
+
             </div>
 
-            <strong>{it.title || "Sin título"}</strong>
+          )
 
-            <div>
-              {(it.currency || "USD") + " " + (it.price != null ? Number(it.price).toLocaleString() : "0")}
-            </div>
+        })}
 
-            <div style={{ opacity: 0.8 }}>{it.description || ""}</div>
-          </div>
-        ))}
       </div>
+
     </div>
-  );
+
+  )
+
 }
