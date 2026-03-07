@@ -1,0 +1,30 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: casa
+      POSTGRES_PASSWORD: casapass
+      POSTGRES_DB: casa_car
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  backend:
+    build: ./backend
+    command: npm run start:dev
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+      DATABASE_URL: postgres://casa:casapass@postgres:5432/casa_car
+    depends_on:
+      - postgres
+      - redis
+volumes:
+  pgdata:

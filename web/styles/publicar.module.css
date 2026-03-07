@@ -1,0 +1,35 @@
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.textarea {
+  min-height: 100px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.button {
+  width: 140px;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}

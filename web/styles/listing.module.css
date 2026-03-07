@@ -1,0 +1,39 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.photo {
+  height: 140px;
+  background: #f2f2f2;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.price {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: #555;
+}
