@@ -1,7 +1,13 @@
-import { supabase } from "../../lib/supabaseAdmin"
+import { createClient } from "@supabase/supabase-js"
+
 export default async function handler(req, res) {
   try {
-    const { data, error } = await supabaseAdmin
+    const supabase = createClient(
+      "https://cdmlyrjccdxakvbmbbpp.supabase.co",
+      "sb_publishable_j6ibbVlh7A_S4ww4P3wUEg_YxgzDO1u"
+    )
+
+    const { data, error } = await supabase
       .from("listings")
       .select("*")
       .order("created_at", { ascending: false })
