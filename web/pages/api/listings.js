@@ -1,5 +1,4 @@
-import { supabaseAdmin } from "../../lib/supabaseAdmin"
-
+import { supabase } from "../../lib/supabaseAdmin"
 export default async function handler(req, res) {
   try {
     const { data, error } = await supabaseAdmin
