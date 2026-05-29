@@ -2,6 +2,7 @@ import { MARKETPLACE_CATEGORIES, categoryLabel } from '../lib/category';
 import { getSiteUrl } from '../lib/siteUrl';
 import { getSupabaseServer } from '../lib/supabaseServer';
 import { getListingSeoPath, xmlEscape } from '../lib/seo';
+import { getCategoryLandingPath, SEO_CATEGORY_LANDINGS, SEO_TOPIC_LANDINGS } from '../lib/seoLandings';
 import { slugify } from '../lib/slugify';
 
 function isoDate(value) {
@@ -40,6 +41,20 @@ export async function getServerSideProps({ res }) {
     addUrl(`/buscar?category=${encodeURIComponent(category.value)}`, {
       changefreq: 'daily',
       priority: '0.85',
+    });
+  }
+
+  for (const landing of SEO_CATEGORY_LANDINGS) {
+    addUrl(getCategoryLandingPath(landing), {
+      changefreq: 'daily',
+      priority: '0.9',
+    });
+  }
+
+  for (const landing of SEO_TOPIC_LANDINGS) {
+    addUrl(`/${landing.categorySlug}/${landing.slug}`, {
+      changefreq: 'weekly',
+      priority: '0.86',
     });
   }
 

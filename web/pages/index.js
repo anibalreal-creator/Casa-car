@@ -12,7 +12,7 @@ import CategoryShowcase from '../components/CategoryShowcase';
 import { useLang } from '../context/LanguageContext';
 import SeoHead from '../components/SeoHead';
 import SeoJsonLd from '../components/SeoJsonLd';
-import { absoluteUrl, buildOrganizationJsonLd } from '../lib/seo';
+import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '../lib/seo';
 
 function HeroPromoCard() {
   const { t } = useLang();
@@ -67,17 +67,7 @@ export default function Home() {
         url="/"
       />
       <SeoJsonLd data={buildOrganizationJsonLd()} />
-      <SeoJsonLd data={{
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'Casa-Car',
-        url: absoluteUrl('/'),
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: `${absoluteUrl('/buscar')}?q={search_term_string}`,
-          'query-input': 'required name=search_term_string',
-        },
-      }} />
+      <SeoJsonLd data={buildWebSiteJsonLd()} />
       <GlobalHeader />
       <div className="cc-home-wrap" style={styles.wrap}>
         <section className="cc-home-hero-wrap" style={styles.heroWrap}>

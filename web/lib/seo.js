@@ -176,3 +176,17 @@ export function buildOrganizationJsonLd() {
     sameAs: [],
   };
 }
+
+export function buildWebSiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Casa-Car',
+    url: absoluteUrl('/'),
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${absoluteUrl('/buscar')}?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}

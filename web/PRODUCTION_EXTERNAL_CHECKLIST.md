@@ -36,9 +36,24 @@ Do not commit real secrets. Configure these values only inside Vercel and Supaba
 
 - Verify domain property.
 - Submit: `https://TU-DOMINIO-FINAL/sitemap.xml`
+- Run before submitting: `npm run launch:audit -- https://TU-DOMINIO-FINAL`
 - Inspect and request indexing for:
   - `/`
   - `/buscar`
   - `/sitemap.xml`
+  - `/autos`
+  - `/propiedades`
+  - `/turismo`
   - a real listing URL
   - a real SEO landing URL
+
+## Launch audit
+
+From `C:\casa-car\web`:
+
+```bash
+npm run build
+npm run launch:audit -- https://TU-DOMINIO-FINAL
+```
+
+The audit checks home, Tourism Booking-style filters, sitemap, robots, premium checkout protection and tourism reservation validation.
