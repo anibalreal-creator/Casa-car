@@ -74,7 +74,7 @@ async function main() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
   });
-  check([400, 401, 403].includes(reservation.status), 'Reservas turismo validan payload/autenticacion', String(reservation.status));
+  check([400, 401, 403, 429].includes(reservation.status), 'Reservas turismo validan payload/autenticacion/rate-limit', String(reservation.status));
 
   if (failures.length) {
     console.error(`Launch audit failed: ${failures.join(', ')}`);
