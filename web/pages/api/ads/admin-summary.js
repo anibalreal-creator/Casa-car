@@ -2,6 +2,7 @@ import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { normalizeAdRecord } from '../../../lib/adHelpers';
 import { deriveCampaignState } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
+import { requireAdminRoute } from '../../../lib/apiRouteGuards';
 
 function ctr(impressions = 0, clicks = 0) {
   const imp = Number(impressions || 0);
@@ -12,6 +13,8 @@ function ctr(impressions = 0, clicks = 0) {
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
+  const admin = await requireAdminRoute(req, res, { allowLocalDev: false });
+  if (!admin) return;
 
   try {
     const supabase = getSupabaseServer();

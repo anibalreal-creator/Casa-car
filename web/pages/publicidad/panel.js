@@ -87,9 +87,15 @@ export default function PublicidadPanelPage() {
 
   async function loadCampaigns(currentUser = user) {
     try {
+      const auth = await supabaseBrowser.auth.getSession();
+      const token = auth?.data?.session?.access_token || '';
       const res = await fetch('/api/ads/my-campaigns', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-casa-request': '1' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-casa-request': '1',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ user_id: currentUser?.id || '', contact_email: currentUser?.email || '' }),
       });
       const data = await res.json();
@@ -128,7 +134,10 @@ export default function PublicidadPanelPage() {
       if (editingId) {
         const res = await fetch(`/api/ads?id=${editingId}`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(auth?.data?.session?.access_token ? { Authorization: `Bearer ${auth.data.session.access_token}` } : {}),
+          },
           body: JSON.stringify({ ...form, banner_url }),
         });
         const data = await res.json();
@@ -144,8 +153,11 @@ export default function PublicidadPanelPage() {
       if (!banner_url) throw new Error('Tenés que subir un banner.');
       const res = await fetch('/api/ads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, banner_url, user_id: currentUser.id, status: 'pending_payment' }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(auth?.data?.session?.access_token ? { Authorization: `Bearer ${auth.data.session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ ...form, banner_url, status: 'pending_payment' }),
       });
       const campaign = await res.json();
       if (!res.ok) throw new Error(campaign.error || campaign.hint || 'No se pudo crear la campaña');
@@ -153,7 +165,11 @@ export default function PublicidadPanelPage() {
 
       const prefRes = await fetch('/api/ads/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-casa-request': '1' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-casa-request': '1',
+          ...(auth?.data?.session?.access_token ? { Authorization: `Bearer ${auth.data.session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           campaignId: campaign.id,
           title: campaign.title,
@@ -180,7 +196,15 @@ export default function PublicidadPanelPage() {
     setSyncing(true);
     setNotice('');
     try {
-      const res = await fetch('/api/ads/sync-active', { method: 'POST', headers: { 'x-casa-request': '1' } });
+      const auth = await supabaseBrowser.auth.getSession();
+      const token = auth?.data?.session?.access_token || '';
+      const res = await fetch('/api/ads/sync-active', {
+        method: 'POST',
+        headers: {
+          'x-casa-request': '1',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudieron sincronizar campañas');
       setNotice(`Sync OK · ${data.updated || 0} campañas actualizadas`);

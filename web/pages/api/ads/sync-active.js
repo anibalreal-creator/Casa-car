@@ -1,13 +1,20 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { deriveCampaignState } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
+import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
+import { isOwnerEmail } from '../../../lib/owner';
 
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
   try {
+    const user = await requireAuthenticatedRoute(req, res);
+    if (!user) return;
+
     const supabase = getSupabaseServer();
-    const { data, error } = await supabase.from('ad_campaigns').select('*');
+    let query = supabase.from('ad_campaigns').select('*');
+    if (!isOwnerEmail(user.email || '')) query = query.eq('user_id', String(user.id));
+    const { data, error } = await query;
     if (error) throw error;
 
     const rows = Array.isArray(data) ? data : [];

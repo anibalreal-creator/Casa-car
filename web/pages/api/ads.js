@@ -1,6 +1,18 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan } from '../../lib/adHelpers';
 import { normalizeSlotKey } from '../../lib/adSlots';
+import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
+import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
+
+function canManageCampaign(campaign, user) {
+  const userId = String(user?.id || '');
+  const userEmail = normalizeEmail(user?.email || '');
+  const campaignUserId = String(campaign?.user_id || '');
+  const campaignEmail = normalizeEmail(campaign?.contact_email || campaign?.user_email || '');
+  if (isOwnerEmail(userEmail)) return true;
+  if (campaignUserId) return Boolean(userId && userId === campaignUserId);
+  return Boolean(userEmail && campaignEmail && userEmail === campaignEmail);
+}
 
 function withHouseAds(items, slot) {
   const normalized = (items || []).map(normalizeAdRecord);
@@ -31,12 +43,15 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    const user = await requireAuthenticatedRoute(req, res);
+    if (!user) return;
+
     const body = req.body || {};
     const plan = getAdPlan(body.plan_key || 'basico');
     const startsAt = body.starts_at || null;
     const endsAt = body.ends_at || null;
     const payload = {
-      user_id: body.user_id || null,
+      user_id: user.id,
       company_name: body.company_name || body.title || '',
       title: body.title || body.company_name || 'Campaña publicitaria',
       description: body.description || '',
@@ -46,7 +61,7 @@ export default async function handler(req, res) {
       destination_url: body.destination_url || '',
       cta_text: body.cta_text || 'Ver más',
       contact_name: body.contact_name || '',
-      contact_email: body.contact_email || '',
+      contact_email: body.contact_email || user.email || '',
       status: body.status || 'pending_payment',
       active: false,
       starts_at: startsAt,
@@ -66,10 +81,23 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PATCH') {
+    const user = await requireAuthenticatedRoute(req, res);
+    if (!user) return;
+
     const { id } = req.query;
     const body = req.body || {};
+    const { data: existing, error: existingError } = await supabase
+      .from('ad_campaigns')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existingError) return res.status(500).json({ error: existingError.message });
+    if (!existing) return res.status(404).json({ error: 'Campania no encontrada' });
+    if (!canManageCampaign(existing, user)) return res.status(403).json({ error: 'No autorizado' });
+
     const payload = {};
-    ['company_name','title','description','plan_key','slot_key','banner_url','destination_url','cta_text','contact_name','contact_email','status','mercadopago_status','mercadopago_payment_id','starts_at','ends_at'].forEach((key) => {
+    ['company_name','title','description','plan_key','slot_key','banner_url','destination_url','cta_text','contact_name','contact_email','starts_at','ends_at'].forEach((key) => {
       if (body[key] !== undefined) payload[key] = body[key];
     });
     const { data, error } = await supabase.from('ad_campaigns').update(payload).eq('id', id).select('*').single();

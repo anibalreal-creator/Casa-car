@@ -52,7 +52,7 @@ export default function AdminAdsPage() {
     setLoading(true);
     try {
       const [summaryRes, campaignsRes] = await Promise.all([
-        fetch('/api/ads/admin-summary', { method: 'POST', headers: { 'x-casa-request': '1' } }),
+        secureFetch('/api/ads/admin-summary', { method: 'POST', headers: { 'x-casa-request': '1' } }),
         fetch(`/api/secure/admin/campaigns?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`),
       ]);
       const summaryJson = await summaryRes.json().catch(() => ({}));

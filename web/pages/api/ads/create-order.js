@@ -1,8 +1,9 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { buildAdPreference, getAdPlan } from '../../../lib/adHelpers';
-import { isOwnerEmail } from '../../../lib/owner';
+import { isOwnerEmail, normalizeEmail } from '../../../lib/owner';
 import { patchForCampaignAction } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
+import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
 
 function getBaseUrl(req) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || '';
@@ -16,6 +17,9 @@ export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
   try {
+    const user = await requireAuthenticatedRoute(req, res);
+    if (!user) return;
+
     const supabase = getSupabaseServer();
     const { campaignId = '', title = '', planKey = 'basico', slotKey = 'home_middle', companyName = '' } = req.body || {};
     if (!campaignId) return safeJson(res, 400, { error: 'Falta campaignId' });
@@ -29,20 +33,37 @@ export default async function handler(req, res) {
     if (campaignError) throw campaignError;
     if (!campaign) return safeJson(res, 404, { error: 'Campaña no encontrada' });
 
-    if (isOwnerEmail(campaign.contact_email)) {
+    const userEmail = normalizeEmail(user.email || '');
+    const campaignEmail = normalizeEmail(campaign.contact_email || campaign.user_email || '');
+    const campaignUserId = String(campaign.user_id || '');
+    const isCampaignOwner = isOwnerEmail(userEmail)
+      ? true
+      : campaignUserId
+        ? campaignUserId === String(user.id)
+        : Boolean(campaignEmail && campaignEmail === userEmail);
+
+    if (!isCampaignOwner) return safeJson(res, 403, { error: 'No autorizado' });
+
+    if (isOwnerEmail(userEmail) || isOwnerEmail(campaignEmail)) {
       const patch = patchForCampaignAction(campaign, 'activate');
       await supabase.from('ad_campaigns').update({ ...patch, mercadopago_status: 'owner_free' }).eq('id', campaignId);
       return safeJson(res, 200, { ok: true, ownerFree: true, campaignId, chosen_checkout_url: `${getBaseUrl(req)}/dashboard/company` });
     }
 
-    const plan = getAdPlan(planKey);
+    const plan = getAdPlan(campaign.plan_key || planKey);
     const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     if (!mpToken) {
       return safeJson(res, 200, { ok: true, manual: true, campaignId, planKey: plan.key, amount: plan.price, message: 'Falta Mercado Pago. Campaña guardada en pending_payment.' });
     }
 
     const preference = buildAdPreference({
-      campaign: { id: campaignId, title, plan_key: plan.key, slot_key: slotKey, company_name: companyName },
+      campaign: {
+        id: campaignId,
+        title: campaign.title || title,
+        plan_key: plan.key,
+        slot_key: campaign.slot_key || slotKey,
+        company_name: campaign.company_name || companyName,
+      },
       baseUrl: getBaseUrl(req),
     });
 

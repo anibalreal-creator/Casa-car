@@ -74,7 +74,11 @@ export default function CompanyDashboardPage() {
       const [campaignsRes, dashboardRes] = await Promise.all([
         fetch('/api/ads/my-campaigns', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-casa-request': '1' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-casa-request': '1',
+            ...(sessionRes?.data?.session?.access_token ? { Authorization: `Bearer ${sessionRes.data.session.access_token}` } : {}),
+          },
           body: JSON.stringify({ user_id: nextUser.id, contact_email: nextUser.email || '' }),
         }),
         secureFetch('/api/secure/company/dashboard').catch(() => null),

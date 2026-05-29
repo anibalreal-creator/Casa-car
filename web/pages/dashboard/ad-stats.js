@@ -3,6 +3,7 @@ import GlobalHeader from '../../components/GlobalHeader';
 import FooterBlueBar from '../../components/FooterBlueBar';
 import { AD_PLANS } from '../../data/adPlans';
 import { getSlotLabel } from '../../lib/adSlots';
+import { secureFetch } from '../../lib/secureClient';
 
 const PLAN_PRICE = AD_PLANS.reduce((acc, item) => {
   acc[String(item.key || '').toLowerCase()] = Number(item.price || 0);
@@ -57,7 +58,7 @@ export default function AdStatsPage() {
     setLoading(true);
     try {
       const [summaryRes, campaignsRes] = await Promise.all([
-        fetch('/api/ads/admin-summary', { method: 'POST', headers: { 'x-casa-request': '1' } }),
+        secureFetch('/api/ads/admin-summary', { method: 'POST', headers: { 'x-casa-request': '1' } }),
         fetch('/api/secure/admin/campaigns?status=all'),
       ]);
       const summaryJson = await summaryRes.json().catch(() => ({}));
