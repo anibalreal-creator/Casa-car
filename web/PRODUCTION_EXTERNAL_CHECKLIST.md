@@ -7,8 +7,8 @@ Do not commit real secrets. Configure these values only inside Vercel and Supaba
 - Root directory: `web`
 - Build command: `npm run build`
 - Production environment variables:
-  - `NEXT_PUBLIC_SITE_URL=https://TU-DOMINIO-FINAL`
-  - `SITE_URL=https://TU-DOMINIO-FINAL`
+  - `NEXT_PUBLIC_SITE_URL=https://casa-car.com`
+  - `SITE_URL=https://casa-car.com`
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
@@ -18,8 +18,8 @@ Do not commit real secrets. Configure these values only inside Vercel and Supaba
 
 ## Mercado Pago
 
-- Webhook premium: `https://TU-DOMINIO-FINAL/api/payments/mercadopago/webhook`
-- Webhook ads: `https://TU-DOMINIO-FINAL/api/payments/mercadopago/ad-webhook`
+- Webhook premium: `https://casa-car.com/api/payments/mercadopago/webhook`
+- Webhook ads: `https://casa-car.com/api/payments/mercadopago/ad-webhook`
 - Run one sandbox or real low-value payment and confirm:
   - Premium listing activates.
   - Ad campaign moves from `pending_payment` to `active`.
@@ -29,14 +29,14 @@ Do not commit real secrets. Configure these values only inside Vercel and Supaba
 
 - Apply SQL migrations through `web/supabase/sql/07_production_rls_final.sql`.
 - Authentication URL configuration:
-  - Site URL: `https://TU-DOMINIO-FINAL`
-  - Redirect URLs: `https://TU-DOMINIO-FINAL/**`
+  - Site URL: `https://casa-car.com`
+  - Redirect URLs: `https://casa-car.com/**`
 
 ## Google Search Console
 
 - Verify domain property.
-- Submit: `https://TU-DOMINIO-FINAL/sitemap.xml`
-- Run before submitting: `npm run launch:audit -- https://TU-DOMINIO-FINAL`
+- Submit: `https://casa-car.com/sitemap.xml`
+- Run before submitting: `npm run launch:audit -- https://casa-car.com`
 - Inspect and request indexing for:
   - `/`
   - `/buscar`
@@ -53,7 +53,7 @@ From `C:\casa-car\web`:
 
 ```bash
 npm run build
-npm run launch:audit -- https://TU-DOMINIO-FINAL
+npm run launch:audit -- https://casa-car.com
 ```
 
 The audit checks home, Tourism Booking-style filters, sitemap, robots, premium checkout protection and tourism reservation validation.

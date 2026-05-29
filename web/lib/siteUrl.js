@@ -4,7 +4,7 @@ export function getSiteUrl() {
     process.env.SITE_URL,
     process.env.VERCEL_PROJECT_PRODUCTION_URL,
     process.env.VERCEL_URL,
-    "https://casa-car-two.vercel.app",
+    "https://casa-car.com",
   ];
 
   for (const value of candidates) {
@@ -14,7 +14,7 @@ export function getSiteUrl() {
     return normalized;
   }
 
-  return "https://casa-car-two.vercel.app";
+  return "https://casa-car.com";
 }
 
 function normalizeSiteUrl(value) {
