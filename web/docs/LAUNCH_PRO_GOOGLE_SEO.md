@@ -6,13 +6,13 @@ Este archivo es operativo. No pegar claves ni tokens aca.
 
 1. En Vercel configurar dominio final.
 2. En Vercel configurar:
-   - `NEXT_PUBLIC_SITE_URL=https://casa-car.com`
-   - `SITE_URL=https://casa-car.com`
+   - `NEXT_PUBLIC_SITE_URL=https://www.casa-car.com`
+   - `SITE_URL=https://www.casa-car.com`
 3. Redeploy production.
 4. Ejecutar:
 
 ```bash
-npm run launch:audit -- https://casa-car.com
+npm run launch:audit -- https://www.casa-car.com
 ```
 
 ## Google Search Console
@@ -22,7 +22,7 @@ npm run launch:audit -- https://casa-car.com
 3. Enviar sitemap:
 
 ```text
-https://casa-car.com/sitemap.xml
+https://www.casa-car.com/sitemap.xml
 ```
 
 4. Inspeccionar y pedir indexacion para:
