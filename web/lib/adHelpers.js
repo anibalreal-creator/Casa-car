@@ -1,5 +1,6 @@
 import { AD_PLANS, AD_SLOTS, getAdPlan, getPlanRank } from '../data/adPlans';
 import { normalizeSlotKey, getSlotLabel } from './adSlots';
+import { getSiteUrl } from './siteUrl';
 
 export function plusDaysIso(days = 7) {
   const date = new Date();
@@ -60,7 +61,7 @@ export function getHouseAds() {
 
 export function buildAdPreference({ campaign, baseUrl }) {
   const plan = getAdPlan(campaign.plan_key || 'basico');
-  const safeBaseUrl = baseUrl || 'https://casa-car-two.vercel.app';
+  const safeBaseUrl = (baseUrl || getSiteUrl()).replace(/\/+$/, '');
   const returnUrl = `${safeBaseUrl}/publicidad/panel?status=paid`;
   const campaignId = String(campaign.id);
   return {

@@ -1,3 +1,5 @@
+import { getSiteUrl } from './siteUrl';
+
 const MP_BASE_URL = 'https://api.mercadopago.com';
 
 function getMpToken() {
@@ -47,7 +49,7 @@ export function buildPremiumPreference({ listing, user }) {
   // IMPORTANTE: para evitar el error de MercadoPago
   // "auto_return invalid. back_url.success must be defined"
   // usamos URLs públicas, fijas y sin query params.
-  const baseUrl = 'https://casa-car-two.vercel.app';
+  const baseUrl = getSiteUrl();
   const returnUrl = `${baseUrl}/mis-anuncios`;
 
   return {

@@ -1,4 +1,5 @@
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
+import { getSiteUrl } from '../../lib/siteUrl';
 import mercadopago from "mercadopago";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,7 +9,7 @@ const supabase = createClient(
 );
 
 mercadopago.configure({
-  access_token: process.env.MP_ACCESS_TOKEN,
+  access_token: process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN,
 });
 
 const PLAN_PRICES = {
@@ -86,7 +87,7 @@ export default async function handler(req, res) {
     }
 
     const campaignId = inserted.id;
-    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+    const baseUrl = getSiteUrl();
 
     const preference = {
       items: [
