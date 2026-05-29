@@ -1,4 +1,5 @@
 import { getSupabaseServer } from "../../../lib/supabaseServer";
+import { getSiteUrl } from "../../../lib/siteUrl";
 import { checkRateLimit } from "../../../lib/server/rateLimit";
 import { calculateTourismQuote } from "../../../lib/tourism";
 
@@ -18,7 +19,7 @@ async function createCheckout({ listing, reservation, total }) {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
   if (!token || !reservation.pay_now || !total) return null;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://casa-car-two.vercel.app";
+  const baseUrl = getSiteUrl();
   const preference = {
     items: [{
       id: String(listing.id),
