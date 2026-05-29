@@ -67,46 +67,40 @@ drop policy if exists "reviews authenticated insert" on public.reviews;
 -- Direct browser inserts stay closed because existing Casa-Car schemas differ.
 create policy "reviews authenticated insert" on public.reviews for insert with check (false);
 
-drop policy if exists "reports own insert" on public.reports;
-create policy "reports own insert" on public.reports for insert with check (auth.uid() = reporter_id);
+do $$
+begin
+  if to_regclass('public.reports') is not null then
+    execute 'drop policy if exists "reports own insert" on public.reports';
+    if exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'reports' and column_name = 'reporter_id'
+    ) then
+      execute 'create policy "reports own insert" on public.reports for insert with check (auth.uid() = reporter_id)';
+    else
+      execute 'create policy "reports own insert" on public.reports for insert with check (false)';
+    end if;
+  end if;
 
-drop policy if exists "verification own read" on public.verification_requests;
-create policy "verification own read" on public.verification_requests for select using (auth.uid() = user_id);
+  if to_regclass('public.verification_requests') is not null then
+    execute 'drop policy if exists "verification own read" on public.verification_requests';
+    execute 'drop policy if exists "verification own insert" on public.verification_requests';
+    execute 'create policy "verification own read" on public.verification_requests for select using (auth.uid() = user_id)';
+    execute 'create policy "verification own insert" on public.verification_requests for insert with check (auth.uid() = user_id)';
+  end if;
 
-drop policy if exists "verification own insert" on public.verification_requests;
-create policy "verification own insert" on public.verification_requests for insert with check (auth.uid() = user_id);
+  if to_regclass('public.tourism_reservations') is not null then
+    execute 'drop policy if exists "tourism reservations insert public" on public.tourism_reservations';
+    execute 'drop policy if exists "tourism reservations owner read" on public.tourism_reservations';
+    execute 'drop policy if exists "tourism reservations owner update" on public.tourism_reservations';
+    execute 'create policy "tourism reservations insert public" on public.tourism_reservations for insert with check (true)';
+    execute 'create policy "tourism reservations owner read" on public.tourism_reservations for select using (exists (select 1 from public.listings l where l.id = tourism_reservations.listing_id and l.user_id = auth.uid()))';
+    execute 'create policy "tourism reservations owner update" on public.tourism_reservations for update using (exists (select 1 from public.listings l where l.id = tourism_reservations.listing_id and l.user_id = auth.uid())) with check (exists (select 1 from public.listings l where l.id = tourism_reservations.listing_id and l.user_id = auth.uid()))';
+  end if;
 
-drop policy if exists "tourism reservations insert public" on public.tourism_reservations;
-create policy "tourism reservations insert public" on public.tourism_reservations for insert with check (true);
-
-drop policy if exists "tourism reservations owner read" on public.tourism_reservations;
-create policy "tourism reservations owner read" on public.tourism_reservations
-for select using (
-  exists (
-    select 1 from public.listings l
-    where l.id = tourism_reservations.listing_id
-      and l.user_id = auth.uid()
-  )
-);
-
-drop policy if exists "tourism reservations owner update" on public.tourism_reservations;
-create policy "tourism reservations owner update" on public.tourism_reservations
-for update using (
-  exists (
-    select 1 from public.listings l
-    where l.id = tourism_reservations.listing_id
-      and l.user_id = auth.uid()
-  )
-) with check (
-  exists (
-    select 1 from public.listings l
-    where l.id = tourism_reservations.listing_id
-      and l.user_id = auth.uid()
-  )
-);
-
-drop policy if exists "presence deny public select" on public.presence_heartbeats;
-create policy "presence deny public select" on public.presence_heartbeats for select using (false);
-
-drop policy if exists "presence deny public insert" on public.presence_heartbeats;
-create policy "presence deny public insert" on public.presence_heartbeats for insert with check (false);
+  if to_regclass('public.presence_heartbeats') is not null then
+    execute 'drop policy if exists "presence deny public select" on public.presence_heartbeats';
+    execute 'drop policy if exists "presence deny public insert" on public.presence_heartbeats';
+    execute 'create policy "presence deny public select" on public.presence_heartbeats for select using (false)';
+    execute 'create policy "presence deny public insert" on public.presence_heartbeats for insert with check (false)';
+  end if;
+end $$;
