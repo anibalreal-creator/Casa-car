@@ -74,7 +74,7 @@ ${Array.from(urls.values()).join('\n')}
 </urlset>`;
 
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=86400');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.write(xml);
   res.end();
   return { props: {} };

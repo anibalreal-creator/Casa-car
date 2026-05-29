@@ -3,7 +3,7 @@ import { getSiteUrl } from "../lib/siteUrl";
 export async function getServerSideProps({ res }) {
   const site = getSiteUrl();
   res.setHeader("Content-Type", "text/plain");
-  res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+  res.setHeader("Cache-Control", "no-store, max-age=0");
   res.write(`User-agent: *
 Allow: /
 Disallow: /api/
