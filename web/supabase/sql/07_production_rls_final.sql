@@ -63,7 +63,30 @@ drop policy if exists "reviews public read" on public.reviews;
 create policy "reviews public read" on public.reviews for select using (true);
 
 drop policy if exists "reviews authenticated insert" on public.reviews;
-create policy "reviews authenticated insert" on public.reviews for insert with check (auth.uid() = reviewer_id);
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'reviews'
+      and column_name = 'reviewer_id'
+  ) then
+    execute 'create policy "reviews authenticated insert" on public.reviews for insert with check (auth.uid() = reviewer_id)';
+  elsif exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'reviews'
+      and column_name = 'author_user_id'
+  ) then
+    execute 'create policy "reviews authenticated insert" on public.reviews for insert with check (auth.uid() = author_user_id)';
+  else
+    -- Some older Casa-Car schemas store public review contact fields but no auth user id.
+    -- Direct browser inserts stay closed; the server API can still write with the service role.
+    execute 'create policy "reviews authenticated insert" on public.reviews for insert with check (false)';
+  end if;
+end $$;
 
 drop policy if exists "reports own insert" on public.reports;
 create policy "reports own insert" on public.reports for insert with check (auth.uid() = reporter_id);
