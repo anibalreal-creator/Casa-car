@@ -1,0 +1,197 @@
+/* Casa-Car - parche responsive real para mobile
+   Importar en pages/_app.js o en la home.
+*/
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .home-shell,
+  .home-page,
+  .home-wrapper,
+  .home-root,
+  main {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .home-grid,
+  .hero-grid,
+  .search-grid,
+  .cards-grid,
+  .premium-grid,
+  .sections-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .home-row,
+  .hero-row,
+  .search-row,
+  .top-row,
+  .filters-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .home-sidebar,
+  .left-column,
+  .right-column,
+  .hero-left,
+  .hero-right,
+  .filters-sidebar,
+  .search-sidebar,
+  aside {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .home-content,
+  .main-column,
+  .results-column,
+  section,
+  article {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .quick-access,
+  .quick-links,
+  .quick-categories,
+  .chips-row,
+  .home-chips {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .quick-access > *,
+  .quick-links > *,
+  .quick-categories > *,
+  .chips-row > *,
+  .home-chips > * {
+    flex: 0 1 auto !important;
+    min-width: unset !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  .listings-grid,
+  .featured-grid,
+  .sponsored-grid,
+  .market-grid,
+  .cards,
+  .listing-cards {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .listing-card,
+  .card,
+  .premium-card,
+  .sponsored-card,
+  .market-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .listing-card img,
+  .card img,
+  .premium-card img,
+  .sponsored-card img,
+  .market-card img {
+    width: 100% !important;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .search-form,
+  .filters-form,
+  form.home-search,
+  form.filters {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .search-form input,
+  .search-form select,
+  .search-form button,
+  .filters-form input,
+  .filters-form select,
+  .filters-form button,
+  form.home-search input,
+  form.home-search select,
+  form.home-search button,
+  form.filters input,
+  form.filters select,
+  form.filters button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .home-banner,
+  .ad-banner,
+  .hero-banner,
+  .sponsored-banner {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .container,
+  .page-container,
+  .site-container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .listings-grid,
+  .featured-grid,
+  .sponsored-grid,
+  .market-grid,
+  .cards,
+  .listing-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  h1 {
+    font-size: 32px !important;
+    line-height: 1.05 !important;
+  }
+
+  h2 {
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}

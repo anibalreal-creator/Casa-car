@@ -1,0 +1,1 @@
+export default function AdsBannerManager(){return <div>Ads OK</div>}

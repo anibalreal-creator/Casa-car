@@ -1,318 +1,142 @@
-import { createClient } from "@supabase/supabase-js"
 import { useRouter } from "next/router"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
-import dynamic from "next/dynamic"
-import { createClient } from "@supabase/supabase-js"
+import { supabase } from "../../lib/supabase"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
-
-const Map = dynamic(() => import("../../components/Map"), {
-  ssr: false
-})
-
-export default function DetalleAnuncio() {
+export default function Anuncio() {
   const router = useRouter()
   const { id } = router.query
-
   const [item, setItem] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [imagenActiva, setImagenActiva] = useState(0)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [fotoActiva, setFotoActiva] = useState(0)
+  const [session, setSession] = useState(null)
+  const [favoritosCount, setFavoritosCount] = useState(0)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session || null))
+  }, [])
 
   useEffect(() => {
     if (!id) return
-
-    async function cargarAnuncio() {
-      setLoading(true)
-      setErrorMsg("")
-
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle()
-
-      if (error) {
-        setErrorMsg(error.message || "Error al cargar el anuncio")
-        setItem(null)
-        setLoading(false)
-        return
-      }
-
-      setItem(data || null)
-      setLoading(false)
+    async function cargar() {
+      const res = await fetch(`/api/listings?id=${id}`, { cache: "no-store" })
+      const data = await res.json()
+      setItem(res.ok ? data : null)
+      setFotoActiva(0)
     }
-
-    cargarAnuncio()
+    cargar()
   }, [id])
 
-  const imagenes = useMemo(() => {
-    if (!item?.photos || !Array.isArray(item.photos)) return []
+  useEffect(() => {
+    if (!id) return
+    async function cargarCount() {
+      try {
+        const res = await fetch(`/api/favoritos?listing_id=${id}`, { cache: "no-store" })
+        const data = await res.json()
+        setFavoritosCount(data?.count || 0)
+      } catch {
+        setFavoritosCount(0)
+      }
+    }
+    cargarCount()
+  }, [id])
 
-    return item.photos
-      .filter(Boolean)
-      .map((foto) => {
-        const { data } = supabase.storage.from("listings").getPublicUrl(foto)
-        return data?.publicUrl || null
-      })
-      .filter(Boolean)
-  }, [item])
-
-  const imagenPrincipal = imagenes[imagenActiva] || null
-
-  function obtenerPrecio() {
-    return (
-      Number(
-        item?.price ??
-          item?.precio ??
-          0
-      ) || 0
-    )
-  }
-
-  function obtenerTitulo() {
-    return (
-      item?.title ||
-      item?.titulo ||
-      "Sin título"
-    )
-  }
-
-  function obtenerDescripcion() {
-    return (
-      item?.description ||
-      item?.descripcion ||
-      item?.DESCRIPCION ||
-      "Sin descripción"
-    )
-  }
-
-  function obtenerCiudad() {
-    return (
-      item?.city ||
-      item?.ciudad ||
-      "Sin ciudad"
-    )
-  }
-
-  function obtenerDormitorios() {
-    return Number(item?.dormitorios ?? 0) || 0
-  }
-
-  function obtenerBanos() {
-    return Number(item?.banos ?? item?.baños ?? 0) || 0
-  }
-
-  function obtenerTelefono() {
-    if (!item?.telefono) return null
-    return String(item.telefono).replace(/\D/g, "")
-  }
-
-  function obtenerMoneda() {
-    return item?.currency || item?.moneda || "USD"
-  }
-
-  function imprimirFicha() {
-    window.print()
-  }
-
-  if (loading) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.container}>
-          <div style={styles.message}>Cargando anuncio...</div>
-        </div>
-      </div>
-    )
+  function obtenerImagen(path) {
+    if (!path) return null
+    if (String(path).startsWith("http")) return path
+    const { data } = supabase.storage.from("listings").getPublicUrl(path)
+    return data?.publicUrl || null
   }
 
   if (!item) {
     return (
       <div style={styles.page}>
-        <div style={styles.container}>
-          <Link href="/" style={styles.backBtn}>
-            ← Volver
-          </Link>
-
-          <div style={{ ...styles.message, marginTop: 16 }}>
-            {errorMsg ? (
-              <>
-                <div style={styles.errorText}>Error: {errorMsg}</div>
-                <div>No existe el anuncio.</div>
-              </>
-            ) : (
-              <div>No existe el anuncio.</div>
-            )}
-          </div>
-        </div>
+        <div style={styles.container}><div style={styles.loadingBox}>Cargando anuncio...</div></div>
       </div>
     )
   }
 
-  const telefono = obtenerTelefono()
-  const precio = obtenerPrecio()
-  const titulo = obtenerTitulo()
-  const descripcion = obtenerDescripcion()
-  const ciudad = obtenerCiudad()
-  const dormitorios = obtenerDormitorios()
-  const banos = obtenerBanos()
-  const moneda = obtenerMoneda()
-  const pileta = Boolean(item?.pileta)
+  const fotos = Array.isArray(item.photos) ? item.photos.filter(Boolean) : []
+  const fotoPrincipal = fotos.length > 0 ? obtenerImagen(fotos[fotoActiva]) : null
+  const telefono = item?.telefono ? String(item.telefono).replace(/\D/g, "") : null
+  const tipo = item?.tipo || ""
+  const subtipo = item?.subtipo || ""
+  const operacion = item?.operacion || ""
+  const ciudad = item?.ciudad || item?.city || ""
+  const esMio = Boolean(session?.user?.id && item.user_id === session.user.id)
+
+  async function eliminarAnuncio() {
+    if (!session?.user?.id) return
+    if (!confirm("¿Eliminar este anuncio?")) return
+    const res = await fetch("/api/delete-listing", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: item.id, user_id: session.user.id })
+    })
+    if (res.ok) router.push("/")
+    else alert("No se pudo eliminar")
+  }
 
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <div style={styles.topBar}>
-          <Link href="/" style={styles.backBtn}>
-            ← Volver
-          </Link>
-
-          <button onClick={imprimirFicha} style={styles.printBtn}>
-            Imprimir
-          </button>
+          <Link href="/" style={styles.backBtn}>← Volver</Link>
+          <div style={styles.topActions}>
+            {esMio ? <Link href={`/editar/${item.id}`} style={styles.editBtn}>Editar</Link> : null}
+            {esMio ? <button onClick={eliminarAnuncio} style={styles.deleteBtn}>Eliminar</button> : null}
+            <button onClick={() => window.print()} style={styles.printBtn}>Imprimir</button>
+          </div>
         </div>
 
-        <div style={styles.galleryCard}>
-          <div style={styles.mainImageWrap}>
-            {imagenPrincipal ? (
-              <img
-                src={imagenPrincipal}
-                alt={titulo}
-                style={styles.mainImage}
-              />
-            ) : (
-              <div style={styles.noImageBig}>Sin foto</div>
-            )}
+        <div style={styles.card}>
+          <div style={styles.headerBlock}>
+            <div>
+              <h1 style={styles.title}>{item?.titulo || item?.title || "Sin título"}</h1>
+              <div style={styles.price}>{item?.moneda || item?.currency || "USD"} {Number(item?.precio ?? item?.price ?? 0).toLocaleString("es-AR")}</div>
+              {item?.destacado ? <span style={styles.destacado}>⭐ Destacado</span> : null}
+            </div>
+            <div style={styles.favsBox}>♥ {favoritosCount}</div>
           </div>
 
-          {imagenes.length > 1 && (
-            <div style={styles.thumbsRow}>
-              {imagenes.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setImagenActiva(index)}
-                  style={{
-                    ...styles.thumbButton,
-                    border:
-                      imagenActiva === index
-                        ? "2px solid #1d4ed8"
-                        : "1px solid #d1d5db"
-                  }}
-                >
-                  <img
-                    src={img}
-                    alt={`Foto ${index + 1}`}
-                    style={styles.thumbImage}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={styles.mainGrid}>
-          <div style={styles.leftCol}>
-            <div style={styles.infoCard}>
-              <div style={styles.price}>{moneda} {precio}</div>
-              <h1 style={styles.title}>{titulo}</h1>
-              <div style={styles.city}>{ciudad}</div>
-
-              <div style={styles.featuresRow}>
-                <span style={styles.featureBadge}>
-                  🛏 {dormitorios > 0 ? `${dormitorios} dormitorios` : "Dormitorios s/d"}
-                </span>
-
-                <span style={styles.featureBadge}>
-                  🚿 {banos > 0 ? `${banos} baño${banos > 1 ? "s" : ""}` : "Baños s/d"}
-                </span>
-
-                <span style={styles.featureBadge}>
-                  🏊 {pileta ? "Con pileta" : "Sin pileta"}
-                </span>
-              </div>
-
-              <div style={styles.sectionTitle}>Descripción</div>
-              <p style={styles.description}>{descripcion}</p>
-            </div>
-
-            <div style={styles.infoCard}>
-              <div style={styles.sectionTitle}>Características</div>
-
-              <div style={styles.specGrid}>
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Precio</div>
-                  <div style={styles.specValue}>{moneda} {precio}</div>
-                </div>
-
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Ciudad</div>
-                  <div style={styles.specValue}>{ciudad}</div>
-                </div>
-
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Dormitorios</div>
-                  <div style={styles.specValue}>{dormitorios || "Sin dato"}</div>
-                </div>
-
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Baños</div>
-                  <div style={styles.specValue}>{banos || "Sin dato"}</div>
-                </div>
-
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Pileta</div>
-                  <div style={styles.specValue}>{pileta ? "Sí" : "No"}</div>
-                </div>
-
-                <div style={styles.specItem}>
-                  <div style={styles.specLabel}>Moneda</div>
-                  <div style={styles.specValue}>{moneda}</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.infoCard}>
-              <div style={styles.sectionTitle}>Ubicación</div>
-              <p style={styles.locationText}>{ciudad}</p>
-              <Map city={ciudad} />
-            </div>
-          </div>
-
-          <div style={styles.rightCol}>
-            <div style={styles.contactCard}>
-              <div style={styles.contactTitle}>Contactá al anunciante</div>
-
-              {telefono ? (
-                <a
-                  href={`https://wa.me/${telefono}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={styles.whatsappBtn}
-                >
-                  💬 Contactar por WhatsApp
-                </a>
-              ) : (
-                <div style={styles.noPhone}>
-                  Este anuncio todavía no tiene teléfono.
+          {fotoPrincipal ? (
+            <div>
+              <img src={fotoPrincipal} alt={item?.titulo || item?.title || "Anuncio"} style={styles.mainImage} />
+              {fotos.length > 1 && (
+                <div style={styles.gallery}>
+                  {fotos.map((foto, i) => {
+                    const url = obtenerImagen(foto)
+                    return (
+                      <img
+                        key={`${foto}-${i}`}
+                        src={url}
+                        alt={`foto-${i + 1}`}
+                        onClick={() => setFotoActiva(i)}
+                        style={{ ...styles.thumb, border: i === fotoActiva ? "3px solid #2563eb" : "2px solid transparent" }}
+                      />
+                    )
+                  })}
                 </div>
               )}
-
-              <button onClick={imprimirFicha} style={styles.secondaryBtn}>
-                Imprimir ficha
-              </button>
             </div>
+          ) : <div style={styles.noImage}>Sin foto</div>}
 
-            <div style={styles.adCard}>
-              <div style={styles.adTitle}>Espacio publicitario</div>
-              <div style={styles.adBox}>
-                Acá puede ir un anuncio destacado, crédito, seguro, escribanía o inmobiliaria premium.
-              </div>
-            </div>
+          <div style={styles.infoGrid}>
+            <div style={styles.infoItem}><b>Tipo</b><br />{String(tipo).replaceAll("_", " ") || "-"}</div>
+            <div style={styles.infoItem}><b>Subtipo</b><br />{String(subtipo).replaceAll("_", " ") || "-"}</div>
+            <div style={styles.infoItem}><b>Operación</b><br />{String(operacion).replaceAll("_", " ") || "-"}</div>
+            <div style={styles.infoItem}><b>Ciudad</b><br />{ciudad || "-"}</div>
           </div>
+
+          {item.descripcion || item.description ? (
+            <div style={styles.descriptionBox}>
+              <h3 style={styles.sectionTitle}>Descripción</h3>
+              <p style={styles.description}>{item.descripcion || item.description}</p>
+            </div>
+          ) : null}
+
+          {telefono ? (
+            <a href={`https://wa.me/${telefono}`} target="_blank" rel="noreferrer" style={styles.whatsapp}>WhatsApp</a>
+          ) : null}
         </div>
       </div>
     </div>
@@ -320,252 +144,29 @@ export default function DetalleAnuncio() {
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f6f7fb",
-    fontFamily: "Arial, sans-serif",
-    padding: "24px 16px"
-  },
-  container: {
-    maxWidth: 1280,
-    margin: "0 auto"
-  },
-  topBar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 18,
-    flexWrap: "wrap"
-  },
-  backBtn: {
-    display: "inline-block",
-    textDecoration: "none",
-    background: "#fff",
-    color: "#111827",
-    border: "1px solid #d1d5db",
-    borderRadius: 10,
-    padding: "10px 14px",
-    fontWeight: 700
-  },
-  printBtn: {
-    border: "none",
-    background: "#0b1730",
-    color: "#fff",
-    borderRadius: 10,
-    padding: "10px 14px",
-    fontWeight: 700,
-    cursor: "pointer"
-  },
-  message: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 14,
-    padding: 24,
-    color: "#374151"
-  },
-  errorText: {
-    color: "#b91c1c",
-    marginBottom: 10,
-    fontWeight: 700
-  },
-  galleryCard: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 18
-  },
-  mainImageWrap: {
-    width: "100%"
-  },
-  mainImage: {
-    width: "100%",
-    height: 520,
-    objectFit: "cover",
-    borderRadius: 14,
-    display: "block"
-  },
-  noImageBig: {
-    width: "100%",
-    height: 520,
-    background: "#e5e7eb",
-    borderRadius: 14,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#6b7280",
-    fontSize: 24
-  },
-  thumbsRow: {
-    display: "flex",
-    gap: 10,
-    marginTop: 14,
-    flexWrap: "wrap"
-  },
-  thumbButton: {
-    padding: 0,
-    borderRadius: 10,
-    overflow: "hidden",
-    background: "#fff",
-    cursor: "pointer"
-  },
-  thumbImage: {
-    width: 100,
-    height: 70,
-    objectFit: "cover",
-    display: "block"
-  },
-  mainGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 320px",
-    gap: 18
-  },
-  leftCol: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 18
-  },
-  rightCol: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 18
-  },
-  infoCard: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 22
-  },
-  contactCard: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 22,
-    position: "sticky",
-    top: 16
-  },
-  adCard: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 22
-  },
-  adTitle: {
-    fontSize: 18,
-    fontWeight: 800,
-    marginBottom: 12,
-    color: "#111827"
-  },
-  adBox: {
-    background: "#f3f4f6",
-    borderRadius: 12,
-    padding: 18,
-    color: "#4b5563",
-    lineHeight: 1.6,
-    fontSize: 14
-  },
-  price: {
-    fontSize: 34,
-    fontWeight: 800,
-    color: "#111827",
-    marginBottom: 10
-  },
-  title: {
-    margin: 0,
-    fontSize: 34,
-    color: "#111827"
-  },
-  city: {
-    marginTop: 10,
-    fontSize: 18,
-    color: "#2563eb",
-    fontWeight: 700
-  },
-  featuresRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 18
-  },
-  featureBadge: {
-    background: "#f3f4f6",
-    borderRadius: 999,
-    padding: "9px 13px",
-    fontSize: 14,
-    color: "#374151"
-  },
-  sectionTitle: {
-    marginTop: 22,
-    marginBottom: 12,
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#111827"
-  },
-  description: {
-    color: "#4b5563",
-    lineHeight: 1.7,
-    fontSize: 16,
-    margin: 0
-  },
-  specGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: 14
-  },
-  specItem: {
-    background: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: 14
-  },
-  specLabel: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 6
-  },
-  specValue: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: "#111827"
-  },
-  locationText: {
-    margin: "0 0 12px 0",
-    color: "#374151"
-  },
-  contactTitle: {
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#111827",
-    marginBottom: 16
-  },
-  whatsappBtn: {
-    display: "block",
-    textDecoration: "none",
-    background: "#25D366",
-    color: "#fff",
-    borderRadius: 12,
-    padding: "14px 16px",
-    textAlign: "center",
-    fontWeight: 800,
-    marginBottom: 12
-  },
-  secondaryBtn: {
-    width: "100%",
-    border: "1px solid #d1d5db",
-    background: "#fff",
-    color: "#111827",
-    borderRadius: 12,
-    padding: "14px 16px",
-    fontWeight: 700,
-    cursor: "pointer"
-  },
-  noPhone: {
-    background: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    color: "#4b5563",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12
-  }
+  page: { padding: 40, background: "#f5f6fa", minHeight: "100vh", fontFamily: "Arial, sans-serif" },
+  container: { maxWidth: 1000, margin: "auto" },
+  loadingBox: { background: "#fff", padding: 30, borderRadius: 12, border: "1px solid #e5e7eb" },
+  card: { background: "#fff", padding: 30, borderRadius: 12, border: "1px solid #e5e7eb" },
+  topBar: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, gap: 12, flexWrap: "wrap" },
+  topActions: { display: "flex", gap: 10, flexWrap: "wrap" },
+  backBtn: { textDecoration: "none", background: "#eee", color: "#111", padding: "10px 14px", borderRadius: 8, fontWeight: 700 },
+  printBtn: { background: "#111", color: "#fff", padding: "10px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700 },
+  editBtn: { textDecoration: "none", background: "#f59e0b", color: "#fff", padding: "10px 14px", borderRadius: 8, fontWeight: 700 },
+  deleteBtn: { background: "#ef4444", color: "#fff", padding: "10px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700 },
+  headerBlock: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, marginBottom: 20 },
+  title: { margin: 0, fontSize: 34, color: "#111827" },
+  price: { marginTop: 10, fontSize: 30, fontWeight: "bold", color: "#111827" },
+  destacado: { background: "#fde68a", color: "#92400e", padding: "4px 10px", borderRadius: 20, fontWeight: 700, fontSize: 12, display: "inline-block", marginTop: 8 },
+  favsBox: { background: "#fff1f2", color: "#be123c", padding: "10px 14px", borderRadius: 999, fontWeight: 800, border: "1px solid #fecdd3" },
+  mainImage: { width: "100%", height: 430, objectFit: "contain", background: "#f8fafc", borderRadius: 12, marginTop: 10 },
+  noImage: { width: "100%", height: 320, background: "#eef2f7", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", fontSize: 22, marginTop: 10 },
+  gallery: { display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" },
+  thumb: { width: 120, height: 80, objectFit: "contain", background: "#f8fafc", cursor: "pointer", borderRadius: 8 },
+  infoGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 24 },
+  infoItem: { background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, minHeight: 72 },
+  sectionTitle: { marginTop: 0, marginBottom: 14, fontSize: 24, color: "#111827" },
+  descriptionBox: { marginTop: 30 },
+  description: { lineHeight: 1.7, color: "#374151", fontSize: 16 },
+  whatsapp: { display: "inline-block", marginTop: 30, background: "#25D366", color: "#fff", padding: "14px 18px", borderRadius: 10, textDecoration: "none", fontWeight: 700 }
 }

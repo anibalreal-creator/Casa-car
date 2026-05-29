@@ -1,0 +1,1 @@
+Placeholder banner 2. Reemplazar este archivo por una imagen real llamada banner2.png dentro de web/public/banners/

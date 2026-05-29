@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "title": "Casa quinta con pileta",
+    "price": 95000,
+    "currency": "USD",
+    "city": "Santa Fe",
+    "country": "Argentina",
+    "category": "Propiedad",
+    "subtype": "Quinta",
+    "description": "Parque grande con pileta ideal fin de semana",
+    "phone": "5493425551111",
+    "images": [
+      "https://picsum.photos/seed/casa1/900/600",
+      "https://picsum.photos/seed/casa2/900/600"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "BMW Serie 3",
+    "price": 28000,
+    "currency": "USD",
+    "city": "Córdoba",
+    "country": "Argentina",
+    "category": "Auto",
+    "subtype": "Sedan",
+    "description": "Automático, excelente estado",
+    "phone": "5493515551111",
+    "images": [
+      "https://picsum.photos/seed/bmw1/900/600",
+      "https://picsum.photos/seed/bmw2/900/600"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Honda Tornado 300",
+    "price": 9200,
+    "currency": "USD",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "category": "Moto",
+    "subtype": "Enduro",
+    "description": "Enduro lista para viajar",
+    "phone": "5491125551111",
+    "images": [
+      "https://picsum.photos/seed/moto1/900/600",
+      "https://picsum.photos/seed/moto2/900/600"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Lancha Open 6m",
+    "price": 28000,
+    "currency": "USD",
+    "city": "Tigre",
+    "country": "Argentina",
+    "category": "Náutica",
+    "subtype": "Lancha",
+    "description": "Motor 150HP ideal paseo",
+    "phone": "5491135551111",
+    "images": [
+      "https://picsum.photos/seed/nautica1/900/600",
+      "https://picsum.photos/seed/nautica2/900/600"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Departamento frente al mar",
+    "price": 420,
+    "currency": "BRL",
+    "city": "Florianópolis",
+    "country": "Brasil",
+    "category": "Turismo",
+    "subtype": "Alquiler temporal",
+    "description": "Alquiler temporal frente al mar",
+    "phone": "554899991111",
+    "images": [
+      "https://picsum.photos/seed/turismo1/900/600",
+      "https://picsum.photos/seed/turismo2/900/600"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Toyota Hilux 2022",
+    "price": 42000,
+    "currency": "USD",
+    "city": "Mendoza",
+    "country": "Argentina",
+    "category": "Auto",
+    "subtype": "Pickup",
+    "description": "4x4 full, única mano",
+    "phone": "5492615551111",
+    "images": [
+      "https://picsum.photos/seed/hilux1/900/600",
+      "https://picsum.photos/seed/hilux2/900/600"
+    ]
+  }
+]

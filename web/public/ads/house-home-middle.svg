@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="220" viewBox="0 0 1400 220" fill="none">
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#07111f"/>
+    <stop offset="52%" stop-color="#132b73"/>
+    <stop offset="100%" stop-color="#2456ff"/>
+  </linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.94"/>
+    <stop offset="100%" stop-color="#e2e8f0" stop-opacity="0.84"/>
+  </linearGradient>
+</defs>
+<rect width="1400" height="220" rx="36" fill="url(#g)"/>
+<circle cx="1220" cy="40" r="180" fill="#a78bfa" fill-opacity="0.16"/>
+<circle cx="1280" cy="205" r="170" fill="#22d3ee" fill-opacity="0.14"/>
+<text x="70" y="62" fill="#ffffff" fill-opacity="0.10" font-family="Arial" font-size="118" font-weight="900">CASA-CAR</text>
+<rect x="32" y="28" width="150" height="42" rx="20" fill="#ffffff" fill-opacity="0.94"/>
+<text x="63" y="55" fill="#0f172a" font-family="Arial" font-size="20" font-weight="800">DESTACADO</text>
+<text x="36" y="118" fill="#ffffff" font-family="Arial" font-size="30" font-weight="800">Banners para inmobiliarias, concesionarias y servicios</text>
+<text x="36" y="154" fill="#dbeafe" font-family="Arial" font-size="20">Casa-Car Ads</text>
+<text x="36" y="182" fill="#dbeafe" font-family="Arial" font-size="18">Resultados y home con lectura clara y contraste real</text>
+<rect x="1100" y="26" width="250" height="48" rx="18" fill="#111827" fill-opacity="0.68" stroke="#93c5fd" stroke-opacity="0.35"/>
+<text x="1126" y="51" fill="#ffffff" font-family="Arial" font-size="18" font-weight="800">Planes</text>
+<text x="1126" y="68" fill="#cbd5e1" font-family="Arial" font-size="12">Básico · Destacado · Premium</text>
+<rect x="1100" y="86" width="250" height="48" rx="18" fill="#111827" fill-opacity="0.62" stroke="#93c5fd" stroke-opacity="0.35"/>
+<text x="1126" y="111" fill="#ffffff" font-family="Arial" font-size="18" font-weight="800">Slots</text>
+<text x="1126" y="128" fill="#cbd5e1" font-family="Arial" font-size="12">Home · Sidebar · Ficha</text>
+<rect x="1100" y="146" width="250" height="48" rx="18" fill="#111827" fill-opacity="0.56" stroke="#93c5fd" stroke-opacity="0.35"/>
+<text x="1126" y="171" fill="#ffffff" font-family="Arial" font-size="18" font-weight="800">Cobro</text>
+<text x="1126" y="188" fill="#cbd5e1" font-family="Arial" font-size="12">Mercado Pago + activación</text>
+</svg>

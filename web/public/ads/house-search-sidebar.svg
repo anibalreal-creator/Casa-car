@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="520" viewBox="0 0 380 520" fill="none">
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#061226"/>
+    <stop offset="55%" stop-color="#0f2d70"/>
+    <stop offset="100%" stop-color="#2555ff"/>
+  </linearGradient>
+  <linearGradient id="shine" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+</defs>
+<rect width="380" height="520" rx="34" fill="url(#g)"/>
+<circle cx="300" cy="70" r="170" fill="#8b5cf6" fill-opacity="0.14"/>
+<circle cx="330" cy="350" r="160" fill="#22d3ee" fill-opacity="0.18"/>
+<rect x="24" y="24" width="180" height="52" rx="18" fill="#fff" fill-opacity="0.96"/>
+<text x="42" y="58" fill="#0f172a" font-family="Arial" font-size="22" font-weight="700">CASA-CAR ADS</text>
+<text x="32" y="150" fill="#fff" font-family="Arial" font-size="40" font-weight="800">Tu marca</text>
+<text x="32" y="194" fill="#fff" font-family="Arial" font-size="40" font-weight="800">también puede</text>
+<text x="32" y="238" fill="#fff" font-family="Arial" font-size="40" font-weight="800">estar acá</text>
+<text x="32" y="292" fill="#c7d2fe" font-family="Arial" font-size="22">Sidebar premium con cobro y activación automática</text>
+<rect x="32" y="334" width="170" height="52" rx="24" fill="#fff"/>
+<text x="76" y="368" fill="#0f172a" font-family="Arial" font-size="24" font-weight="800">Ver planes</text>
+<g opacity="0.92">
+  <rect x="245" y="50" width="108" height="160" rx="24" fill="#111827" fill-opacity="0.70" stroke="#93c5fd" stroke-opacity="0.5"/>
+  <rect x="266" y="78" width="66" height="12" rx="6" fill="#e5e7eb"/>
+  <rect x="266" y="101" width="47" height="8" rx="4" fill="#60a5fa" fill-opacity="0.9"/>
+  <rect x="266" y="122" width="58" height="8" rx="4" fill="#60a5fa" fill-opacity="0.65"/>
+  <rect x="266" y="163" width="69" height="18" rx="9" fill="#fff"/>
+</g>
+<text x="-30" y="500" transform="rotate(-90 -30 500)" fill="url(#shine)" font-family="Arial" font-size="86" font-weight="800">CASA-CAR</text>
+</svg>

@@ -1,9 +1,32 @@
-html, body {
-  padding: 0;
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-  background: #fafafa;
-  color: #111;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
 }
-a { color: inherit; }
-* { box-sizing: border-box; }
+
+html, body, #__next {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f7fb;
+  color: #111827;
+}
+
+a, img, svg, video, canvas, iframe {
+  max-width: 100%;
+}
+
+input, select, textarea, button {
+  font: inherit;
+}

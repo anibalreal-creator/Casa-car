@@ -1,516 +1,149 @@
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { createClient } from "@supabase/supabase-js"
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import GlobalHeader from '../components/GlobalHeader';
+import SearchMarketplaceHero from '../components/SearchMarketplaceHero';
+import FooterBlueBar from '../components/FooterBlueBar';
+import MarketplaceHomeSections from '../components/MarketplaceHomeSections';
+import HomeQuickSearches from '../components/HomeQuickSearches';
+import AdsSlot from '../components/AdsSlot';
+import PremiumListingsStrip from '../components/PremiumListingsStrip';
+import CategoryShowcase from '../components/CategoryShowcase';
+import { useLang } from '../context/LanguageContext';
+import SeoHead from '../components/SeoHead';
+import SeoJsonLd from '../components/SeoJsonLd';
+import { absoluteUrl, buildOrganizationJsonLd } from '../lib/seo';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+function HeroPromoCard() {
+  const { t } = useLang();
+
+  return (
+    <aside style={styles.heroPromoUltra}>
+      <div style={styles.heroKicker}>CASA-CAR</div>
+      <h1 style={styles.heroTitleUltra}>{t('home_left_title', 'Encontrá lo que buscás')}</h1>
+      <p style={styles.heroSubtitleUltra}>{t('home_left_subtitle', 'Propiedades, autos y oportunidades reales en un solo lugar.')}</p>
+
+      <div style={styles.heroBadges}>
+        <span style={styles.heroBadge}>{t('home_badge_active', '25 anuncios activos')}</span>
+        <span style={styles.heroBadgeAlt}>{t('home_badge_global', 'Marketplace global')}</span>
+      </div>
+
+      <div style={styles.heroActions}>
+        <Link href="/buscar" style={styles.btnPrimary}>{t('home_explore_ads', 'Explorar anuncios')}</Link>
+        <Link href="/publicar" style={styles.btnSecondary}>{t('home_publish_free', 'Publicar gratis')}</Link>
+      </div>
+    </aside>
+  );
+}
 
 export default function Home() {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
+  const router = useRouter();
+  const [search, setSearch] = useState('');
+  const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [category, setCategory] = useState('');
+  const [listingType, setListingType] = useState('');
+  const { t } = useLang();
 
-  const [ciudadFiltro, setCiudadFiltro] = useState("")
-  const [precioMin, setPrecioMin] = useState("")
-  const [precioMax, setPrecioMax] = useState("")
-  const [dormFiltro, setDormFiltro] = useState("")
-  const [banosFiltro, setBanosFiltro] = useState("")
-  const [soloPileta, setSoloPileta] = useState(false)
-  const [ordenPrecio, setOrdenPrecio] = useState("recientes")
-
-  useEffect(() => {
-    async function cargar() {
-      setLoading(true)
-
-      const { data, error } = await supabase
-        .from("listings")
-        .select("*")
-        .order("created_at", { ascending: false })
-
-      if (!error && data) setItems(data)
-
-      setLoading(false)
-    }
-
-    cargar()
-  }, [])
-
-  function obtenerImagen(item) {
-    if (!item.photos || !Array.isArray(item.photos) || item.photos.length === 0) {
-      return null
-    }
-
-    const first = item.photos[0]
-    if (!first) return null
-
-    const { data } = supabase.storage.from("listings").getPublicUrl(first)
-    return data?.publicUrl || null
-  }
-
-  function obtenerPrecio(item) {
-    const valor = item.price ?? item.precio ?? 0
-    return Number(valor) || 0
-  }
-
-  function obtenerCiudad(item) {
-    return item.city || item.ciudad || ""
-  }
-
-  function obtenerDormitorios(item) {
-    return Number(item.dormitorios ?? 0) || 0
-  }
-
-  function obtenerBanos(item) {
-    return Number(item.banos ?? item.baños ?? 0) || 0
-  }
-
-  function tienePileta(item) {
-    return Boolean(item.pileta)
-  }
-
-  function obtenerTelefono(item) {
-    if (!item.telefono) return null
-    return String(item.telefono).replace(/\D/g, "")
-  }
-
-  const resultados = useMemo(() => {
-    let filtrados = [...items]
-
-    if (ciudadFiltro.trim()) {
-      filtrados = filtrados.filter((item) =>
-        obtenerCiudad(item).toLowerCase().includes(ciudadFiltro.toLowerCase())
-      )
-    }
-
-    if (precioMin !== "") {
-      filtrados = filtrados.filter((item) => obtenerPrecio(item) >= Number(precioMin))
-    }
-
-    if (precioMax !== "") {
-      filtrados = filtrados.filter((item) => obtenerPrecio(item) <= Number(precioMax))
-    }
-
-    if (dormFiltro !== "") {
-      filtrados = filtrados.filter((item) => obtenerDormitorios(item) >= Number(dormFiltro))
-    }
-
-    if (banosFiltro !== "") {
-      filtrados = filtrados.filter((item) => obtenerBanos(item) >= Number(banosFiltro))
-    }
-
-    if (soloPileta) {
-      filtrados = filtrados.filter((item) => tienePileta(item))
-    }
-
-    if (ordenPrecio === "menor") {
-      filtrados.sort((a, b) => obtenerPrecio(a) - obtenerPrecio(b))
-    } else if (ordenPrecio === "mayor") {
-      filtrados.sort((a, b) => obtenerPrecio(b) - obtenerPrecio(a))
-    } else {
-      filtrados.sort((a, b) => {
-        const da = new Date(a.created_at || 0).getTime()
-        const db = new Date(b.created_at || 0).getTime()
-        return db - da
-      })
-    }
-
-    return filtrados
-  }, [items, ciudadFiltro, precioMin, precioMax, dormFiltro, banosFiltro, soloPileta, ordenPrecio])
-
-  function limpiarFiltros() {
-    setCiudadFiltro("")
-    setPrecioMin("")
-    setPrecioMax("")
-    setDormFiltro("")
-    setBanosFiltro("")
-    setSoloPileta(false)
-    setOrdenPrecio("recientes")
+  function onSubmit(e) {
+    e.preventDefault();
+    const query = {};
+    if (search) query.q = search;
+    if (country) query.country = country;
+    if (state) query.state = state;
+    if (city) query.city = city;
+    if (category) query.category = category;
+    if (listingType) query.type = listingType;
+    router.push({ pathname: '/buscar', query });
   }
 
   return (
     <div style={styles.page}>
-      <div style={styles.container}>
-        <header style={styles.topHeader}>
-          <div>
-            <h1 style={styles.logo}>Casa-Car NUEVO</h1>
-            <p style={styles.subtitle}>Propiedades y vehículos en un solo lugar</p>
-          </div>
-
-          <Link href="/publicar" style={styles.publishBtn}>
-            + Publicar anuncio
-          </Link>
-        </header>
-
-        <section style={styles.filtersBar}>
-          <input
-            type="text"
-            placeholder="Ciudad"
-            value={ciudadFiltro}
-            onChange={(e) => setCiudadFiltro(e.target.value)}
-            style={styles.filterInputLg}
-          />
-
-          <select
-            value={ordenPrecio}
-            onChange={(e) => setOrdenPrecio(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="recientes">Más recientes</option>
-            <option value="menor">Menor precio</option>
-            <option value="mayor">Mayor precio</option>
-          </select>
-
-          <input
-            type="number"
-            placeholder="Precio desde"
-            value={precioMin}
-            onChange={(e) => setPrecioMin(e.target.value)}
-            style={styles.filterInput}
-          />
-
-          <input
-            type="number"
-            placeholder="Precio hasta"
-            value={precioMax}
-            onChange={(e) => setPrecioMax(e.target.value)}
-            style={styles.filterInput}
-          />
-
-          <select
-            value={dormFiltro}
-            onChange={(e) => setDormFiltro(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="">Dormitorios</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-            <option value="5">5+</option>
-          </select>
-
-          <select
-            value={banosFiltro}
-            onChange={(e) => setBanosFiltro(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="">Baños</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-          </select>
-
-          <label style={styles.checkboxWrap}>
-            <input
-              type="checkbox"
-              checked={soloPileta}
-              onChange={(e) => setSoloPileta(e.target.checked)}
+      <SeoHead
+        title="Casa-Car | Marketplace global de propiedades, vehiculos, nautica y turismo"
+        description="Casa-Car es un marketplace global para publicar, buscar y monetizar propiedades, autos, motos, camiones, maquinaria, nautica, turismo, servicios y carros de golf."
+        image="/casa-car-logo.png"
+        url="/"
+      />
+      <SeoJsonLd data={buildOrganizationJsonLd()} />
+      <SeoJsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Casa-Car',
+        url: absoluteUrl('/'),
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${absoluteUrl('/buscar')}?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      }} />
+      <GlobalHeader />
+      <div className="cc-home-wrap" style={styles.wrap}>
+        <section className="cc-home-hero-wrap" style={styles.heroWrap}>
+          <HeroPromoCard />
+          <div style={styles.heroCard}>
+            <SearchMarketplaceHero
+              search={search} setSearch={setSearch}
+              country={country} setCountry={setCountry}
+              state={state} setState={setState}
+              city={city} setCity={setCity}
+              category={category} setCategory={setCategory}
+              listingType={listingType} setListingType={setListingType}
+              onSubmit={onSubmit}
             />
-            <span>Con pileta</span>
-          </label>
-
-          <button onClick={limpiarFiltros} style={styles.clearBtn}>
-            Limpiar
-          </button>
+          </div>
         </section>
 
-        <div style={styles.resultsTop}>
-          <div style={styles.resultsCount}>
-            {loading ? "Cargando anuncios..." : `${resultados.length} anuncios encontrados`}
-          </div>
-        </div>
-
-        {loading ? (
-          <div style={styles.message}>Cargando publicaciones...</div>
-        ) : resultados.length === 0 ? (
-          <div style={styles.message}>No hay resultados con esos filtros.</div>
-        ) : (
-          <div style={styles.resultsList}>
-            {resultados.map((item) => {
-              const imageUrl = obtenerImagen(item)
-              const telefono = obtenerTelefono(item)
-              const precio = obtenerPrecio(item)
-              const ciudad = obtenerCiudad(item)
-              const dorms = obtenerDormitorios(item)
-              const banos = obtenerBanos(item)
-              const pileta = tienePileta(item)
-
-              return (
-                <article key={item.id} style={styles.card}>
-                  <div style={styles.cardImageCol}>
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={item.title || "Anuncio"}
-                        style={styles.cardImage}
-                      />
-                    ) : (
-                      <div style={styles.noImage}>Sin foto</div>
-                    )}
-                  </div>
-
-                  <div style={styles.cardMainCol}>
-                    <div style={styles.price}>USD {precio}</div>
-
-                    <h2 style={styles.cardTitle}>{item.title || "Sin título"}</h2>
-
-                    <div style={styles.cardCity}>
-                      {ciudad || "Sin ciudad"}
-                    </div>
-
-                    <div style={styles.featuresRow}>
-                      <span style={styles.featureBadge}>
-                        🛏 {dorms > 0 ? `${dorms} dorm.` : "Sin dato"}
-                      </span>
-
-                      <span style={styles.featureBadge}>
-                        🚿 {banos > 0 ? `${banos} baño${banos > 1 ? "s" : ""}` : "Sin dato"}
-                      </span>
-
-                      <span style={styles.featureBadge}>
-                        🏊 {pileta ? "Con pileta" : "Sin pileta"}
-                      </span>
-                    </div>
-
-                    <p style={styles.cardDescription}>
-                      {item.description || item.descripcion || "Sin descripción"}
-                    </p>
-                  </div>
-
-                  <div style={styles.cardActionsCol}>
-                    {telefono && (
-                      <a
-                        href={`https://wa.me/${telefono}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={styles.whatsappBtn}
-                      >
-                        💬 WhatsApp
-                      </a>
-                    )}
-
-                    <Link href={`/anuncio/${item.id}`} style={styles.detailBtn}>
-                      Ver detalle
-                    </Link>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        )}
+        <AdsSlot slot="home_top" title={t('ads_title_top', 'Publicidad premium para empresas')} subtitle={t('ads_subtitle_top', 'Banners destacados para inmobiliarias, concesionarias, turismo y servicios.')} />
+        <PremiumListingsStrip />
+        <CategoryShowcase />
+        <MarketplaceHomeSections />
+        <HomeQuickSearches />
+        <AdsSlot slot="home_middle" title={t('ads_title_middle', 'Espacios publicitarios automáticos')} subtitle={t('ads_subtitle_middle', 'Panel de empresas + cobro + visibilidad en slots reutilizables.')} />
       </div>
+      <FooterBlueBar />
+
+      <style jsx>{`
+        @media (max-width: 980px) {
+          .cc-home-wrap {
+            padding: 18px 12px 36px !important;
+          }
+
+          .cc-home-hero-wrap {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+        }
+      `}</style>
     </div>
-  )
+  );
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f6f7fb",
-    fontFamily: "Arial, sans-serif",
-    padding: "24px 16px"
-  },
-  container: {
-    maxWidth: 1280,
-    margin: "0 auto"
-  },
-  topHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+  page: { background: '#f5f7fb', minHeight: '100vh', fontFamily: 'Arial, sans-serif' },
+  wrap: { maxWidth: 1400, margin: '0 auto', padding: '32px 16px 48px' },
+  heroWrap: { display: 'grid', gridTemplateColumns: 'minmax(320px,360px) minmax(0,1fr)', gap: 24, alignItems: 'stretch', marginBottom: 34 },
+  heroPromoUltra: {
+    background: 'linear-gradient(180deg,#0f172a 0%, #111827 35%, #1d4ed8 100%)',
+    borderRadius: 30,
+    padding: 28,
+    color: '#fff',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
     gap: 16,
-    flexWrap: "wrap",
-    marginBottom: 20
+    minHeight: 360,
+    boxShadow: '0 18px 40px rgba(15,23,42,.14)',
   },
-  logo: {
-    margin: 0,
-    fontSize: 48,
-    lineHeight: 1,
-    fontWeight: 800,
-    color: "#0f172a"
-  },
-  subtitle: {
-    margin: "8px 0 0 0",
-    fontSize: 16,
-    color: "#6b7280"
-  },
-  publishBtn: {
-    textDecoration: "none",
-    background: "#0b1730",
-    color: "#fff",
-    padding: "14px 20px",
-    borderRadius: 12,
-    fontWeight: 700,
-    display: "inline-block"
-  },
-  filtersBar: {
-    display: "grid",
-    gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1fr 1fr auto auto",
-    gap: 10,
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 18
-  },
-  filterInputLg: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    fontSize: 15
-  },
-  filterInput: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    fontSize: 15
-  },
-  filterSelect: {
-    width: "100%",
-    padding: 12,
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    fontSize: 15,
-    background: "#fff"
-  },
-  checkboxWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    padding: "0 8px",
-    fontSize: 14,
-    color: "#111827",
-    whiteSpace: "nowrap"
-  },
-  clearBtn: {
-    border: "1px solid #d1d5db",
-    background: "#fff",
-    borderRadius: 10,
-    padding: "0 14px",
-    fontWeight: 700,
-    cursor: "pointer"
-  },
-  resultsTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12
-  },
-  resultsCount: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: "#111827"
-  },
-  message: {
-    background: "#fff",
-    borderRadius: 14,
-    border: "1px solid #e5e7eb",
-    padding: 24,
-    color: "#374151"
-  },
-  resultsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16
-  },
-  card: {
-    display: "grid",
-    gridTemplateColumns: "320px 1fr 180px",
-    gap: 18,
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "stretch",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.04)"
-  },
-  cardImageCol: {
-    width: "100%"
-  },
-  cardImage: {
-    width: "100%",
-    height: 230,
-    objectFit: "cover",
-    borderRadius: 12,
-    display: "block"
-  },
-  noImage: {
-    width: "100%",
-    height: 230,
-    background: "#f3f4f6",
-    borderRadius: 12,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#6b7280",
-    fontSize: 20
-  },
-  cardMainCol: {
-    display: "flex",
-    flexDirection: "column"
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: "#111827",
-    marginBottom: 8
-  },
-  cardTitle: {
-    margin: 0,
-    fontSize: 26,
-    color: "#111827"
-  },
-  cardCity: {
-    marginTop: 8,
-    fontSize: 16,
-    color: "#2563eb",
-    fontWeight: 700
-  },
-  featuresRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 14
-  },
-  featureBadge: {
-    background: "#f3f4f6",
-    borderRadius: 999,
-    padding: "8px 12px",
-    fontSize: 14,
-    color: "#374151"
-  },
-  cardDescription: {
-    marginTop: 16,
-    color: "#4b5563",
-    lineHeight: 1.6,
-    fontSize: 15
-  },
-  cardActionsCol: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: 10
-  },
-  whatsappBtn: {
-    textDecoration: "none",
-    background: "#25D366",
-    color: "#fff",
-    borderRadius: 10,
-    padding: "12px 14px",
-    textAlign: "center",
-    fontWeight: 700
-  },
-  detailBtn: {
-    textDecoration: "none",
-    background: "#1d4ed8",
-    color: "#fff",
-    borderRadius: 10,
-    padding: "12px 14px",
-    textAlign: "center",
-    fontWeight: 700
-  }
-}
+  heroKicker: { display: 'inline-block', width: 'fit-content', padding: '8px 12px', borderRadius: 999, background: 'rgba(255,255,255,.12)', color: '#fff', fontWeight: 900, fontSize: 12, letterSpacing: '.08em' },
+  heroTitleUltra: { fontSize: 44, fontWeight: 900, lineHeight: 1.02, letterSpacing: '-.04em', margin: 0 },
+  heroSubtitleUltra: { fontSize: 17, color: '#dbeafe', maxWidth: 320, lineHeight: 1.55, margin: 0 },
+  heroBadges: { display: 'flex', gap: 10, flexWrap: 'wrap' },
+  heroBadge: { background: '#2563eb', color: '#fff', padding: '8px 12px', borderRadius: 12, fontWeight: 800, fontSize: 13 },
+  heroBadgeAlt: { background: 'rgba(255,255,255,.1)', color: '#fff', padding: '8px 12px', borderRadius: 12, fontWeight: 800, fontSize: 13 },
+  heroActions: { display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' },
+  btnPrimary: { background: '#2563eb', color: '#fff', padding: '13px 16px', borderRadius: 14, fontWeight: 900, textDecoration: 'none' },
+  btnSecondary: { background: '#fff', color: '#111827', padding: '13px 16px', borderRadius: 14, fontWeight: 900, textDecoration: 'none' },
+  heroCard: { minWidth: 0 },
+};
