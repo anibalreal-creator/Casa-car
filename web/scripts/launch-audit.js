@@ -41,6 +41,14 @@ async function main() {
   check(tourism.status === 200, 'Buscar Turismo responde 200', String(tourism.status));
   check(/Check-in|checkIn|Entrada/i.test(tourism.body), 'Turismo muestra filtros tipo Booking');
 
+  const autosLanding = await text(`${base}/autos?launch_audit=${Date.now()}`);
+  check(autosLanding.status === 200, 'Landing /autos responde 200', String(autosLanding.status));
+  check(/application\/ld\+json/i.test(autosLanding.body), 'Landing /autos tiene JSON-LD');
+
+  const bmwLanding = await text(`${base}/autos/bmw?launch_audit=${Date.now()}`);
+  check(bmwLanding.status === 200, 'Landing /autos/bmw responde 200', String(bmwLanding.status));
+  check(/Autos BMW|bmw/i.test(bmwLanding.body), 'Landing /autos/bmw contiene tema SEO');
+
   const sitemap = await text(`${base}/sitemap.xml?launch_audit=${Date.now()}`);
   check(sitemap.status === 200, 'Sitemap responde 200', String(sitemap.status));
   check(!/localhost|127\.0\.0\.1|192\.168\./i.test(sitemap.body), 'Sitemap no contiene URLs locales');
