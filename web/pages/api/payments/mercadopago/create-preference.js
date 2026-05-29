@@ -1,9 +1,21 @@
 
-import { getSiteUrl } from "../../../../lib/siteUrl";
+import { requireAuthenticatedRoute } from "../../../../lib/apiRouteGuards";
+import { buildPremiumPreference, mercadoPagoRequest } from "../../../../lib/mercadopago";
+import { getSupabaseServer } from "../../../../lib/supabaseServer";
 
 export default async function handler(req, res) {
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const user = await requireAuthenticatedRoute(req, res);
+    if (!user) return;
+
     const { listingId } = req.body;
+    if (!listingId) {
+      return res.status(400).json({ error: "Falta listingId" });
+    }
 
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
       return res.status(500).json({
@@ -11,48 +23,26 @@ export default async function handler(req, res) {
       });
     }
 
-    const baseUrl = getSiteUrl();
-    const returnUrl = `${baseUrl}/mis-anuncios`;
+    const supabase = getSupabaseServer();
+    const { data: listing, error } = await supabase.from("listings").select("*").eq("id", String(listingId)).maybeSingle();
+    if (error) throw error;
+    if (!listing) return res.status(404).json({ error: "Anuncio no encontrado" });
+    if (!listing.user_id || String(listing.user_id) !== String(user.id)) {
+      return res.status(403).json({ error: "No podés pagar premium para un anuncio de otro usuario" });
+    }
 
-    const preference = {
-      items: [
-        {
-          title: "Casa-Car Premium",
-          quantity: 1,
-          currency_id: "ARS",
-          unit_price: 100,
-        },
-      ],
-      back_urls: {
-        success: returnUrl,
-        failure: returnUrl,
-        pending: returnUrl,
-      },
-      metadata: { listing_id: listingId, source: 'casa-car', feature: 'featured_listing' },
-      notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
-      external_reference: `listing:${listingId}`,
-      auto_return: "approved",
-      statement_descriptor: "CASA-CAR",
-    };
-
-    const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(preference),
-    });
-
-    const data = await response.json();
+    const preference = buildPremiumPreference({ listing, user });
+    const data = await mercadoPagoRequest("/checkout/preferences", { method: "POST", body: preference });
 
     return res.status(200).json({
       checkout_url: data.init_point,
       chosen_checkout_url: data.init_point,
+      sandbox_checkout_url: data.sandbox_init_point || null,
+      preference_id: data.id || null,
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("create premium preference error:", error);
     res.status(500).json({ error: "Error creando preferencia" });
   }
 }
