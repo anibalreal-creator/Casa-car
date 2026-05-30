@@ -168,6 +168,7 @@ export default class MyDocument extends Document {
     return (
       <Html>
         <Head>
+          <meta name="msvalidate.01" content="92E2D6B1365BE892A6A62706CAB4707E" />
           <style dangerouslySetInnerHTML={{ __html: casaCarResponsiveFix }} />
         </Head>
         <body>
