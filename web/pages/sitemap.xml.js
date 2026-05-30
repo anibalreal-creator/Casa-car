@@ -34,6 +34,7 @@ export async function getServerSideProps({ res }) {
   addUrl('/buscar', { changefreq: 'daily', priority: '0.95' });
   addUrl('/publicidad', { changefreq: 'weekly', priority: '0.75' });
   addUrl('/planes', { changefreq: 'weekly', priority: '0.75' });
+  addUrl('/empresas', { changefreq: 'weekly', priority: '0.75' });
   addUrl('/empresa', { changefreq: 'weekly', priority: '0.7' });
   addUrl('/panel-empresas', { changefreq: 'weekly', priority: '0.65' });
 

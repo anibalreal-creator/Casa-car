@@ -11,7 +11,7 @@ function buildNav(t) {
     { href: '/mis-anuncios', label: t('nav_my_ads', 'Mis anuncios') },
     { href: '/favoritos', label: t('nav_favorites', 'Favoritos') },
     { href: '/publicidad', label: t('nav_ads', 'Publicidad') },
-    { href: '/empresa', label: t('nav_companies', 'Empresas') },
+    { href: '/empresas', label: t('nav_companies', 'Empresas') },
     { href: '/planes', label: t('nav_plans', 'Planes') },
     { href: '/panel-empresas', label: t('nav_company_panel', 'Panel empresas') },
     { href: '/dashboard/company', label: t('nav_company_dashboard', 'Dashboard empresa') },
