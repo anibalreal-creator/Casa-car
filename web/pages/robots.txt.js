@@ -6,6 +6,8 @@ export async function getServerSideProps({ res }) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.write(`User-agent: *
 Allow: /
+Allow: /api/listings
+Allow: /api/ads?*
 Disallow: /api/
 Disallow: /admin
 Disallow: /admin-completo
