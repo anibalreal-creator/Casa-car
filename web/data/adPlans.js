@@ -2,7 +2,7 @@ export const AD_PLANS = [
   {
     key: 'basico',
     name: 'Básico',
-    price: 25000,
+    price: 500,
     currency: 'ARS',
     badge: 'Entrada',
     durationDays: 7,
@@ -19,7 +19,7 @@ export const AD_PLANS = [
   {
     key: 'destacado',
     name: 'Destacado',
-    price: 65000,
+    price: 1000,
     currency: 'ARS',
     badge: 'Más elegido',
     durationDays: 15,
@@ -36,7 +36,7 @@ export const AD_PLANS = [
   {
     key: 'premium',
     name: 'Premium',
-    price: 145000,
+    price: 1500,
     currency: 'ARS',
     badge: 'Tipo MercadoLibre',
     durationDays: 30,
