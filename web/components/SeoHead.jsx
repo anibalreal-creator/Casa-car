@@ -9,7 +9,7 @@ export default function SeoHead({
   type = "website",
   noindex = false,
 }) {
-  const safeTitle = trimText(title, 82);
+  const safeTitle = trimText(title, 60);
   const safeDescription = trimText(description, 165);
   const absoluteImage = absoluteUrl(image);
   const canonical = absoluteUrl(url);
@@ -22,6 +22,7 @@ export default function SeoHead({
       <meta name="theme-color" content="#0f172a" />
       <meta name="application-name" content="Casa-Car" />
       <meta name="apple-mobile-web-app-title" content="Casa-Car" />
+      <meta name="language" content="Spanish" />
       <meta name="format-detection" content="telephone=no" />
       <link rel="canonical" href={canonical} />
       <link rel="alternate" hrefLang="x-default" href={canonical} />

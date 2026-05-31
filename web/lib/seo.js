@@ -7,7 +7,8 @@ import { getAmenityLabels, getTourismSpecs, isTourismListing } from './tourism';
 export function trimText(value = '', max = 160) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   if (text.length <= max) return text;
-  return `${text.slice(0, Math.max(0, max - 1)).trim()}...`;
+  if (max <= 3) return text.slice(0, max);
+  return `${text.slice(0, Math.max(0, max - 3)).trim()}...`;
 }
 
 export function absoluteUrl(value = '') {

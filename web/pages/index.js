@@ -61,8 +61,8 @@ export default function Home() {
   return (
     <div style={styles.page}>
       <SeoHead
-        title="Casa-Car | Marketplace global de propiedades, vehiculos, nautica y turismo"
-        description="Casa-Car es un marketplace global para publicar, buscar y monetizar propiedades, autos, motos, camiones, maquinaria, nautica, turismo, servicios y carros de golf."
+        title="Casa-Car | Marketplace de propiedades y vehiculos"
+        description="Busca y publica propiedades, autos, nautica, turismo, maquinaria, servicios y carros de golf en Casa-Car."
         image="/casa-car-logo.png"
         url="/"
       />

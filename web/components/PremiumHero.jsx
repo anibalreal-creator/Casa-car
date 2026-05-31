@@ -10,7 +10,7 @@ export default function PremiumHero(){
       flexDirection:"column",
       justifyContent:"center"
     }}>
-      <img src="/logo.png" style={{width:80, marginBottom:10}}/>
+      <img src="/logo.png" alt="Casa-Car" style={{width:80, marginBottom:10}}/>
       <h2 style={{fontSize:32, fontWeight:900}}>Casa-Car</h2>
       <p style={{opacity:.8}}>Marketplace global</p>
       <h1 style={{fontSize:36, fontWeight:900, marginTop:20}}>

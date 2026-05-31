@@ -128,7 +128,7 @@ function Card({ item }) {
   return (
     <article onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:20, overflow:'hidden', boxShadow: hovered ? '0 20px 40px rgba(15,23,42,.12)' : '0 12px 28px rgba(15,23,42,.05)', transform: hovered ? 'translateY(-4px)' : 'translateY(0)', transition:'all .2s ease', cursor:'pointer' }}>
       <div style={{ position:'relative', background:'#f3f4f6' }}>
-        <img src={image} alt="" title="" onError={() => setImage(fallback)} style={{ width:'100%', height:220, objectFit:'cover', objectPosition:'center center', display:'block', background:'#f3f4f6' }} />
+        <img src={image} alt={title} title={title} onError={() => setImage(fallback)} style={{ width:'100%', height:220, objectFit:'cover', objectPosition:'center center', display:'block', background:'#f3f4f6' }} />
         <div style={{ position:'absolute', top:10, right:10, zIndex:3 }}>{!item?.is_demo && detailId ? <FavoriteButton listingId={detailId} compact /> : null}</div>
         <div style={{ position:'absolute', top:10, left:10, display:'flex', gap:8, zIndex:2 }}>
           {item.is_premium ? <span style={pill('#fbbf24')}>{t('card_premium', 'Premium')}</span> : null}

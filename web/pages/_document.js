@@ -166,9 +166,10 @@ header nav, .navbar, .topbar, .site-header, .global-header {
 export default class MyDocument extends Document {
   render() {
     return (
-      <Html>
+      <Html lang="es">
         <Head>
           <meta name="msvalidate.01" content="92E2D6B1365BE892A6A62706CAB4707E" />
+          <meta httpEquiv="content-language" content="es" />
           <style dangerouslySetInnerHTML={{ __html: casaCarResponsiveFix }} />
         </Head>
         <body>
