@@ -152,7 +152,8 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
   const isSidebar = slot === 'search_sidebar';
   const isWide = ['home_top', 'home_middle', 'listing_inline', 'footer_strip'].includes(slot);
   const isHouse = String(ad.company_name || '').toLowerCase() === 'casa-car ads' || String(ad.id || '').startsWith('house-');
-  const showOverlay = !isHouse;
+  const showOverlay = isHouse;
+  const imageSrc = ad.banner_url || '/casa-car-logo.png';
 
   return (
     <section ref={rootRef} className={`adslot ${compact ? 'compact' : ''} ${isSidebar ? 'sidebar' : ''} ${isWide ? 'wide' : ''}`} style={{ ...styles.wrap, ...slotStyles[slot], ...(compact ? styles.compact : null) }}>
@@ -167,15 +168,18 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
         style={{ ...styles.card, ...(isSidebar ? styles.cardSidebar : null) }}
         onClick={() => trackAdEvent(ad, 'click', slot, page, false)}
       >
-        <div style={{ ...styles.mediaWrap, ...(isSidebar ? styles.mediaWrapSidebar : null), ...(isWide ? styles.mediaWrapWide : null) }}>
+        <div
+          style={{
+            ...styles.mediaWrap,
+            ...(isSidebar ? styles.mediaWrapSidebar : null),
+            ...(isWide ? styles.mediaWrapWide : null),
+          }}
+        >
+          <img src={imageSrc} alt="" aria-hidden="true" style={styles.imageBlur} />
           <img
-            src={ad.banner_url || '/casa-car-logo.png'}
+            src={imageSrc}
             alt={ad.title || ad.company_name || t('ads_title_short', 'Publicidad')}
-            style={{
-              ...styles.image,
-              ...(isWide ? styles.imageContain : null),
-              ...(isSidebar ? styles.imageContain : null),
-            }}
+            style={styles.imageSmart}
           />
         </div>
         {showOverlay ? (
@@ -235,11 +239,40 @@ const styles = {
     minHeight: 120,
     background: 'linear-gradient(135deg,#0f172a,#1d4ed8)',
   },
-  mediaWrap: { position: 'absolute', inset: 0, opacity: 1, display: 'flex', alignItems: 'stretch', justifyContent: 'stretch', padding: 0, background: '#09111f' },
+  mediaWrap: {
+    position: 'absolute',
+    inset: 0,
+    opacity: 1,
+    display: 'grid',
+    placeItems: 'center',
+    overflow: 'hidden',
+    padding: 0,
+    background: '#09111f',
+  },
   mediaWrapWide: { background: 'linear-gradient(135deg,#07111f,#15306f)' },
   mediaWrapSidebar: { background: 'linear-gradient(180deg,#07111f,#15306f)' },
-  image: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' },
-  imageContain: { objectFit: 'contain', padding: 0, background: 'transparent' },
+  imageBlur: {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    display: 'block',
+    filter: 'blur(18px)',
+    transform: 'scale(1.14)',
+    opacity: 0.45,
+  },
+  imageSmart: {
+    position: 'relative',
+    zIndex: 1,
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    display: 'block',
+    background: 'transparent',
+  },
   overlay: { position: 'relative', zIndex: 1, minHeight: 120, display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
   overlayWide: { alignItems: 'stretch', background: 'linear-gradient(90deg,rgba(6,18,38,.55),rgba(6,18,38,.18) 48%, rgba(6,18,38,.08) 72%, rgba(6,18,38,.08))' },
   overlaySidebar: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(180deg,rgba(6,18,38,.35),rgba(6,18,38,.50))' },

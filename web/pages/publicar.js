@@ -137,7 +137,7 @@ export default function Publicar() {
     <div style={styles.page}>
       <GlobalHeader />
       <div className="cc-publish-wrap" style={styles.wrap}>
-        <aside className="cc-publish-side" style={styles.sideCol}>
+        <aside className="cc-publish-side cc-publish-left" style={styles.sideCol}>
           <AdSlot slot="search_sidebar" page="publicar_left" title={t("ads_sidebar_title", "Publicidad lateral")} compact />
           <AdSlot slot="listing_inline" page="publicar_left_bottom" title={t("ads_premium_space", "Espacio premium")} compact />
         </aside>
@@ -253,7 +253,7 @@ export default function Publicar() {
           </form>
         </main>
 
-        <aside className="cc-publish-side" style={styles.sideCol}>
+        <aside className="cc-publish-side cc-publish-right" style={styles.sideCol}>
           <AdSlot slot="search_sidebar" page="publicar_right" title={t("ads_sidebar_title", "Publicidad lateral")} compact />
           <AdSlot slot="home_top" page="publicar_right_bottom" title={t("ads_featured_banner", "Banner destacado")} compact />
         </aside>
@@ -261,6 +261,15 @@ export default function Publicar() {
       <FooterBlueBar />
 
       <style jsx>{`
+        @media (max-width: 1540px) {
+          .cc-publish-wrap {
+            grid-template-columns: 230px minmax(0, 1fr) !important;
+            gap: 16px !important;
+          }
+          .cc-publish-right {
+            display: none !important;
+          }
+        }
         @media (max-width: 1180px) {
           .cc-publish-wrap {
             grid-template-columns: 1fr !important;

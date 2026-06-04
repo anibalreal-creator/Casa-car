@@ -192,6 +192,34 @@ export default function PublicidadPanelPage() {
     }
   }
 
+  async function cancelCampaign(id) {
+    if (!id || cancellingId) return;
+    const ok = window.confirm('¿Dar de baja esta publicidad? El banner dejará de mostrarse en los espacios activos.');
+    if (!ok) return;
+    setCancellingId(String(id));
+    setNotice('');
+    try {
+      const auth = await supabaseBrowser.auth.getSession();
+      const token = auth?.data?.session?.access_token || '';
+      const response = await fetch('/api/ads/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-casa-request': '1',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'No se pudo dar de baja');
+      setNotice('Publicidad dada de baja. Ya no se mostrará en los espacios activos.');
+      await loadCampaigns();
+    } catch (error) {
+      setNotice(error.message || 'No se pudo dar de baja la publicidad');
+    } finally {
+      setCancellingId('');
+    }
+  }
   async function syncCampaigns() {
     setSyncing(true);
     setNotice('');
@@ -218,6 +246,7 @@ export default function PublicidadPanelPage() {
 
   const selectedPlan = getAdPlan(form.plan_key);
   const availableSlots = AD_SLOTS.filter((slot) => selectedPlan.slots.includes(slot.key));
+  const selectedSlot = availableSlots.find((slot) => slot.key === form.slot_key) || availableSlots[0] || AD_SLOTS[0];
   useEffect(() => {
     if (!availableSlots.some((slot) => slot.key === form.slot_key)) {
       setForm((prev) => ({ ...prev, slot_key: availableSlots[0]?.key || 'home_middle' }));
@@ -311,8 +340,33 @@ export default function PublicidadPanelPage() {
               <input type="file" accept="image/*" onChange={onFile} style={{ marginTop: 10 }} required={!editingId && !bannerPreview} />
               <span style={styles.uploadHelp}>{editingId ? 'Reemplaza la imagen sin perder la campaña.' : 'Se guarda en Supabase Storage y luego se publica automáticamente al aprobar el pago.'}</span>
             </label>
-            <a href={locationHref(form.slot_key)} style={styles.inlineLink}>Ver ubicación real</a>
-            {bannerPreview ? <img src={bannerPreview} alt="preview" style={styles.preview} /> : null}
+            <div style={styles.slotPreviewBox}>
+              <div style={styles.slotPreviewCopy}>
+                <strong>Ubicacion elegida: {selectedSlot?.label || 'Espacio publicitario'}</strong>
+                <span>{selectedSlot?.dimensions || 'Formato automatico'} - Pagina {selectedSlot?.page || 'Casa-Car'}</span>
+                <span>El anuncio se mostrara en ese espacio cuando la campana este aprobada y activa.</span>
+              </div>
+              <a href={locationHref(form.slot_key)} style={styles.previewSlotButton}>Ver donde aparece</a>
+            </div>
+            <div style={styles.creativePreview}>
+              <div style={styles.creativePreviewInfo}>
+                <strong>Vista previa inteligente del banner</strong>
+                <span>La imagen se ajusta completa: fondo adaptado y banner centrado para evitar textos cortados.</span>
+              </div>
+              {bannerPreview ? (
+                <div style={styles.smartPreviewFrame}>
+                  <img src={bannerPreview} alt="" aria-hidden="true" style={styles.smartPreviewBg} />
+                  <img src={bannerPreview} alt="Vista previa del banner" style={styles.smartPreviewImg} />
+                </div>
+              ) : (
+                <div style={styles.previewPlaceholder}>Subi una imagen para ver como se adapta al espacio elegido.</div>
+              )}
+            </div>
+            {!editingId ? (
+              <div style={styles.paymentHelp}>
+                Si Mercado Pago deja el boton Pagar en gris, normalmente falta validar el medio de pago, usar una cuenta compradora distinta a la vendedora o completar datos de la cuenta de Mercado Pago. Casa-Car ya crea la preferencia y vuelve por webhook cuando Mercado Pago aprueba.
+              </div>
+            ) : null}
             <button type="submit" disabled={submitting} style={styles.button}>{submitting ? 'Procesando…' : (editingId ? 'Guardar cambios del banner' : 'Crear campaña y pagar con Mercado Pago')}</button>
           </form>
 
@@ -340,6 +394,14 @@ export default function PublicidadPanelPage() {
                     <a href={`/publicidad/panel?edit=${item.id}`} style={styles.inlineLink}>Cambiar banner</a>
                     {item.banner_url ? <a href={item.banner_url} target="_blank" rel="noreferrer" style={styles.subtleLink}>Ver banner</a> : null}
                     <a href={locationHref(item.slot_key)} style={styles.subtleLink}>Ver ubicación</a>
+                    <button
+                      type="button"
+                      onClick={() => cancelCampaign(item.id)}
+                      disabled={cancellingId === String(item.id)}
+                      style={styles.cancelButton}
+                    >
+                      {cancellingId === String(item.id) ? 'Dando de baja...' : 'Dar de baja'}
+                    </button>
                   </div>
                 </div>
               )) : <div style={styles.empty}>Todavía no hay campañas guardadas para este usuario.</div>}
@@ -377,6 +439,17 @@ const styles = {
   uploadBox: { border: '1px dashed #94a3b8', borderRadius: 16, padding: 16, background: '#f8fafc', color: '#334155' },
   uploadTitle: { display: 'block', fontWeight: 900 },
   uploadHelp: { display: 'block', marginTop: 8, fontSize: 13, color: '#64748b' },
+  slotPreviewBox: { border: '1px solid #dbeafe', background: '#eff6ff', borderRadius: 16, padding: 12, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' },
+  slotPreviewCopy: { display: 'grid', gap: 4, color: '#334155', fontSize: 13 },
+  previewSlotButton: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 999, padding: '9px 12px', fontWeight: 900, fontSize: 13 },
+  creativePreview: { display: 'grid', gap: 10, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 18, padding: 12 },
+  creativePreviewInfo: { display: 'grid', gap: 4, color: '#334155', fontSize: 13 },
+  smartPreviewFrame: { position: 'relative', overflow: 'hidden', borderRadius: 16, border: '1px solid #cbd5e1', background: '#0f172a', display: 'grid', placeItems: 'center', minHeight: 160 },
+  smartPreviewBg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(18px)', transform: 'scale(1.14)', opacity: 0.45 },
+  smartPreviewImg: { position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
+  previewPlaceholder: { padding: 20, textAlign: 'center', color: '#64748b', fontWeight: 800 },
+  paymentHelp: { fontSize: 13, lineHeight: 1.45, color: '#475569', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: 12 },
+  cancelButton: { border: '1px solid #fecaca', background: '#fff1f2', color: '#be123c', borderRadius: 999, padding: '8px 10px', fontWeight: 900, cursor: 'pointer' },
   preview: { width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 16, border: '1px solid #dbeafe' },
   button: { background: '#0f172a', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 18px', fontWeight: 900, cursor: 'pointer' },
   sidebar: { display: 'grid', gap: 16 },
