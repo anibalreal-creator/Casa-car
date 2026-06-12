@@ -49,11 +49,7 @@ async function getPaymentDetails(body, query) {
   if (!dataId) return null;
   const type = String(body.type || query.type || '').toLowerCase();
   if (type && type !== 'payment') return null;
-  try {
-    return await mercadoPagoRequest(`/v1/payments/${dataId}`);
-  } catch {
-    return null;
-  }
+  return mercadoPagoRequest(`/v1/payments/${dataId}`);
 }
 
 async function insertPaymentEvent(supabase, payload) {
@@ -107,7 +103,13 @@ export default async function handler(req, res) {
 
   const supabase = getSupabaseServer();
   const body = req.body || {};
-  const paymentDetails = await getPaymentDetails(body, req.query || {});
+  let paymentDetails = null;
+  let paymentLookupError = null;
+  try {
+    paymentDetails = await getPaymentDetails(body, req.query || {});
+  } catch (error) {
+    paymentLookupError = error;
+  }
   const eventPayload = paymentDetails || body;
   const providerStatus = pickProviderStatus(paymentDetails || body);
   const mappedStatus = mapStatus(providerStatus);
@@ -116,6 +118,28 @@ export default async function handler(req, res) {
 
   if (!campaignId) {
     return res.status(200).json({ ok: true, skipped: true, reason: 'Sin campaignId/external_reference' });
+  }
+
+  if (['approved', 'pending', 'rejected'].includes(mappedStatus) && !paymentDetails) {
+    await insertPaymentEvent(supabase, {
+      campaign_id: campaignId,
+      external_id: String(body.id || body.data?.id || body.resource?.id || ''),
+      provider_payment_id: providerPaymentId,
+      status: paymentLookupError ? 'lookup_error' : 'ignored_unverified',
+      event_type: 'payment_webhook_unverified',
+      payload_json: {
+        body,
+        query: req.query,
+        error: paymentLookupError?.message || null,
+      },
+      created_at: new Date().toISOString(),
+    });
+
+    if (paymentLookupError && pickDataId(body, req.query || {})) {
+      return res.status(502).json({ ok: false, error: 'No se pudo verificar el pago en Mercado Pago' });
+    }
+
+    return res.status(200).json({ ok: true, skipped: true, reason: 'Pago no verificado en Mercado Pago' });
   }
 
   const { data: campaign, error: campaignError } = await supabase
