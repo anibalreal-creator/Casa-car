@@ -14,6 +14,12 @@ function locationHref(slotKey) {
   return `/publicidad/slots?slot=${encodeURIComponent(slotKey || 'home_middle')}`;
 }
 
+function slotAspectRatio(value = '') {
+  const match = String(value || '').match(/(\d+)\s*x\s*(\d+)/i);
+  if (!match) return '1200 / 220';
+  return `${Number(match[1]) || 1200} / ${Number(match[2]) || 220}`;
+}
+
 export default function PublicidadPanelPage() {
   const router = useRouter();
   const initial = useMemo(() => ({
@@ -116,7 +122,7 @@ export default function PublicidadPanelPage() {
   function useGeneratedBanner({ file, previewUrl }) {
     setBannerFile(file);
     setBannerPreview(previewUrl);
-    setNotice('Diseno IA listo para presentar y subir con la campania.');
+    setNotice('Imagen adaptada lista para presentar y subir con la campania.');
   }
 
   async function uploadBanner() {
@@ -256,6 +262,7 @@ export default function PublicidadPanelPage() {
   const selectedPlan = getAdPlan(form.plan_key);
   const availableSlots = AD_SLOTS.filter((slot) => selectedPlan.slots.includes(slot.key));
   const selectedSlot = availableSlots.find((slot) => slot.key === form.slot_key) || availableSlots[0] || AD_SLOTS[0];
+  const previewAspectRatio = slotAspectRatio(selectedSlot?.dimensions);
   useEffect(() => {
     if (!availableSlots.some((slot) => slot.key === form.slot_key)) {
       setForm((prev) => ({ ...prev, slot_key: availableSlots[0]?.key || 'home_middle' }));
@@ -365,16 +372,15 @@ export default function PublicidadPanelPage() {
             </div>
             <div style={styles.creativePreview}>
               <div style={styles.creativePreviewInfo}>
-                <strong>Vista previa inteligente del banner</strong>
-                <span>La imagen se ajusta completa: fondo adaptado y banner centrado para evitar textos cortados.</span>
+                <strong>Vista previa final del banner</strong>
+                <span>Asi queda el PNG en el formato elegido antes de guardarlo.</span>
               </div>
               {bannerPreview ? (
-                <div style={styles.smartPreviewFrame}>
-                  <img src={bannerPreview} alt="" aria-hidden="true" style={styles.smartPreviewBg} />
+                <div style={{ ...styles.smartPreviewFrame, aspectRatio: previewAspectRatio }}>
                   <img src={bannerPreview} alt="Vista previa del banner" style={styles.smartPreviewImg} />
                 </div>
               ) : (
-                <div style={styles.previewPlaceholder}>Subi una imagen para ver como se adapta al espacio elegido.</div>
+                <div style={styles.previewPlaceholder}>Subi una imagen para ver el espacio elegido.</div>
               )}
             </div>
             {!editingId ? (
@@ -459,9 +465,8 @@ const styles = {
   previewSlotButton: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 999, padding: '9px 12px', fontWeight: 900, fontSize: 13 },
   creativePreview: { display: 'grid', gap: 10, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 18, padding: 12 },
   creativePreviewInfo: { display: 'grid', gap: 4, color: '#334155', fontSize: 13 },
-  smartPreviewFrame: { position: 'relative', overflow: 'hidden', borderRadius: 16, border: '1px solid #cbd5e1', background: '#0f172a', display: 'grid', placeItems: 'center', minHeight: 160 },
-  smartPreviewBg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(18px)', transform: 'scale(1.14)', opacity: 0.45 },
-  smartPreviewImg: { position: 'relative', zIndex: 1, width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
+  smartPreviewFrame: { position: 'relative', overflow: 'hidden', borderRadius: 16, border: '1px solid #cbd5e1', background: '#fff', display: 'grid', placeItems: 'center', width: '100%' },
+  smartPreviewImg: { width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#fff' },
   previewPlaceholder: { padding: 20, textAlign: 'center', color: '#64748b', fontWeight: 800 },
   paymentHelp: { fontSize: 13, lineHeight: 1.45, color: '#475569', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: 12 },
   cancelButton: { border: '1px solid #fecaca', background: '#fff1f2', color: '#be123c', borderRadius: 999, padding: '8px 10px', fontWeight: 900, cursor: 'pointer' },
