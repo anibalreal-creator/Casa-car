@@ -261,17 +261,9 @@ export default function Publicar() {
       <FooterBlueBar />
 
       <style jsx>{`
-        @media (max-width: 1540px) {
+        @media (max-width: 1800px) {
           .cc-publish-wrap {
-            grid-template-columns: 230px minmax(0, 1fr) !important;
-            gap: 16px !important;
-          }
-          .cc-publish-right {
-            display: none !important;
-          }
-        }
-        @media (max-width: 1180px) {
-          .cc-publish-wrap {
+            max-width: 980px !important;
             grid-template-columns: 1fr !important;
           }
           .cc-publish-side {
