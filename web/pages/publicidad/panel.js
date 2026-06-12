@@ -11,8 +11,7 @@ function statCard(label, value, hint) {
 }
 
 function locationHref(slotKey) {
-  const slot = AD_SLOTS.find((item) => item.key === slotKey);
-  return slot?.examplePath || `/publicidad/ubicaciones/${encodeURIComponent(slotKey || 'home_middle')}`;
+  return `/publicidad/slots?slot=${encodeURIComponent(slotKey || 'home_middle')}`;
 }
 
 export default function PublicidadPanelPage() {
