@@ -129,11 +129,19 @@ export default function AdBanner({
       }}
     >
       {image ? (
-        <img
-          src={image}
-          alt={ad.title || 'Publicidad'}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-        />
+        <div style={{ position: 'relative', minHeight, height: '100%', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+          <img
+            src={image}
+            alt=""
+            aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', filter: 'blur(18px)', transform: 'scale(1.14)', opacity: 0.42 }}
+          />
+          <img
+            src={image}
+            alt={ad.title || 'Publicidad'}
+            style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
+          />
+        </div>
       ) : (
         <div style={{ padding: 18 }}>
           <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 8 }}>{(ad.plan || 'PLAN').toUpperCase()}</div>

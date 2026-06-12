@@ -106,7 +106,7 @@ export default function SearchSidebar({ filters, setFilters, onSubmit, onClear, 
     <form onSubmit={onSubmit} style={styles.sidebar}>
       <div style={styles.topBar}>
         <div style={styles.kicker}>{t('filter_real_search', 'BUSCADOR REAL')}</div>
-        <div style={styles.microHint}>{t('filter_independent_scroll', 'Scroll independiente')}</div>
+        <div style={styles.microHint}>{t('filter_advanced', 'Filtros avanzados')}</div>
       </div>
 
       <h2 style={styles.title}>{t('filter_title', 'Filtrá anuncios')}</h2>
@@ -292,13 +292,13 @@ const styles = {
     padding:20,
     boxShadow:'0 18px 40px rgba(15,23,42,.06)',
     display:'grid',
-    gridTemplateRows:'auto auto minmax(0, 1fr) auto',
+    gridTemplateRows:'auto auto auto auto',
     gap:12,
     width:'100%',
     boxSizing:'border-box',
-    height:'calc(100vh - 116px)',
+    height:'auto',
     minHeight:0,
-    overflow:'hidden'
+    overflow:'visible'
   },
   topBar:{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,flexWrap:'wrap'},
   kicker:{display:'inline-block',padding:'6px 10px',borderRadius:999,background:'#ede9fe',color:'#6d28d9',fontWeight:800,fontSize:12,letterSpacing:'.08em'},
@@ -312,8 +312,8 @@ const styles = {
     alignContent:'start',
     gap:12,
     minHeight:0,
-    overflowY:'auto',
-    overscrollBehavior:'contain',
+    overflowY:'visible',
+    overscrollBehavior:'auto',
     paddingRight:4,
     scrollbarWidth:'thin'
   },

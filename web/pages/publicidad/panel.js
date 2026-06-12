@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import GlobalHeader from '../../components/GlobalHeader';
 import FooterBlueBar from '../../components/FooterBlueBar';
+import AdCreativeStudio from '../../components/AdCreativeStudio';
 import { AD_PLANS, AD_SLOTS, getAdPlan } from '../../data/adPlans';
 import { supabaseBrowser } from '../../lib/supabaseBrowser';
 
@@ -110,6 +111,12 @@ export default function PublicidadPanelPage() {
     const file = e.target.files?.[0] || null;
     setBannerFile(file);
     setBannerPreview(file ? URL.createObjectURL(file) : bannerPreview);
+  }
+
+  function useGeneratedBanner({ file, previewUrl }) {
+    setBannerFile(file);
+    setBannerPreview(previewUrl);
+    setNotice('Diseno IA listo para presentar y subir con la campania.');
   }
 
   async function uploadBanner() {
@@ -342,6 +349,12 @@ export default function PublicidadPanelPage() {
               <input type="file" accept="image/*" onChange={onFile} style={{ marginTop: 10 }} required={!editingId && !bannerPreview} />
               <span style={styles.uploadHelp}>{editingId ? 'Reemplaza la imagen sin perder la campaña.' : 'Se guarda en Supabase Storage. La campaña queda pendiente/inactiva y se publica automáticamente al aprobar el pago.'}</span>
             </label>
+            <AdCreativeStudio
+              form={form}
+              selectedSlot={selectedSlot}
+              sourceImage={bannerPreview}
+              onUseBanner={useGeneratedBanner}
+            />
             <div style={styles.slotPreviewBox}>
               <div style={styles.slotPreviewCopy}>
                 <strong>Ubicacion elegida: {selectedSlot?.label || 'Espacio publicitario'}</strong>

@@ -357,8 +357,10 @@ export default function Buscar({ initialQuery = {} }) {
         <div className="buscar-layout" style={styles.layout}>
           <aside className="buscar-sidebar" style={styles.sidebarCol}>
             <div style={styles.sidebarStickyBox}>
-              <SearchSidebar filters={filters} setFilters={setFilters} onSubmit={onSubmit} onClear={onClear} items={items} />
-              <div style={{ marginTop: 14 }}><AdSlot slot="search_sidebar" page="buscar" title={t('ads_results_title', 'Publicidad en resultados')} compact /></div>
+              <div style={styles.filterBox}>
+                <SearchSidebar filters={filters} setFilters={setFilters} onSubmit={onSubmit} onClear={onClear} items={items} />
+              </div>
+              <div style={styles.sidebarAdBox}><AdSlot slot="search_sidebar" page="buscar" title={t('ads_results_title', 'Publicidad en resultados')} compact /></div>
             </div>
           </aside>
           <section style={styles.resultsCol}>
@@ -429,7 +431,9 @@ const styles = {
   wrap:{ maxWidth:1400, margin:'0 auto', padding:'28px 16px 40px' },
   layout:{},
   sidebarCol:{ minWidth:0, maxWidth:340, width:'100%', position:'sticky', top:88, alignSelf:'start' },
-  sidebarStickyBox:{ maxHeight:'calc(100vh - 104px)', overflowY:'auto', paddingRight:4, overscrollBehavior:'contain', scrollbarWidth:'thin' },
+  sidebarStickyBox:{ display:'grid', gap:14, paddingRight:4 },
+  filterBox:{ minWidth:0 },
+  sidebarAdBox:{ minWidth:0 },
   resultsCol:{ minWidth:0 },
   kicker:{ fontSize:12, fontWeight:900, letterSpacing:'.16em', color:'#1d4ed8', marginBottom:10 },
   headRow:{ display:'flex', justifyContent:'space-between', gap:20, flexWrap:'wrap', alignItems:'flex-start' },

@@ -10,6 +10,14 @@ const slotStyles = {
   footer_strip: { minHeight: 132 },
 };
 
+const cardHeights = {
+  home_top: 178,
+  home_middle: 148,
+  search_sidebar: 300,
+  listing_inline: 156,
+  footer_strip: 108,
+};
+
 function normalizeId(value) {
   const id = String(value || '').trim();
   if (!id || id.startsWith('house-')) return '';
@@ -145,12 +153,28 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
     return () => observer.disconnect();
   }, [ad, slot, page]);
 
-  if (!ad) return null;
-
   const safeTitle = title || t('ads_title_short', 'Publicidad');
-
   const isSidebar = slot === 'search_sidebar';
   const isWide = ['home_top', 'home_middle', 'listing_inline', 'footer_strip'].includes(slot);
+  const cardHeight = compact
+    ? Math.max(118, Math.round((cardHeights[slot] || 140) * 0.82))
+    : cardHeights[slot] || 140;
+
+  if (!ad) {
+    return (
+      <section ref={rootRef} className={`adslot ${compact ? 'compact' : ''} ${isSidebar ? 'sidebar' : ''} ${isWide ? 'wide' : ''}`} style={{ ...styles.wrap, ...slotStyles[slot], ...(compact ? styles.compact : null) }}>
+        <div style={styles.headRow}>
+          <div style={styles.label}>{safeTitle}</div>
+          <Link href="/publicidad" style={styles.reserveLink}>{t('ads_reserve_space', 'Reservar este espacio')}</Link>
+        </div>
+        <Link href="/publicidad" style={{ ...styles.emptyCard, height: cardHeight }}>
+          <strong>{t('ads_title_short', 'Publicidad')}</strong>
+          <span>{t('ads_reserve_space', 'Reservar este espacio')}</span>
+        </Link>
+      </section>
+    );
+  }
+
   const isHouse = String(ad.company_name || '').toLowerCase() === 'casa-car ads' || String(ad.id || '').startsWith('house-');
   const showOverlay = isHouse;
   const imageSrc = ad.banner_url || '/casa-car-logo.png';
@@ -165,7 +189,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
         href={ad.destination_url || '/publicidad'}
         target="_blank"
         rel="noreferrer"
-        style={{ ...styles.card, ...(isSidebar ? styles.cardSidebar : null) }}
+        style={{ ...styles.card, height: cardHeight, ...(isSidebar ? styles.cardSidebar : null) }}
         onClick={() => trackAdEvent(ad, 'click', slot, page, false)}
       >
         <div
@@ -264,21 +288,26 @@ const styles = {
     opacity: 0.45,
   },
   imageSmart: {
-    position: 'relative',
+    position: 'absolute',
+    inset: 0,
     zIndex: 1,
     width: '100%',
     height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
     objectFit: 'contain',
     objectPosition: 'center',
     display: 'block',
+    boxSizing: 'border-box',
     background: 'transparent',
   },
-  overlay: { position: 'relative', zIndex: 1, minHeight: 120, display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
+  overlay: { position: 'relative', zIndex: 2, minHeight: '100%', height: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
   overlayWide: { alignItems: 'stretch', background: 'linear-gradient(90deg,rgba(6,18,38,.55),rgba(6,18,38,.18) 48%, rgba(6,18,38,.08) 72%, rgba(6,18,38,.08))' },
   overlaySidebar: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(180deg,rgba(6,18,38,.35),rgba(6,18,38,.50))' },
   plan: { display: 'inline-block', fontSize: 11, fontWeight: 900, padding: '6px 9px', borderRadius: 999, background: 'rgba(255,255,255,.15)', marginBottom: 8 },
   adTitle: { margin: 0, fontSize: 24, lineHeight: 1.05 },
   adText: { margin: '8px 0 0 0', color: 'rgba(255,255,255,.92)', fontWeight: 700 },
   cta: { whiteSpace: 'nowrap', padding: '10px 14px', borderRadius: 999, background: '#fff', color: '#0f172a', fontWeight: 900, alignSelf: 'flex-end', boxShadow: '0 8px 20px rgba(15,23,42,.18)' },
+  emptyCard: { display: 'grid', placeItems: 'center', alignContent: 'center', gap: 8, textDecoration: 'none', color: '#334155', border: '1px dashed #bfdbfe', borderRadius: 18, background: 'linear-gradient(135deg,#f8fbff,#eff6ff)', fontWeight: 900, textAlign: 'center', padding: 16, boxSizing: 'border-box' },
   cardSidebar: { minHeight: 340 },
 };
