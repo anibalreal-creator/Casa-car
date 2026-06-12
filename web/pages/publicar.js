@@ -13,6 +13,7 @@ import SmartLocationPicker from "../components/SmartLocationPicker";
 import LocationMap from "../components/LocationMap";
 import FooterBlueBar from "../components/FooterBlueBar";
 import GlobalHeader from "../components/GlobalHeader";
+import AdSlot from "../components/AdSlot";
 
 const CATEGORY_LABEL_KEYS = {
   Propiedad: "cat_properties",
@@ -136,6 +137,11 @@ export default function Publicar() {
     <div style={styles.page}>
       <GlobalHeader />
       <div className="cc-publish-wrap" style={styles.wrap}>
+        <aside className="cc-publish-side cc-publish-left" style={styles.sideCol}>
+          <AdSlot slot="search_sidebar" page="publicar_left" title={t("ads_sidebar_title", "Publicidad lateral")} compact />
+          <AdSlot slot="listing_inline" page="publicar_left_bottom" title={t("ads_premium_space", "Espacio premium")} compact />
+        </aside>
+
         <main style={styles.mainCol}>
           <h1 style={styles.title}>{t("publish_title", "Publicar anuncio")}</h1>
           <p style={styles.subtitle}>{t("publish_subtitle", "Ahora con ubicación inteligente, venta/alquiler y ficha técnica.")}</p>
@@ -164,6 +170,10 @@ export default function Publicar() {
                 </div>
               </div>
             </div>
+          </section>
+          <section className="cc-publish-inline-ads" style={styles.inlineAds}>
+            <AdSlot slot="listing_inline" page="publicar_inline_primary" title={t("ads_premium_space", "Espacio premium")} compact />
+            <AdSlot slot="home_top" page="publicar_inline_secondary" title={t("ads_featured_banner", "Banner destacado")} compact />
           </section>
           {!authChecked ? <div style={styles.infoBox}>{t("publish_checking", "Verificando sesión…")}</div> : null}
           {authChecked && !user ? (
@@ -246,10 +256,36 @@ export default function Publicar() {
             <button type="submit" style={styles.submit} disabled={submitting}>{submitting ? t("publish_submitting", "Publicando...") : t("publish_submit", "Publicar")}</button>
           </form>
         </main>
+
+        <aside className="cc-publish-side cc-publish-right" style={styles.sideCol}>
+          <AdSlot slot="search_sidebar" page="publicar_right" title={t("ads_sidebar_title", "Publicidad lateral")} compact />
+          <AdSlot slot="home_top" page="publicar_right_bottom" title={t("ads_featured_banner", "Banner destacado")} compact />
+        </aside>
       </div>
       <FooterBlueBar />
 
       <style jsx>{`
+        .cc-publish-side :global(.adslot) {
+          width: 100%;
+          max-width: 320px;
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+        .cc-publish-inline-ads {
+          display: none;
+        }
+        @media (max-width: 1640px) {
+          .cc-publish-wrap {
+            max-width: 980px !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-publish-side {
+            display: none !important;
+          }
+          .cc-publish-inline-ads {
+            display: grid !important;
+          }
+        }
         @media (max-width: 760px) {
           .cc-publish-wrap {
             padding-bottom: 96px !important;
@@ -262,7 +298,8 @@ export default function Publicar() {
 
 const styles = {
   page:{background:"#f5f7fb",minHeight:"100vh",fontFamily:"Arial, sans-serif"},
-  wrap:{maxWidth:980,margin:"0 auto",padding:"26px 16px 48px",display:'grid',gridTemplateColumns:'minmax(0,1fr)',gap:20,alignItems:'start'},
+  wrap:{maxWidth:1660,boxSizing:'border-box',margin:"0 auto",padding:"26px 16px 48px",display:'grid',gridTemplateColumns:'320px minmax(0,948px) 320px',gap:20,alignItems:'start',justifyContent:'center'},
+  sideCol:{display:'grid',gap:16,position:'sticky',top:110,width:'100%',maxWidth:320,minWidth:0,overflow:'hidden'},
   mainCol:{minWidth:0},
   title:{fontSize:42,margin:'0 0 8px 0',color:'#111827'},
   subtitle:{margin:'0 0 20px 0',color:'#64748b',fontSize:18},
@@ -280,6 +317,7 @@ const styles = {
   previewImage:{display:'grid',placeItems:'center',background:'#eef2ff',color:'#1d4ed8',fontWeight:900,fontSize:12},
   previewImg:{width:'100%',height:'100%',objectFit:'cover'},
   previewBody:{display:'grid',alignContent:'center',gap:6,padding:12,color:'#334155'},
+  inlineAds:{gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14,margin:'0 0 16px 0'},
   infoBox:{background:'#fff',border:'1px solid #e5e7eb',padding:16,borderRadius:16,marginBottom:16},
   infoActions:{display:'flex',gap:10,flexWrap:'wrap',marginTop:12},
   secondaryLink:{textDecoration:'none',background:'#fff',color:'#111827',padding:'10px 14px',borderRadius:12,border:'1px solid #d1d5db',fontWeight:800},
