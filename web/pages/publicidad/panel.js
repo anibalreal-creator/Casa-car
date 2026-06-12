@@ -36,6 +36,7 @@ export default function PublicidadPanelPage() {
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState('');
   const [editingId, setEditingId] = useState('');
+  const [cancellingId, setCancellingId] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -181,8 +182,9 @@ export default function PublicidadPanelPage() {
       const pref = await prefRes.json();
       if (!prefRes.ok) throw new Error(pref.error || 'No se pudo iniciar el checkout');
       if (pref.manual) {
-        setNotice('Campaña guardada en pending_payment. Falta Mercado Pago para abrir checkout automático.');
+        setNotice('Campaña guardada como pendiente/inactiva. Falta Mercado Pago para abrir checkout automático; no se mostrará como activa hasta confirmar el pago.');
         setSubmitting(false);
+        await loadCampaigns(currentUser);
         return;
       }
       window.location.href = pref.chosen_checkout_url || pref.checkout_url;
@@ -269,8 +271,8 @@ export default function PublicidadPanelPage() {
 
   const stats = useMemo(() => {
     const total = campaigns.length;
-    const active = campaigns.filter((item) => item.active || item.status === 'active').length;
-    const pending = campaigns.filter((item) => String(item.status).includes('pending')).length;
+    const active = campaigns.filter((item) => item.active || item.is_active || item.status === 'active').length;
+    const pending = campaigns.filter((item) => String(item.status).includes('pending') && !(item.active || item.is_active)).length;
     const clicks = campaigns.reduce((acc, item) => acc + Number(item.clicks || 0), 0);
     return [
       statCard('Campañas', total, 'totales'),
@@ -297,7 +299,7 @@ export default function PublicidadPanelPage() {
           </div>
           <div style={styles.infoBox}>
             <div><strong>Plan:</strong> {selectedPlan.name}</div>
-            <div><strong>Precio:</strong> ARS {selectedPlan.price.toLocaleString('es-AR')}</div>
+            <div><strong>Precio prueba:</strong> ARS {selectedPlan.price.toLocaleString('es-AR')}</div>
             <div><strong>Duración:</strong> {selectedPlan.durationDays} días</div>
             <button type="button" onClick={syncCampaigns} style={styles.syncButton}>{syncing ? 'Sincronizando…' : 'Sync campañas'}</button>
           </div>
@@ -338,7 +340,7 @@ export default function PublicidadPanelPage() {
             <label style={styles.uploadBox}>
               <span style={styles.uploadTitle}>{editingId ? 'Cambiar banner' : 'Subir banner'}</span>
               <input type="file" accept="image/*" onChange={onFile} style={{ marginTop: 10 }} required={!editingId && !bannerPreview} />
-              <span style={styles.uploadHelp}>{editingId ? 'Reemplaza la imagen sin perder la campaña.' : 'Se guarda en Supabase Storage y luego se publica automáticamente al aprobar el pago.'}</span>
+              <span style={styles.uploadHelp}>{editingId ? 'Reemplaza la imagen sin perder la campaña.' : 'Se guarda en Supabase Storage. La campaña queda pendiente/inactiva y se publica automáticamente al aprobar el pago.'}</span>
             </label>
             <div style={styles.slotPreviewBox}>
               <div style={styles.slotPreviewCopy}>
@@ -389,7 +391,7 @@ export default function PublicidadPanelPage() {
                 <div key={item.id} style={styles.campaignCard}>
                   <div style={styles.campaignTitle}>{item.title}</div>
                   <div style={styles.campaignMeta}>{item.plan_name || item.plan_key} · {item.slot_label || item.slot_key}</div>
-                  <div style={styles.campaignMeta}>Estado: {item.status}{item.active ? ' · activa' : ''}</div>
+                  <div style={styles.campaignMeta}>Estado: {item.status}{item.active || item.is_active ? ' · activa' : ' · inactiva'}</div>
                   <div style={styles.linkRow}>
                     <a href={`/publicidad/panel?edit=${item.id}`} style={styles.inlineLink}>Cambiar banner</a>
                     {item.banner_url ? <a href={item.banner_url} target="_blank" rel="noreferrer" style={styles.subtleLink}>Ver banner</a> : null}
@@ -400,7 +402,7 @@ export default function PublicidadPanelPage() {
                       disabled={cancellingId === String(item.id)}
                       style={styles.cancelButton}
                     >
-                      {cancellingId === String(item.id) ? 'Dando de baja...' : 'Dar de baja'}
+                      {cancellingId === String(item.id) ? 'Dando de baja...' : 'Dar de baja publicidad'}
                     </button>
                   </div>
                 </div>
