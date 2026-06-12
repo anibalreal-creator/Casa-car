@@ -45,9 +45,13 @@ export default function PublicidadSlots() {
             <div style={styles.mockPage}>
               {selected.key === 'search_sidebar' ? (
                 <div style={styles.mockSearch}>
-                  <aside style={styles.mockFilter}>Filtros de busqueda</aside>
-                  <div style={styles.mockSideAd}><AdSlot slot="search_sidebar" page="buscar" title="Publicidad en resultados" compact /></div>
+                  <aside style={styles.mockSearchRail}>
+                    <div style={styles.mockFilter}>Filtros de busqueda</div>
+                    <div style={styles.mockSideAd}><AdSlot slot="search_sidebar" page="buscar" title="Publicidad en resultados" compact /></div>
+                  </aside>
                   <div style={styles.mockResults}>
+                    <div style={styles.resultCard} />
+                    <div style={styles.resultCard} />
                     <div style={styles.resultCard} />
                     <div style={styles.resultCard} />
                   </div>
@@ -103,8 +107,9 @@ const styles = {
   mockPage: { display: 'grid', gap: 14, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 18, padding: 14 },
   mockHeader: { height: 64, borderRadius: 14, background: 'linear-gradient(90deg,#e2e8f0,#fff)', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#475569' },
   mockCards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 },
-  mockSearch: { display: 'grid', gridTemplateColumns: '320px minmax(0,1fr)', gap: 14, alignItems: 'start' },
-  mockFilter: { minHeight: 320, borderRadius: 16, background: '#fff', border: '1px solid #e5e7eb', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#64748b' },
+  mockSearch: { display: 'grid', gridTemplateColumns: 'minmax(280px,320px) minmax(0,1fr)', gap: 14, alignItems: 'start' },
+  mockSearchRail: { display: 'grid', gap: 14, minWidth: 0 },
+  mockFilter: { minHeight: 260, borderRadius: 16, background: '#fff', border: '1px solid #e5e7eb', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#64748b' },
   mockSideAd: { minWidth: 0 },
   mockResults: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12 },
   resultCard: { minHeight: 150, borderRadius: 16, background: '#fff', border: '1px solid #e5e7eb' },
