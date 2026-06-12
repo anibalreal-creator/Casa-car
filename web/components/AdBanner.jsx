@@ -139,7 +139,7 @@ export default function AdBanner({
           <img
             src={image}
             alt={ad.title || 'Publicidad'}
-            style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
+            style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
           />
         </div>
       ) : (

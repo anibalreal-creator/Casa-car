@@ -175,8 +175,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
     );
   }
 
-  const isHouse = String(ad.company_name || '').toLowerCase() === 'casa-car ads' || String(ad.id || '').startsWith('house-');
-  const showOverlay = isHouse;
+  const showOverlay = false;
   const imageSrc = ad.banner_url || '/casa-car-logo.png';
 
   return (
@@ -203,7 +202,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
           <img
             src={imageSrc}
             alt={ad.title || ad.company_name || t('ads_title_short', 'Publicidad')}
-            style={styles.imageSmart}
+            style={{ ...styles.imageSmart, ...(isWide ? styles.imageSmartWide : null), ...(isSidebar ? styles.imageSmartSidebar : null) }}
           />
         </div>
         {showOverlay ? (
@@ -295,12 +294,14 @@ const styles = {
     height: '100%',
     maxWidth: '100%',
     maxHeight: '100%',
-    objectFit: 'contain',
+    objectFit: 'cover',
     objectPosition: 'center',
     display: 'block',
     boxSizing: 'border-box',
     background: 'transparent',
   },
+  imageSmartWide: { objectFit: 'cover' },
+  imageSmartSidebar: { objectFit: 'cover' },
   overlay: { position: 'relative', zIndex: 2, minHeight: '100%', height: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
   overlayWide: { alignItems: 'stretch', background: 'linear-gradient(90deg,rgba(6,18,38,.55),rgba(6,18,38,.18) 48%, rgba(6,18,38,.08) 72%, rgba(6,18,38,.08))' },
   overlaySidebar: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(180deg,rgba(6,18,38,.35),rgba(6,18,38,.50))' },
