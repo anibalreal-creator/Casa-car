@@ -26,6 +26,14 @@ const slotRatios = {
   footer_strip: 1200 / 140,
 };
 
+const slotAspectRatios = {
+  home_top: '1200 / 220',
+  home_middle: '1200 / 180',
+  search_sidebar: '320 / 420',
+  listing_inline: '1200 / 220',
+  footer_strip: '1200 / 140',
+};
+
 function normalizeId(value) {
   const id = String(value || '').trim();
   if (!id || id.startsWith('house-')) return '';
@@ -186,6 +194,11 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
 
   const showOverlay = false;
   const imageSrc = ad.banner_url || '/casa-car-logo.png';
+  const cardStyle = {
+    ...styles.card,
+    ...(slotAspectRatios[slot] ? { aspectRatio: slotAspectRatios[slot], height: 'auto' } : { height: cardHeight }),
+    ...(isSidebar ? styles.cardSidebar : null),
+  };
   const handleImageLoad = (event) => {
     const expected = slotRatios[slot];
     const width = event.currentTarget?.naturalWidth || 0;
@@ -209,7 +222,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
         href={ad.destination_url || '/publicidad'}
         target="_blank"
         rel="noreferrer"
-        style={{ ...styles.card, height: cardHeight, ...(isSidebar ? styles.cardSidebar : null) }}
+        style={cardStyle}
         onClick={() => trackAdEvent(ad, 'click', slot, page, false)}
       >
         <div
