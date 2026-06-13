@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 
-const VARIANTS = [
+const COVER_VARIANTS = [
   { key: 'center', label: 'Adaptado', tone: 'recorte central', mode: 'cover', focusX: 0.5, focusY: 0.5 },
   { key: 'top', label: 'Arriba', tone: 'logo y encabezado', mode: 'cover', focusX: 0.5, focusY: 0.18 },
   { key: 'bottom', label: 'Abajo', tone: 'datos de contacto', mode: 'cover', focusX: 0.5, focusY: 0.82 },
   { key: 'complete', label: 'Completo', tone: 'sin cortar', mode: 'contain', focusX: 0.5, focusY: 0.5 },
 ];
+
+const COMPLETE_VARIANT = COVER_VARIANTS.find((item) => item.key === 'complete');
 
 function parseDimensions(value = '') {
   const match = String(value || '').match(/(\d+)\s*x\s*(\d+)/i);
@@ -59,6 +61,14 @@ function drawContain(ctx, image, width, height) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, drawWidth, drawHeight);
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
+}
+
+function getVariantsForDimensions(dimensions) {
+  const ratio = dimensions.width / dimensions.height;
+  if (ratio < 1.15) {
+    return [COMPLETE_VARIANT];
+  }
+  return COVER_VARIANTS;
 }
 
 function canvasToOutput(canvas) {
@@ -116,8 +126,15 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const dimensions = useMemo(() => parseDimensions(selectedSlot?.dimensions), [selectedSlot?.dimensions]);
+  const variants = useMemo(() => getVariantsForDimensions(dimensions), [dimensions.width, dimensions.height]);
   const aspectRatio = `${dimensions.width} / ${dimensions.height}`;
-  const activeVariant = VARIANTS.find((item) => item.key === selected) || VARIANTS[0];
+  const activeVariant = variants.find((item) => item.key === selected) || variants[0];
+
+  useEffect(() => {
+    if (!variants.some((variant) => variant.key === selected)) {
+      setSelected(variants[0]?.key || 'complete');
+    }
+  }, [selected, variants]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +150,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
 
     setLoading(true);
     Promise.all(
-      VARIANTS.map(async (variant) => {
+      variants.map(async (variant) => {
         try {
           const output = await renderCreative({ selectedSlot, sourceImage, variant });
           return [variant.key, { ...output, variant }];
@@ -150,7 +167,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
     return () => {
       cancelled = true;
     };
-  }, [selectedSlot?.dimensions, sourceImage]);
+  }, [selectedSlot?.dimensions, sourceImage, variants]);
 
   async function useVariant() {
     setGenerating(true);
@@ -180,7 +197,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
       </div>
 
       <div style={styles.variantGrid}>
-        {VARIANTS.map((variant) => {
+        {variants.map((variant) => {
           const preview = previews[variant.key];
           return (
             <button
@@ -206,7 +223,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
         <button type="button" onClick={useVariant} disabled={generating || loading || !sourceImage} style={styles.useButton}>
           {generating ? 'Generando...' : 'Usar adaptacion IA'}
         </button>
-        {error ? <span style={styles.error}>{error}</span> : <span style={styles.hint}>PNG final listo para mostrar y subir.</span>}
+        {error ? <span style={styles.error}>{error}</span> : <span style={styles.hint}>PNG final completo, sin cortar texto ni logos.</span>}
       </div>
     </section>
   );
@@ -222,7 +239,7 @@ const styles = {
   variantButton: { border: '1px solid #dbeafe', background: '#fff', borderRadius: 14, padding: 8, cursor: 'pointer', display: 'grid', gap: 8, textAlign: 'left' },
   variantButtonActive: { borderColor: '#1d4ed8', boxShadow: '0 0 0 3px rgba(29,78,216,.12)' },
   variantPreview: { borderRadius: 10, overflow: 'hidden', display: 'grid', placeItems: 'center', minHeight: 92, boxSizing: 'border-box', background: '#eff6ff' },
-  previewImage: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  previewImage: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
   placeholder: { color: '#64748b', fontWeight: 900, fontSize: 12 },
   variantMeta: { color: '#334155', fontSize: 12, fontWeight: 800 },
   footer: { display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
