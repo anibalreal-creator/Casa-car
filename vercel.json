@@ -9,23 +9,38 @@
   "routes": [
     {
       "src": "/listing/([^/]+)",
-      "dest": "web/ver-anuncio?id=$1"
+      "status": 308,
+      "headers": {
+        "Location": "/ver-anuncio?id=$1"
+      }
     },
     {
       "src": "/anuncio/([^/]+)",
-      "dest": "web/ver-anuncio?id=$1"
+      "status": 308,
+      "headers": {
+        "Location": "/ver-anuncio?id=$1"
+      }
     },
     {
       "src": "/editar/([^/]+)",
-      "dest": "web/editar?id=$1"
+      "status": 308,
+      "headers": {
+        "Location": "/editar?id=$1"
+      }
     },
     {
       "src": "/vendedor/([^/]+)",
-      "dest": "web/vendedor-publico?id=$1"
+      "status": 308,
+      "headers": {
+        "Location": "/vendedor-publico?id=$1"
+      }
     },
     {
       "src": "/publicidad/ubicaciones/([^/]+)",
-      "dest": "web/publicidad/slots?slot=$1"
+      "status": 308,
+      "headers": {
+        "Location": "/publicidad/slots?slot=$1"
+      }
     },
     {
       "src": "/(.*)",
