@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useLang } from "../context/LanguageContext";
 import { getAmenityLabels, tourismText } from "../lib/tourism";
+import { getListingDetailHref } from "../lib/listingRoutes";
 
 function toNumber(value) {
   const parsed = Number(value);
@@ -35,7 +36,7 @@ export default function TourismSearchMap({ items = [] }) {
         {items.slice(0, 8).map((item) => {
           const amenities = getAmenityLabels(item, language).slice(0, 3);
           return (
-            <a key={item.id} href={`/listing/${item.id}`} style={styles.item}>
+            <a key={item.id} href={getListingDetailHref(item)} style={styles.item}>
               <strong>{item.title || 'Casa-Car'}</strong>
               <span>{[item.city, item.country].filter(Boolean).join(', ')}</span>
               <span>{item.currency || 'USD'} {Number(item.price || 0).toLocaleString('es-AR')}</span>

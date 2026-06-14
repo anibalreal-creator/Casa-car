@@ -78,7 +78,7 @@ export default function PanelVendedor() {
         </form>
 
         <div style={{marginTop:18}}>
-          <a href={`/vendedor/${user.id}`} style={styles.publicLink}>Ver perfil público</a>
+          <a href={`/vendedor-publico?id=${encodeURIComponent(user.id)}`} style={styles.publicLink}>Ver perfil público</a>
         </div>
       </div>
       <FooterBlueBar />

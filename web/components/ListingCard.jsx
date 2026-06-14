@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { useLang } from "../context/LanguageContext";
 import { getAmenityLabels, getTourismSpecs, isTourismListing, tourismText } from "../lib/tourism";
+import { getListingDetailHref } from "../lib/listingRoutes";
 
 function safeJsonArray(value) {
   if (!value) return [];
@@ -97,7 +98,7 @@ export default function ListingCard(props) {
     t("card_location_unknown", "Ubicación no informada");
   const price = formatPrice(item.price, item.currency, t);
   const id = item.id || item.listing_id || item.public_id || "";
-  const detailHref = `/listing/${id}`;
+  const detailHref = getListingDetailHref(id);
   const whatsapp = item.whatsapp || item.whatsapp_url || item.phone || "";
   const tourism = isTourismListing(item);
   const tourismSpecs = getTourismSpecs(item);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import FavoriteButton from './FavoriteButton';
 import { useLang } from '../context/LanguageContext';
 import { fetchJsonCached } from '../lib/clientFetchCache';
+import { getListingDetailHref } from '../lib/listingRoutes';
 
 function safeJsonArray(value) {
   if (!value) return [];
@@ -122,7 +123,7 @@ function Card({ item }) {
   const price = formatPrice(item, t);
   const title = item.title || t('card_no_title', 'Anuncio');
   const detailId = isUuid(item?.id) ? String(item.id) : '';
-  const detailHref = detailId ? `/listing/${detailId}` : '#';
+  const detailHref = detailId ? getListingDetailHref(detailId) : '#';
   const whatsappHref = item.whatsapp_url || (item.phone ? `https://wa.me/${item.phone}` : '#');
 
   return (

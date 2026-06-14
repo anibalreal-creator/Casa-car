@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import VerifiedBadge from "../../components/VerifiedBadge";
 import SellerStats from "../../components/SellerStats";
 import FooterBlueBar from "../../components/FooterBlueBar";
+import { getListingDetailHref } from "../../lib/listingRoutes";
 
 export default function SellerPublicPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function SellerPublicPage() {
                 <h3 style={{margin:"0 0 8px 0"}}>{item.title}</h3>
                 <div style={styles.price}>{item.currency} {item.price}</div>
                 <div style={styles.city}>{item.city}, {item.country}</div>
-                <a href={`/listing/${item.id}`} style={styles.link}>Ver anuncio</a>
+                <a href={getListingDetailHref(item)} style={styles.link}>Ver anuncio</a>
               </div>
             </div>
           ))}

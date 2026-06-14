@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import SellerPanel from "../components/SellerPanel";
+import { getListingDetailHref } from "../lib/listingRoutes";
 
 export default function VendedorPage() {
   const [items, setItems] = useState([]);
@@ -26,7 +27,7 @@ export default function VendedorPage() {
                 <div style={{fontWeight:800,marginBottom:6}}>{item.title}</div>
                 <div>{item.city}, {item.country}</div>
                 <div>{item.currency} {item.price}</div>
-                <a href={`/listing/${item.id}`} style={{display:"inline-block",marginTop:10,textDecoration:"none",background:"#1d4ed8",color:"#fff",padding:"10px 12px",borderRadius:10,fontWeight:700}}>Ver anuncio</a>
+                <a href={getListingDetailHref(item)} style={{display:"inline-block",marginTop:10,textDecoration:"none",background:"#1d4ed8",color:"#fff",padding:"10px 12px",borderRadius:10,fontWeight:700}}>Ver anuncio</a>
               </div>
             </div>
           ))}

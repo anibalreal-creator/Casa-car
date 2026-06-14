@@ -2,6 +2,7 @@ import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
+import { getListingEditHref } from "../../lib/listingRoutes"
 
 export default function Anuncio() {
   const router = useRouter()
@@ -82,7 +83,7 @@ export default function Anuncio() {
         <div style={styles.topBar}>
           <Link href="/" style={styles.backBtn}>← Volver</Link>
           <div style={styles.topActions}>
-            {esMio ? <Link href={`/editar/${item.id}`} style={styles.editBtn}>Editar</Link> : null}
+            {esMio ? <Link href={getListingEditHref(item)} style={styles.editBtn}>Editar</Link> : null}
             {esMio ? <button onClick={eliminarAnuncio} style={styles.deleteBtn}>Eliminar</button> : null}
             <button onClick={() => window.print()} style={styles.printBtn}>Imprimir</button>
           </div>

@@ -6,6 +6,7 @@ import FooterBlueBar from "../components/FooterBlueBar";
 import GlobalHeader from "../components/GlobalHeader";
 import { useLang } from "../context/LanguageContext";
 import { getImagePresentation } from "../lib/imagePresentation";
+import { getListingDetailHref, getListingEditHref } from "../lib/listingRoutes";
 
 export default function MisAnuncios() {
   const { t } = useLang();
@@ -155,8 +156,8 @@ export default function MisAnuncios() {
                       <span>{item.chat_messages || 0} {t("stats_chats", "chats")}</span>
                     </div>
                     <div style={styles.actions}>
-                      <Link href={`/listing/${item.id}`} style={styles.link}>{t("action_view", "Ver")}</Link>
-                      <Link href={`/editar/${item.id}`} style={styles.linkAlt}>{t("action_edit", "Editar")}</Link>
+                      <Link href={getListingDetailHref(item)} style={styles.link}>{t("action_view", "Ver")}</Link>
+                      <Link href={getListingEditHref(item)} style={styles.linkAlt}>{t("action_edit", "Editar")}</Link>
                       <button type="button" onClick={() => removeItem(item.id)} style={styles.danger}>{t("action_delete", "Eliminar")}</button>
                     </div>
                     {!item.is_premium ? (

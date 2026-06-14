@@ -8,6 +8,26 @@
   ],
   "routes": [
     {
+      "src": "/listing/([^/]+)",
+      "dest": "web/ver-anuncio?id=$1"
+    },
+    {
+      "src": "/anuncio/([^/]+)",
+      "dest": "web/ver-anuncio?id=$1"
+    },
+    {
+      "src": "/editar/([^/]+)",
+      "dest": "web/editar?id=$1"
+    },
+    {
+      "src": "/vendedor/([^/]+)",
+      "dest": "web/vendedor-publico?id=$1"
+    },
+    {
+      "src": "/publicidad/ubicaciones/([^/]+)",
+      "dest": "web/publicidad/slots?slot=$1"
+    },
+    {
       "src": "/(.*)",
       "headers": {
         "X-Frame-Options": "SAMEORIGIN",

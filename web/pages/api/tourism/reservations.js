@@ -20,6 +20,7 @@ async function createCheckout({ listing, reservation, total }) {
   if (!token || !reservation.pay_now || !total) return null;
 
   const baseUrl = getSiteUrl();
+  const detailUrl = `${baseUrl}/ver-anuncio?id=${encodeURIComponent(listing.id)}`;
   const preference = {
     items: [{
       id: String(listing.id),
@@ -38,9 +39,9 @@ async function createCheckout({ listing, reservation, total }) {
       guest_email: reservation.guest_email,
     },
     back_urls: {
-      success: `${baseUrl}/listing/${listing.id}`,
-      failure: `${baseUrl}/listing/${listing.id}`,
-      pending: `${baseUrl}/listing/${listing.id}`,
+      success: detailUrl,
+      failure: detailUrl,
+      pending: detailUrl,
     },
     auto_return: "approved",
     external_reference: `tourism:${listing.id}:${Date.now()}`,

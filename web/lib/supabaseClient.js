@@ -38,7 +38,7 @@ export const SLOT_META = {
     label: 'Ficha de anuncio',
     size: '1200x220',
     page: 'página listing',
-    demoHref: '/listing/demo-publicidad?demoSlot=ficha_anuncio',
+    demoHref: '/publicidad/slots?slot=listing_inline',
   },
   pie_global: {
     key: 'pie_global',

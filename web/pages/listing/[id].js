@@ -28,12 +28,12 @@ import {
   buildOrganizationJsonLd,
   getListingCanonicalUrl,
   getListingSeoSlug,
-  getListingSeoPath,
   normalizeListingForSeo,
 } from '../../lib/seo';
 import { slugify } from '../../lib/slugify';
 import { fetchJsonCached } from '../../lib/clientFetchCache';
 import { isTourismListing } from '../../lib/tourism';
+import { getListingDetailHref } from '../../lib/listingRoutes';
 
 const SPEC_LABELS = {
   brand: 'Marca', model: 'Modelo', year: 'Año', km: 'Kilómetros', fuel: 'Combustible', transmission: 'Transmisión',
@@ -316,7 +316,7 @@ export default function ListingDetail({ initialItem = null }) {
           {similarItems.length ? (
             <div style={styles.similarGrid}>
               {similarItems.map((similar) => (
-                <a key={similar.id} href={getListingSeoPath(similar)} style={styles.similarCard}>
+                <a key={similar.id} href={getListingDetailHref(similar)} style={styles.similarCard}>
                   <img src={similar.images?.[0] || 'https://picsum.photos/seed/casacar/900/600'} alt={similar.title} style={styles.similarImg} />
                   <strong>{similar.title}</strong>
                   <span>{similar.currency || 'USD'} {Number(similar.price || 0).toLocaleString('es-AR')}</span>

@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/anuncio/${anuncioId}?paid=1`,
+      success_url: `${baseUrl}/ver-anuncio?id=${encodeURIComponent(anuncioId)}&paid=1`,
       cancel_url: `${baseUrl}/publicar?canceled=1`,
       metadata: { anuncioId },
     });

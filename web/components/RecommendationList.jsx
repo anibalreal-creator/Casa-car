@@ -1,3 +1,5 @@
+import { getListingDetailHref } from "../lib/listingRoutes";
+
 export default function RecommendationList({ items = [] }) {
   return (
     <div style={styles.grid}>
@@ -9,7 +11,7 @@ export default function RecommendationList({ items = [] }) {
             <div style={styles.meta}>{item.city}, {item.country}</div>
             <div style={styles.price}>{item.currency} {item.price}</div>
             <div style={styles.score}>IA score: {Math.round(Number(item.ai_score || 0))}</div>
-            <a href={`/listing/${item.id}`} style={styles.link}>Ver anuncio</a>
+            <a href={getListingDetailHref(item)} style={styles.link}>Ver anuncio</a>
           </div>
         </div>
       ))}

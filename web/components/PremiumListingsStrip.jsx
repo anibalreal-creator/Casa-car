@@ -3,6 +3,7 @@ import { getImagePresentation } from "../lib/imagePresentation";
 import { categoryLabel } from "../lib/category";
 import { useLang } from "../context/LanguageContext";
 import { fetchJsonCached } from "../lib/clientFetchCache";
+import { getListingDetailHref } from "../lib/listingRoutes";
 
 const FALLBACK_CARDS = {
   es: [
@@ -33,7 +34,7 @@ function formatPrice(item, t) {
 }
 
 function getHref(item) {
-  if (item?.id && !String(item.id).startsWith("fallback-")) return `/listing/${item.id}`;
+  if (item?.id && !String(item.id).startsWith("fallback-")) return getListingDetailHref(item);
   return "/buscar";
 }
 
