@@ -59,6 +59,7 @@ securityHeaders.push({ key: 'Content-Security-Policy', value: contentSecurityPol
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingRoot: __dirname,
   images: {
     // Evita depender del optimizer remoto amplio, que es la parte más sensible del audit.
     unoptimized: true,

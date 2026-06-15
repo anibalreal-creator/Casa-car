@@ -19,13 +19,16 @@ export default async function handler(req, res) {
     if (!listing) return res.status(404).json({ error: 'Anuncio no encontrado' });
 
     if (step === 'publish') {
-      const { data, error } = await supabase.from('listings').update({ status: 'review' }).eq('id', listing_id).select('*').single();
+      const { data, error } = await supabase.from('listings').update({ status: 'review' }).eq('id', listing_id).eq('user_id', user.id).select('*').single();
       if (error) throw error;
       return ok(res, { flow: 'publish', listing: data, nextStep: 'payment' });
     }
 
     if (step === 'activate' || step === 'renew') {
-      const chosenPlan = isOwnerEmail(user.email) ? 'OWNER_FREE' : (membership?.active ? membership.plan : plan);
+      if (!isOwnerEmail(user.email) && !membership?.active) {
+        return res.status(402).json({ error: 'Activar premium requiere un plan pago activo.', requiresPayment: true });
+      }
+      const chosenPlan = isOwnerEmail(user.email) ? 'OWNER_FREE' : membership.plan;
       const days = getFeaturedDays(chosenPlan, 30);
       const { data, error, featured } = await mirrorFeaturedState(supabase, listing_id, 'activate', { planKey: chosenPlan, days });
       if (error) throw error;

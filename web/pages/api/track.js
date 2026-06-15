@@ -1,8 +1,10 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { ok, fail, methodNotAllowed } from '../../lib/api';
+import { checkRateLimit } from '../../lib/server/rateLimit';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(res);
+  if (!checkRateLimit(req, res, { name: 'analytics-track', limit: 180, windowMs: 60_000 })) return;
   try {
     const supabase = getSupabaseServer();
     const payload = {

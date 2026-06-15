@@ -16,3 +16,12 @@ dev-server.err.log
 *_FIX.txt
 .env.local
 .env*.local
+.env
+.env.*
+!.env.example
+!.env*.example
+*.rtf
+clave*
+*secret*
+*password*
+*token*

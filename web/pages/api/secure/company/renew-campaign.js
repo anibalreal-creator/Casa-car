@@ -1,6 +1,7 @@
 import { requireUser } from '../../../../lib/auth';
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { addDays, getPlanDurationDays } from '../../../../lib/adPlans';
+import { isOwnerEmail } from '../../../../lib/owner';
 
 export default async function handler(req, res) {
   const user = await requireUser(req, res);
@@ -21,6 +22,9 @@ export default async function handler(req, res) {
       .single();
 
     if (readError) throw readError;
+    if (!isOwnerEmail(user.email)) {
+      return res.status(402).json({ error: 'Renovar publicidad requiere pago.', requiresPayment: true });
+    }
 
     const startsAt = new Date().toISOString();
     const days = getPlanDurationDays(campaign.plan_key || campaign.plan || campaign.plan_name) || 7;

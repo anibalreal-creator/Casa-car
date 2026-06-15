@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "../lib/supabaseBrowser";
+import { secureFetch } from "../lib/secureClient";
 import SellerStats from "../components/SellerStats";
 import VerifiedBadge from "../components/VerifiedBadge";
 import FooterBlueBar from "../components/FooterBlueBar";
@@ -43,10 +44,10 @@ export default function PanelVendedor() {
   async function saveProfile(e) {
     e.preventDefault();
     if (!user) return;
-    const res = await fetch("/api/seller-profile", {
+    const res = await secureFetch("/api/seller-profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: user.id, ...form })
+      body: JSON.stringify(form)
     });
     const data = await res.json();
     if (!res.ok) return alert(data.error || "No se pudo guardar");

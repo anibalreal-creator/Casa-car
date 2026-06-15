@@ -1,6 +1,7 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { getAdPlan, getAdStatusFromDates } from '../../../lib/adHelpers';
 import { requireResourceOwner } from '../../../lib/apiRouteGuards';
+import { isOwnerEmail } from '../../../lib/owner';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -14,6 +15,9 @@ export default async function handler(req, res) {
 
     const user = await requireResourceOwner(req, res, async () => data);
     if (!user) return;
+    if (!isOwnerEmail(user.email)) {
+      return res.status(402).json({ error: 'Renovar publicidad requiere pago.', requiresPayment: true });
+    }
 
     const plan = getAdPlan(data.plan_key || 'basico');
     const now = new Date();

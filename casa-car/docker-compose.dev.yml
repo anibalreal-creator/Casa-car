@@ -4,9 +4,9 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_USER: casa
-      POSTGRES_PASSWORD: casapass
-      POSTGRES_DB: casa_car
+      POSTGRES_USER: ${POSTGRES_USER:-casa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-casa_dev_password_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-casa_car}
     ports:
       - "5432:5432"
     volumes:
@@ -22,7 +22,7 @@ services:
       - "4000:4000"
     environment:
       PORT: "4000"
-      DATABASE_URL: postgres://casa:casapass@postgres:5432/casa_car
+      DATABASE_URL: postgres://${POSTGRES_USER:-casa}:${POSTGRES_PASSWORD:-casa_dev_password_change_me}@postgres:5432/${POSTGRES_DB:-casa_car}
     depends_on:
       - postgres
       - redis

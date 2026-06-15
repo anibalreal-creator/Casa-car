@@ -1,16 +1,12 @@
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { getSiteUrl } from '../../lib/siteUrl';
-import mercadopago from "mercadopago";
+import { mercadoPagoRequest } from '../../lib/mercadopago';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-mercadopago.configure({
-  access_token: process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN,
-});
 
 const PLAN_PRICES = {
   basico: 500,
@@ -113,9 +109,9 @@ export default async function handler(req, res) {
       },
     };
 
-    const response = await mercadopago.preferences.create(preference);
-    const preferenceId = response?.body?.id || null;
-    const initPoint = response?.body?.init_point || "";
+    const response = await mercadoPagoRequest("/checkout/preferences", { method: "POST", body: preference });
+    const preferenceId = response?.id || null;
+    const initPoint = response?.init_point || "";
 
     await supabase
       .from("ad_campaigns")

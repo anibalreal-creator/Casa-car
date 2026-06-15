@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { getServerUser } from '../../lib/auth';
+import { checkRateLimit } from '../../lib/server/rateLimit';
 
 function cut(value, max) {
   return String(value || '').slice(0, max);
@@ -7,12 +8,13 @@ function cut(value, max) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!checkRateLimit(req, res, { name: 'heartbeat', limit: 120, windowMs: 60_000 })) return;
   try {
     const serverUser = await getServerUser(req);
     const body = req.body || {};
     const sessionKey = cut(body.session_key || req.headers['x-session-key'] || 'anon', 120);
-    const userId = serverUser?.id || body.user_id || null;
-    const userEmail = serverUser?.email || body.user_email || null;
+    const userId = serverUser?.id || null;
+    const userEmail = serverUser?.email || null;
     const path = cut(body.path || '/', 200);
     const supabase = getSupabaseServer();
     const payload = {

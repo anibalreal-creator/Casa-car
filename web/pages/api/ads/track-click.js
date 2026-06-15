@@ -1,7 +1,9 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
+import { checkRateLimit } from '../../../lib/server/rateLimit';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!checkRateLimit(req, res, { name: 'ad-track-click', limit: 180, windowMs: 60_000 })) return;
   const supabase = getSupabaseServer();
   try {
     const { campaignId = '' } = req.body || {};

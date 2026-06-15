@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { authHeaders } from "../lib/secureClient";
 
 export default function ChatPanel({ listingId }) {
   const [messages, setMessages] = useState([]);
@@ -8,7 +9,8 @@ export default function ChatPanel({ listingId }) {
 
   useEffect(() => {
     if (!listingId) return;
-    fetch(`/api/messages?listing_id=${listingId}`)
+    authHeaders()
+      .then((headers) => fetch(`/api/messages?listing_id=${listingId}`, { headers }))
       .then((r) => r.json())
       .then((d) => setMessages(Array.isArray(d) ? d : []))
       .catch(() => setMessages([]));
