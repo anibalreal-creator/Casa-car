@@ -3,6 +3,7 @@ import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { normalizeCategory } from '../../lib/category';
 import { buildListingSlug } from '../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../lib/api';
+import { enforceListingCreationLimit } from '../../lib/listingLimits';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -135,6 +136,10 @@ export default async function handler(req, res) {
       const user = await requireAuthenticatedRoute(req, res);
       if (!user) return;
       const body = req.body || {};
+      const quota = await enforceListingCreationLimit(supabase, user);
+      if (!quota.canCreateListing) {
+        return res.status(402).json(quota.blockedResponse);
+      }
       const payload = {
         user_id: user.id,
         title: body.title,

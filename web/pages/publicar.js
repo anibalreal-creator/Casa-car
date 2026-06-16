@@ -111,16 +111,32 @@ export default function Publicar() {
       const nextUser = auth.user;
       if (!nextUser) throw new Error(t("publish_error_login", "Tenés que iniciar sesión para publicar."));
       if (requiredMissing.length) throw new Error(`${t("publish_missing_fields", "Completa los campos pendientes")}: ${requiredMissing.join(", ")}`);
-      const uploaded = await uploadImages();
-      const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData?.session?.access_token;
+      const headers = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      const limitRes = await fetch("/api/secure/company/limits", { headers });
+      if (limitRes.ok) {
+        const limitData = await limitRes.json();
+        if (limitData?.canCreateListing === false) {
+          alert(`Ya usaste tus ${limitData?.limits?.maxListings || 3} publicaciones incluidas. Para publicar otro anuncio elegi un plan pago.`);
+          window.location.href = "/planes?limit=listings";
+          return;
+        }
+      }
+
+      const uploaded = await uploadImages();
+      const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
       const res = await fetch("/api/secure/listings", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers,
         body: JSON.stringify({ ...formData, images: uploaded, seo_slug: seoSlug })
       });
       const data = await res.json();
+      if (res.status === 402 && data?.requiresPayment) {
+        alert(data.error || "Para publicar otro anuncio elegi un plan pago.");
+        window.location.href = data.upgradeUrl || "/planes?limit=listings";
+        return;
+      }
       if (!res.ok) throw new Error(data.error || t("publish_error_save", "No se pudo guardar"));
       setImages([]);
       setFormData(initial);

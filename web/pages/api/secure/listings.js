@@ -3,6 +3,7 @@ import { getServerUser } from '../../../lib/auth';
 import { normalizeCategory } from '../../../lib/category';
 import { buildListingSlug } from '../../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../../lib/api';
+import { enforceListingCreationLimit } from '../../../lib/listingLimits';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -150,6 +151,11 @@ export default async function handler(req, res) {
 
       if (!payload.title) {
         return res.status(400).json({ error: 'Falta título' });
+      }
+
+      const quota = await enforceListingCreationLimit(supabase, currentUser);
+      if (!quota.canCreateListing) {
+        return res.status(402).json(quota.blockedResponse);
       }
 
       let insertResult = await supabase.from('listings').insert(payload).select('*').single();
