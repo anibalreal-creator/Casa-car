@@ -105,6 +105,7 @@ export default function Publicar() {
   const [authChecked, setAuthChecked] = useState(false);
   const [user, setUser] = useState(null);
   const [ownerMode, setOwnerMode] = useState(false);
+  const [paymentPrompt, setPaymentPrompt] = useState(null);
   const subtypeOptions = useMemo(() => SUBTYPES?.[formData.category] || [], [formData.category]);
   const { t, language } = useLang();
   const requiredMissing = useMemo(() => {
@@ -162,6 +163,13 @@ export default function Publicar() {
     return urls;
   }
 
+  function askPaidPlan(data = {}) {
+    setPaymentPrompt({
+      upgradeUrl: data?.upgradeUrl || "/planes?limit=listings",
+      maxListings: data?.limits?.maxListings || 3,
+    });
+  }
+
   async function submit(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -176,8 +184,7 @@ export default function Publicar() {
       try {
         const { data: limitData } = await fetchJsonWithRetry("/api/secure/company/limits", { headers }, 2);
         if (limitData?.canCreateListing === false) {
-          alert(`Ya usaste tus ${limitData?.limits?.maxListings || 3} publicaciones incluidas. Para publicar otro anuncio elegi un plan pago.`);
-          window.location.href = "/planes?limit=listings";
+          askPaidPlan(limitData);
           return;
         }
       } catch {
@@ -202,15 +209,13 @@ export default function Publicar() {
         }));
       } catch (error) {
         if (error.status === 402 && error.data?.requiresPayment) {
-          alert(error.data.error || "Para publicar otro anuncio elegi un plan pago.");
-          window.location.href = error.data.upgradeUrl || "/planes?limit=listings";
+          askPaidPlan(error.data);
           return;
         }
         throw error;
       }
       if (data?.requiresPayment) {
-        alert(data.error || "Para publicar otro anuncio elegi un plan pago.");
-        window.location.href = data.upgradeUrl || "/planes?limit=listings";
+        askPaidPlan(data);
         return;
       }
       setImages([]);
@@ -227,6 +232,32 @@ export default function Publicar() {
   return (
     <div style={styles.page}>
       <GlobalHeader />
+      {paymentPrompt ? (
+        <div style={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="paid-plan-title">
+          <div style={styles.modal}>
+            <strong id="paid-plan-title" style={styles.modalTitle}>Ya usaste tus {paymentPrompt.maxListings} publicaciones gratis</strong>
+            <p style={styles.modalText}>Queres seguir con la publicacion? Te redireccionaremos a planes de pago.</p>
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                style={styles.modalSecondary}
+                onClick={() => setPaymentPrompt(null)}
+              >
+                No
+              </button>
+              <button
+                type="button"
+                style={styles.modalPrimary}
+                onClick={() => {
+                  window.location.href = paymentPrompt.upgradeUrl || "/planes?limit=listings";
+                }}
+              >
+                Si
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className="cc-publish-wrap" style={styles.wrap}>
         <aside className="cc-publish-side cc-publish-left" style={styles.sideCol}>
           <AdSlot slot="search_sidebar" page="publicar_left" title={t("ads_sidebar_title", "Publicidad lateral")} compact />
@@ -419,5 +450,12 @@ const styles = {
   premiumBox:{display:'grid',gap:10,padding:18,border:'1px solid #e5e7eb',borderRadius:18,background:'#f8fafc'},
   ownerHint:{color:'#1d4ed8',fontWeight:800},
   check:{display:'flex',alignItems:'center',gap:8,fontWeight:800},
-  submit:{background:'linear-gradient(135deg,#0f172a,#1d4ed8)',color:'#fff',border:'none',borderRadius:14,padding:'14px 18px',fontWeight:900,cursor:'pointer'}
+  submit:{background:'linear-gradient(135deg,#0f172a,#1d4ed8)',color:'#fff',border:'none',borderRadius:14,padding:'14px 18px',fontWeight:900,cursor:'pointer'},
+  modalOverlay:{position:'fixed',inset:0,background:'rgba(15,23,42,.42)',zIndex:9999,display:'grid',placeItems:'center',padding:20},
+  modal:{width:'min(460px,100%)',background:'#fff',borderRadius:18,border:'1px solid #e5e7eb',boxShadow:'0 24px 80px rgba(15,23,42,.28)',padding:22,display:'grid',gap:14},
+  modalTitle:{fontSize:20,color:'#111827',lineHeight:1.25},
+  modalText:{margin:0,color:'#475569',fontSize:16,lineHeight:1.45},
+  modalActions:{display:'flex',gap:10,justifyContent:'flex-end',flexWrap:'wrap'},
+  modalSecondary:{border:'1px solid #cbd5e1',background:'#fff',color:'#111827',borderRadius:12,padding:'11px 18px',fontWeight:900,cursor:'pointer'},
+  modalPrimary:{border:'none',background:'linear-gradient(135deg,#0f172a,#1d4ed8)',color:'#fff',borderRadius:12,padding:'11px 20px',fontWeight:900,cursor:'pointer'}
 };
