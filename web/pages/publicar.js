@@ -31,6 +31,63 @@ function localizedCategoryLabel(category, t) {
   return CATEGORY_LABEL_KEYS[category] ? t(CATEGORY_LABEL_KEYS[category], category) : category;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getErrorStatus(error) {
+  const direct = Number(error?.status || error?.statusCode);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const match = String(error?.message || '').match(/\b(408|429|500|502|503|504)\b/);
+  return match ? Number(match[1]) : 0;
+}
+
+function isRetryableError(error) {
+  const status = getErrorStatus(error);
+  return [408, 429, 500, 502, 503, 504].includes(status) || /network|timeout|fetch/i.test(String(error?.message || ''));
+}
+
+async function withTransientRetry(operation, attempts = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts || !isRetryableError(error)) throw error;
+      await sleep(500 * attempt);
+    }
+  }
+  throw lastError;
+}
+
+async function fetchJsonWithRetry(url, options = {}, attempts = 3) {
+  return withTransientRetry(async () => {
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text };
+      }
+    }
+    if (!res.ok) {
+      const error = new Error(data?.error || `HTTP ${res.status} error`);
+      error.status = res.status;
+      error.data = data;
+      throw error;
+    }
+    return { res, data };
+  }, attempts);
+}
+
+function createClientRequestId(userId) {
+  const random = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+  return `${userId || 'user'}:${Date.now()}:${random}`;
+}
+
 export default function Publicar() {
   const initial = {
     title:"", category:"Propiedad", subtype:"Casa", listing_type:"venta",
@@ -95,8 +152,10 @@ export default function Publicar() {
       const ext = file.name.split(".").pop();
       const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const path = `public/${safeName}`;
-      const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, { cacheControl: "3600", upsert: false });
-      if (error) throw error;
+      await withTransientRetry(async () => {
+        const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, { cacheControl: "3600", upsert: true });
+        if (error) throw error;
+      });
       const { data } = supabaseBrowser.storage.from("listings").getPublicUrl(path);
       urls.push(data.publicUrl);
     }
@@ -114,30 +173,46 @@ export default function Publicar() {
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData?.session?.access_token;
       const headers = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-      const limitRes = await fetch("/api/secure/company/limits", { headers });
-      if (limitRes.ok) {
-        const limitData = await limitRes.json();
+      try {
+        const { data: limitData } = await fetchJsonWithRetry("/api/secure/company/limits", { headers }, 2);
         if (limitData?.canCreateListing === false) {
           alert(`Ya usaste tus ${limitData?.limits?.maxListings || 3} publicaciones incluidas. Para publicar otro anuncio elegi un plan pago.`);
           window.location.href = "/planes?limit=listings";
           return;
         }
+      } catch {
+        // El backend vuelve a validar el cupo al guardar. Si esta consulta falla transitoriamente, seguimos.
       }
 
       const uploaded = await uploadImages();
       const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
-      const res = await fetch("/api/secure/listings", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ ...formData, images: uploaded, seo_slug: seoSlug })
-      });
-      const data = await res.json();
-      if (res.status === 402 && data?.requiresPayment) {
+      const clientRequestId = createClientRequestId(nextUser.id);
+      let data;
+      try {
+        ({ data } = await fetchJsonWithRetry("/api/secure/listings", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            ...formData,
+            images: uploaded,
+            seo_slug: seoSlug,
+            client_request_id: clientRequestId,
+            specs_json: { ...(formData.specs_json || {}), client_request_id: clientRequestId },
+          })
+        }));
+      } catch (error) {
+        if (error.status === 402 && error.data?.requiresPayment) {
+          alert(error.data.error || "Para publicar otro anuncio elegi un plan pago.");
+          window.location.href = error.data.upgradeUrl || "/planes?limit=listings";
+          return;
+        }
+        throw error;
+      }
+      if (data?.requiresPayment) {
         alert(data.error || "Para publicar otro anuncio elegi un plan pago.");
         window.location.href = data.upgradeUrl || "/planes?limit=listings";
         return;
       }
-      if (!res.ok) throw new Error(data.error || t("publish_error_save", "No se pudo guardar"));
       setImages([]);
       setFormData(initial);
       alert(t("publish_success", "Anuncio publicado correctamente"));

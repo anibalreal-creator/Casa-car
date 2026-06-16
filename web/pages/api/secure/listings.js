@@ -4,6 +4,7 @@ import { normalizeCategory } from '../../../lib/category';
 import { buildListingSlug } from '../../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../../lib/api';
 import { enforceListingCreationLimit } from '../../../lib/listingLimits';
+import { findListingByClientRequestId, sanitizeClientRequestId } from '../../../lib/listingRequestId';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -151,6 +152,13 @@ export default async function handler(req, res) {
 
       if (!payload.title) {
         return res.status(400).json({ error: 'Falta título' });
+      }
+
+      const clientRequestId = sanitizeClientRequestId(payload.specs_json?.client_request_id || req.body?.client_request_id);
+      if (clientRequestId) {
+        payload.specs_json.client_request_id = clientRequestId;
+        const existing = await findListingByClientRequestId(supabase, currentUser.id, clientRequestId);
+        if (existing) return ok(res, { ...existing, images: normalizeImages(existing.images), duplicateRequest: true });
       }
 
       const quota = await enforceListingCreationLimit(supabase, currentUser);

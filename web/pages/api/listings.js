@@ -4,6 +4,7 @@ import { normalizeCategory } from '../../lib/category';
 import { buildListingSlug } from '../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../lib/api';
 import { enforceListingCreationLimit } from '../../lib/listingLimits';
+import { findListingByClientRequestId, sanitizeClientRequestId } from '../../lib/listingRequestId';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -136,6 +137,11 @@ export default async function handler(req, res) {
       const user = await requireAuthenticatedRoute(req, res);
       if (!user) return;
       const body = req.body || {};
+      const clientRequestId = sanitizeClientRequestId(body?.specs_json?.client_request_id || body?.client_request_id);
+      if (clientRequestId) {
+        const existing = await findListingByClientRequestId(supabase, user.id, clientRequestId);
+        if (existing) return ok(res, { ...existing, images: normalizeImages(existing.images), duplicateRequest: true });
+      }
       const quota = await enforceListingCreationLimit(supabase, user);
       if (!quota.canCreateListing) {
         return res.status(402).json(quota.blockedResponse);
@@ -161,6 +167,7 @@ export default async function handler(req, res) {
         images: Array.isArray(body.images) ? body.images : [],
         specs_json: {
           ...(body.specs_json || {}),
+          ...(clientRequestId ? { client_request_id: clientRequestId } : {}),
           contact_email: body.contact_email || body?.specs_json?.contact_email || '',
         },
         featured: Boolean(body.featured),
