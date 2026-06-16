@@ -39,6 +39,19 @@ function PlansInner() {
         body: JSON.stringify({ plan }),
       });
       const data = await res.json();
+      if (res.status === 402 && data?.requiresPayment) {
+        const prefRes = await secureFetch('/api/payments/mercadopago/create-subscription-preference', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan }),
+        });
+        const pref = await prefRes.json().catch(() => ({}));
+        if (!prefRes.ok) throw new Error(pref.error || t('plan_checkout_error', 'No se pudo iniciar el checkout'));
+        const checkoutUrl = pref.chosen_checkout_url || pref.checkout_url || pref.sandbox_checkout_url;
+        if (!checkoutUrl) throw new Error(t('plan_checkout_missing', 'Mercado Pago no devolvio link de checkout'));
+        window.location.href = checkoutUrl;
+        return;
+      }
       if (!res.ok) throw new Error(data.error || t('plan_activate_error', 'No se pudo activar'));
       setCurrent(data.subscription || { plan, active: plan !== 'FREE' });
       alert(t('plan_saved', 'Plan guardado correctamente') + `: ${plan}`);

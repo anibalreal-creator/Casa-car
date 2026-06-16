@@ -83,3 +83,48 @@ export function buildPremiumPreference({ listing, user }) {
     statement_descriptor: 'CASA-CAR',
   };
 }
+
+export function buildSubscriptionPreference({ plan, planInfo = {}, user }) {
+  const planKey = String(plan || '').trim().toUpperCase();
+  const baseUrl = getSiteUrl();
+  const returnUrl = `${baseUrl}/planes`;
+  const amount = Number(planInfo.price || 0);
+  const currency = String(process.env.SUBSCRIPTION_CURRENCY || 'USD').trim().toUpperCase();
+
+  if (!['PRO', 'BUSINESS'].includes(planKey)) {
+    throw new Error('Plan invalido para checkout');
+  }
+  if (!amount || amount <= 0) {
+    throw new Error('El plan no tiene precio configurado');
+  }
+
+  return {
+    items: [
+      {
+        id: `subscription-${planKey.toLowerCase()}`,
+        title: `Casa-Car ${planKey}`,
+        description: `Plan ${planKey} por 30 dias`,
+        category_id: 'services',
+        quantity: 1,
+        currency_id: currency,
+        unit_price: amount,
+      },
+    ],
+    metadata: {
+      source: 'casa-car',
+      feature: 'subscription',
+      subscription_plan: planKey,
+      user_id: user?.id || null,
+      user_email: user?.email || null,
+    },
+    back_urls: {
+      success: returnUrl,
+      failure: returnUrl,
+      pending: returnUrl,
+    },
+    auto_return: 'approved',
+    external_reference: `subscription:${user?.id || 'unknown'}:${planKey}`,
+    notification_url: `${baseUrl}/api/payments/mercadopago/webhook`,
+    statement_descriptor: 'CASA-CAR',
+  };
+}

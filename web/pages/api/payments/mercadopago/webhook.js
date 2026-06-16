@@ -9,10 +9,61 @@ function getListingIdFromExternalReference(value) {
   return text.trim();
 }
 
-function plus30DaysIso() {
+function plusDaysIso(days = 30) {
   const date = new Date();
-  date.setDate(date.getDate() + 30);
+  date.setDate(date.getDate() + Number(days || 30));
   return date.toISOString();
+}
+
+function getSubscriptionFromPayment(payment) {
+  const metadata = payment?.metadata || {};
+  const externalReference = String(payment?.external_reference || '');
+  const parts = externalReference.startsWith('subscription:') ? externalReference.split(':') : [];
+  const userId = metadata.user_id || parts[1] || null;
+  const plan = String(metadata.subscription_plan || parts[2] || '').trim().toUpperCase();
+
+  if (!userId || !['PRO', 'BUSINESS'].includes(plan)) return null;
+  return { userId: String(userId), plan };
+}
+
+async function activateSubscription(supabase, { userId, plan, paymentId, payment }) {
+  const nowIso = new Date().toISOString();
+  const expiresAt = plusDaysIso(30);
+  const basePayload = {
+    user_id: userId,
+    plan,
+    active: true,
+    status: 'active',
+    started_at: nowIso,
+    expires_at: expiresAt,
+    metadata: {
+      provider: 'mercadopago',
+      payment_id: paymentId,
+      payment_status: payment?.status || null,
+      amount: payment?.transaction_amount || null,
+      currency: payment?.currency_id || null,
+      approved_at: nowIso,
+    },
+  };
+  const attempts = [
+    basePayload,
+    Object.fromEntries(Object.entries(basePayload).filter(([key]) => key !== 'metadata')),
+    Object.fromEntries(Object.entries(basePayload).filter(([key]) => key !== 'active')),
+    Object.fromEntries(Object.entries(basePayload).filter(([key]) => key !== 'active' && key !== 'metadata')),
+  ];
+
+  let lastError = null;
+  for (const payload of attempts) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .upsert(payload, { onConflict: 'user_id' })
+      .select('*')
+      .single();
+    if (!error) return { data, expiresAt };
+    lastError = error;
+  }
+
+  return { error: lastError };
 }
 
 async function logEvent(supabase, payload) {
@@ -67,6 +118,7 @@ export default async function handler(req, res) {
 
     const status = payment?.status || 'unknown';
     const paymentId = String(payment?.id || dataId);
+    const subscription = getSubscriptionFromPayment(payment);
 
     await logEvent(supabase, {
       listing_id: listingId ? String(listingId) : null,
@@ -76,6 +128,29 @@ export default async function handler(req, res) {
       mercadopago_payment_id: paymentId,
       payload_json: payment,
     });
+
+    if (subscription) {
+      if (status === 'approved') {
+        const activated = await activateSubscription(supabase, {
+          userId: subscription.userId,
+          plan: subscription.plan,
+          paymentId,
+          payment,
+        });
+        if (activated.error) {
+          console.log('ERROR UPDATE SUBSCRIPTION APPROVED:', activated.error);
+          return res.status(500).json({ error: 'No se pudo activar suscripcion', detalle: activated.error });
+        }
+        return res.status(200).json({
+          ok: true,
+          status,
+          subscription: subscription.plan,
+          expiresAt: activated.expiresAt,
+        });
+      }
+
+      return res.status(200).json({ ok: true, status, subscription: subscription.plan });
+    }
 
     if (!listingId) {
       return res.status(200).json({ ok: true, warning: 'payment sin listing_id' });
