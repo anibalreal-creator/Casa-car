@@ -2,6 +2,7 @@
 import { requireAuthenticatedRoute } from "../../../../lib/apiRouteGuards";
 import { buildPremiumPreference, mercadoPagoRequest } from "../../../../lib/mercadopago";
 import { getSupabaseServer } from "../../../../lib/supabaseServer";
+import { enforcePremiumActivationLimit } from "../../../../lib/listingLimits";
 
 export default async function handler(req, res) {
   try {
@@ -29,6 +30,11 @@ export default async function handler(req, res) {
     if (!listing) return res.status(404).json({ error: "Anuncio no encontrado" });
     if (!listing.user_id || String(listing.user_id) !== String(user.id)) {
       return res.status(403).json({ error: "No podés pagar premium para un anuncio de otro usuario" });
+    }
+
+    const premiumQuota = await enforcePremiumActivationLimit(supabase, user, { excludeListingId: listingId });
+    if (!premiumQuota.canActivatePremium) {
+      return res.status(402).json(premiumQuota.blockedResponse);
     }
 
     const preference = buildPremiumPreference({ listing, user });

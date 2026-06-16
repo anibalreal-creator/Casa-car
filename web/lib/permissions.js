@@ -57,7 +57,7 @@ export async function canManageCompany(userId, email = '') {
 
   const membership = await getCurrentMembership(userId);
   return Boolean(
-    membership?.active && ['PRO', 'BUSINESS', 'EMPRESA', 'COMPANY'].includes(String(membership?.plan || '').toUpperCase())
+    membership?.active && ['BUSINESS', 'EMPRESA', 'COMPANY'].includes(String(membership?.plan || '').toUpperCase())
   );
 }
 

@@ -1,9 +1,24 @@
 import { requireAuthenticatedRoute } from "../../../../lib/apiRouteGuards";
 import { buildSubscriptionPreference, mercadoPagoRequest } from "../../../../lib/mercadopago";
+import { AD_PLAN_CONFIG } from "../../../../lib/adPlans";
+
+function planInfo(key) {
+  const config = AD_PLAN_CONFIG[key];
+  if (!config) return null;
+  return {
+    price: Number(config.revenue || 0),
+    publications: Number(config.maxListings || 0),
+    premiumSlots: Number(config.maxPremiumListings || 0),
+    maxCampaigns: Number(config.maxCampaigns || 0),
+    maxActiveCampaigns: Number(config.maxActiveCampaigns || 0),
+    analytics: Boolean(config.analytics),
+    companyPanel: Boolean(config.companyPanel),
+  };
+}
 
 const PLAN_CATALOG = {
-  PRO: { price: 1, publications: 25, premiumSlots: 3, analytics: true },
-  BUSINESS: { price: 2, publications: 200, premiumSlots: 30, analytics: true },
+  PRO: planInfo('PRO'),
+  BUSINESS: planInfo('BUSINESS'),
 };
 
 export default async function handler(req, res) {

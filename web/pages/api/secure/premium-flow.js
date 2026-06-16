@@ -4,6 +4,7 @@ import { getCurrentMembership } from '../../../lib/permissions';
 import { isOwnerEmail, ownerMembership } from '../../../lib/owner';
 import { ok, fail, methodNotAllowed } from '../../../lib/api';
 import { mirrorFeaturedState, getFeaturedDays } from '../../../lib/featuredHelpers';
+import { enforcePremiumActivationLimit } from '../../../lib/listingLimits';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return methodNotAllowed(res);
@@ -27,6 +28,10 @@ export default async function handler(req, res) {
     if (step === 'activate' || step === 'renew') {
       if (!isOwnerEmail(user.email) && !membership?.active) {
         return res.status(402).json({ error: 'Activar premium requiere un plan pago activo.', requiresPayment: true });
+      }
+      const premiumQuota = await enforcePremiumActivationLimit(supabase, user, { excludeListingId: listing_id });
+      if (!premiumQuota.canActivatePremium) {
+        return res.status(402).json(premiumQuota.blockedResponse);
       }
       const chosenPlan = isOwnerEmail(user.email) ? 'OWNER_FREE' : membership.plan;
       const days = getFeaturedDays(chosenPlan, 30);

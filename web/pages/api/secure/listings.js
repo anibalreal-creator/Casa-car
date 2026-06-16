@@ -3,7 +3,7 @@ import { getServerUser } from '../../../lib/auth';
 import { normalizeCategory } from '../../../lib/category';
 import { buildListingSlug } from '../../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../../lib/api';
-import { enforceListingCreationLimit } from '../../../lib/listingLimits';
+import { enforceListingCreationLimit, enforcePremiumActivationLimit } from '../../../lib/listingLimits';
 import { findListingByClientRequestId, sanitizeClientRequestId } from '../../../lib/listingRequestId';
 
 function uniqueSlugCandidate(base) {
@@ -166,6 +166,13 @@ export default async function handler(req, res) {
         return res.status(402).json(quota.blockedResponse);
       }
 
+      if (payload.is_premium || payload.highlighted) {
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, currentUser);
+        if (!premiumQuota.canActivatePremium) {
+          return res.status(402).json(premiumQuota.blockedResponse);
+        }
+      }
+
       let insertResult = await supabase.from('listings').insert(payload).select('*').single();
       if (insertResult.error && String(insertResult.error.message || '').includes('listings_seo_slug_key')) {
         payload.seo_slug = uniqueSlugCandidate(payload.seo_slug || buildListingSlug(payload));
@@ -180,6 +187,13 @@ export default async function handler(req, res) {
       if (!id) return res.status(400).json({ error: 'Falta id' });
 
       const payload = normalizePayload(req.body || {}, currentUser.id);
+      if (payload.is_premium || payload.highlighted) {
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, currentUser, { excludeListingId: id });
+        if (!premiumQuota.canActivatePremium) {
+          return res.status(402).json(premiumQuota.blockedResponse);
+        }
+      }
+
       const { data, error } = await supabase
         .from('listings')
         .update(payload)

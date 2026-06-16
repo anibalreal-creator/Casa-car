@@ -1,6 +1,7 @@
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { getSiteUrl } from '../../lib/siteUrl';
 import { mercadoPagoRequest } from '../../lib/mercadopago';
+import { enforceCampaignCreationLimit } from '../../lib/listingLimits';
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -55,6 +56,11 @@ export default async function handler(req, res) {
 
     if (!amount || !duration_days) {
       return res.status(400).json({ error: "Plan inválido" });
+    }
+
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
+    if (!campaignQuota.canCreateCampaign) {
+      return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
     }
 
     const campaignPayload = {

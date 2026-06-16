@@ -73,7 +73,7 @@ function EmpresaInner() {
         <section style={styles.hero}>
           <div>
             <div style={styles.kicker}>{t('empresa_kicker', 'MODO NEGOCIO')}</div>
-            <h1 style={styles.title}>{t('empresa_title', 'Panel empresa PRO')}</h1>
+            <h1 style={styles.title}>{t('empresa_title', 'Panel empresa BUSINESS')}</h1>
             <p style={styles.subtitle}>{t('empresa_subtitle', 'Administrá campañas, verificá tu marca, medí impresiones y prepará Casa-Car para vender espacios publicitarios en serio.')}</p>
           </div>
           <a href="/planes" style={styles.heroButton}>{t('ads_see_plans', 'Ver planes')}</a>

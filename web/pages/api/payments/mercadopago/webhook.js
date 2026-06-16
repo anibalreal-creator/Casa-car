@@ -1,6 +1,7 @@
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { mercadoPagoRequest } from '../../../../lib/mercadopago';
 import { mirrorFeaturedState } from '../../../../lib/featuredHelpers';
+import { enforcePremiumActivationLimit } from '../../../../lib/listingLimits';
 
 function getListingIdFromExternalReference(value) {
   if (!value) return null;
@@ -157,6 +158,36 @@ export default async function handler(req, res) {
     }
 
     if (status === 'approved') {
+      const { data: listing, error: listingReadError } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', String(listingId))
+        .maybeSingle();
+      if (listingReadError) throw listingReadError;
+
+      if (listing?.user_id) {
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, {
+          id: listing.user_id,
+          email: listing.contact_email || '',
+        }, { excludeListingId: listingId });
+        if (!premiumQuota.canActivatePremium) {
+          await supabase
+            .from('listings')
+            .update({
+              mercadopago_status: 'approved_limit_blocked',
+              mercadopago_payment_id: paymentId,
+            })
+            .eq('id', String(listingId));
+          return res.status(200).json({
+            ok: true,
+            status,
+            listingId,
+            skipped: true,
+            reason: premiumQuota.blockedResponse?.reason || 'premium_limit',
+          });
+        }
+      }
+
       const activated = await mirrorFeaturedState(supabase, String(listingId), 'activate', { planKey: 'PREMIUM', days: 30 });
       if (activated.error) {
         console.log('ERROR UPDATE LISTING APPROVED:', activated.error);

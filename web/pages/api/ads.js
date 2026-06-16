@@ -3,6 +3,7 @@ import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan } from '../../lib/ad
 import { normalizeSlotKey } from '../../lib/adSlots';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
+import { enforceCampaignCreationLimit } from '../../lib/listingLimits';
 
 function canManageCampaign(campaign, user) {
   const userId = String(user?.id || '');
@@ -45,6 +46,11 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
+
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
+    if (!campaignQuota.canCreateCampaign) {
+      return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
+    }
 
     const body = req.body || {};
     const plan = getAdPlan(body.plan_key || 'basico');

@@ -2,6 +2,7 @@ import { getSupabaseServer } from '../../lib/supabaseServer';
 import { extractCampaignId } from '../../lib/adHelpers';
 import { patchForCampaignAction } from '../../lib/campaignStatus';
 import { mercadoPagoRequest } from '../../lib/mercadopago';
+import { enforceCampaignActivationLimit } from '../../lib/listingLimits';
 
 function normalizeExternalReference(value) {
   const normalized = extractCampaignId(value);
@@ -166,6 +167,36 @@ export default async function handler(req, res) {
   });
 
   if (mappedStatus === 'approved') {
+    if (campaign.user_id) {
+      const activationQuota = await enforceCampaignActivationLimit(supabase, {
+        id: campaign.user_id,
+        email: campaign.contact_email || campaign.user_email || '',
+      }, {
+        campaignId,
+        alreadyActive: Boolean(campaign.active || campaign.is_active || String(campaign.status || '').toLowerCase() === 'active'),
+      });
+
+      if (!activationQuota.canActivateCampaign) {
+        const blockedAt = new Date().toISOString();
+        await updateCampaign(supabase, campaignId, {
+          status: 'paused',
+          active: false,
+          is_active: false,
+          mercadopago_status: 'approved_limit_blocked',
+          mercadopago_payment_id: providerPaymentId || null,
+          approved_at: blockedAt,
+        });
+        return res.status(200).json({
+          ok: true,
+          campaignId,
+          providerStatus,
+          mappedStatus,
+          skipped: true,
+          reason: activationQuota.blockedResponse?.reason || 'active_campaign_limit',
+        });
+      }
+    }
+
     const patch = patchForCampaignAction(campaign, 'activate');
     const updateError = await updateCampaign(supabase, campaignId, {
       ...patch,

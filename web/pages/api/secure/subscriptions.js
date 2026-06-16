@@ -2,12 +2,27 @@ import { requireUser } from "../../../lib/auth";
 import { getCurrentMembership, isAdmin } from "../../../lib/permissions";
 import { getSupabaseServer } from "../../../lib/supabaseServer";
 import { isOwnerEmail, ownerMembership } from "../../../lib/owner";
+import { AD_PLAN_CONFIG } from "../../../lib/adPlans";
+
+function planInfo(key, extra = {}) {
+  const config = AD_PLAN_CONFIG[key] || AD_PLAN_CONFIG.FREE;
+  return {
+    price: Number(config.revenue || 0),
+    publications: Number(config.maxListings || 0),
+    premiumSlots: Number(config.maxPremiumListings || 0),
+    maxCampaigns: Number(config.maxCampaigns || 0),
+    maxActiveCampaigns: Number(config.maxActiveCampaigns || 0),
+    analytics: Boolean(config.analytics),
+    companyPanel: Boolean(config.companyPanel),
+    ...extra,
+  };
+}
 
 const PLAN_CATALOG = {
-  FREE: { price: 0, publications: 3, premiumSlots: 0, analytics: false },
-  PRO: { price: 1, publications: 25, premiumSlots: 3, analytics: true },
-  BUSINESS: { price: 2, publications: 200, premiumSlots: 30, analytics: true },
-  OWNER_FREE: { price: 0, publications: 999999, premiumSlots: 999999, analytics: true, hidden: true },
+  FREE: planInfo('FREE'),
+  PRO: planInfo('PRO'),
+  BUSINESS: planInfo('BUSINESS'),
+  OWNER_FREE: planInfo('OWNER_FREE', { hidden: true }),
 };
 
 export default async function handler(req, res) {

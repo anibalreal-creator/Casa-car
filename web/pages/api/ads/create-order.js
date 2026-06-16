@@ -4,6 +4,7 @@ import { isOwnerEmail, normalizeEmail } from '../../../lib/owner';
 import { patchForCampaignAction } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
+import { enforceCampaignActivationLimit } from '../../../lib/listingLimits';
 
 function getBaseUrl(req) {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || '';
@@ -43,6 +44,14 @@ export default async function handler(req, res) {
         : Boolean(campaignEmail && campaignEmail === userEmail);
 
     if (!isCampaignOwner) return safeJson(res, 403, { error: 'No autorizado' });
+
+    const activationQuota = await enforceCampaignActivationLimit(supabase, user, {
+      campaignId,
+      alreadyActive: Boolean(campaign.active || campaign.is_active || String(campaign.status || '').toLowerCase() === 'active'),
+    });
+    if (!activationQuota.canActivateCampaign) {
+      return safeJson(res, activationQuota.canUseCompanyPanel ? 402 : 403, activationQuota.blockedResponse);
+    }
 
     if (isOwnerEmail(userEmail) || isOwnerEmail(campaignEmail)) {
       const patch = patchForCampaignAction(campaign, 'activate');

@@ -6,6 +6,7 @@ import { getAdPlan } from '../../../../data/adPlans';
 import { normalizeSlotKey } from '../../../../lib/adSlots';
 import { parseOrThrow, campaignSchema } from '../../../../lib/validation';
 import { patchForCampaignAction, addDaysIso } from '../../../../lib/campaignStatus';
+import { enforceCampaignCreationLimit } from '../../../../lib/listingLimits';
 
 export default async function handler(req, res) {
   const user = await requireUser(req, res);
@@ -19,6 +20,11 @@ export default async function handler(req, res) {
   const supabase = getSupabaseServer();
 
   try {
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
+    if (!campaignQuota.canCreateCampaign) {
+      return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
+    }
+
     const body = parseOrThrow(campaignSchema, req.body || {});
     const plan = getAdPlan(String(body.plan_key || body.plan || 'basico').toLowerCase());
     const startsAt = body.starts_at || new Date().toISOString();

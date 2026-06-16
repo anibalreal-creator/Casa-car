@@ -3,7 +3,7 @@ import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { normalizeCategory } from '../../lib/category';
 import { buildListingSlug } from '../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../lib/api';
-import { enforceListingCreationLimit } from '../../lib/listingLimits';
+import { enforceListingCreationLimit, enforcePremiumActivationLimit } from '../../lib/listingLimits';
 import { findListingByClientRequestId, sanitizeClientRequestId } from '../../lib/listingRequestId';
 
 function uniqueSlugCandidate(base) {
@@ -145,6 +145,12 @@ export default async function handler(req, res) {
       const quota = await enforceListingCreationLimit(supabase, user);
       if (!quota.canCreateListing) {
         return res.status(402).json(quota.blockedResponse);
+      }
+      if (body.is_premium || body.highlighted || body.featured) {
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, user);
+        if (!premiumQuota.canActivatePremium) {
+          return res.status(402).json(premiumQuota.blockedResponse);
+        }
       }
       const payload = {
         user_id: user.id,
