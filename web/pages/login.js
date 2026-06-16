@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { supabase } from "../lib/supabase"
+import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail"
 import { useLang } from "../context/LanguageContext"
 
 export default function LoginPage() {
@@ -24,22 +25,20 @@ export default function LoginPage() {
 
     try {
       if (modo === "registro") {
-        const { error } = await supabase.auth.signUp({
+        await signUpWithEmail(supabase, {
           email,
           password
         })
-        if (error) throw error
-        alert(t("signup_created", "Cuenta creada. Revisa tu email si Supabase pide confirmacion."))
+        alert(t("signup_created", "Cuenta creada. Te enviamos un correo de confirmacion. Revisa tambien Spam/Correo no deseado."))
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        await signInWithEmail(supabase, {
           email,
           password
         })
-        if (error) throw error
         router.push("/")
       }
     } catch (err) {
-      alert(err.message || t("auth_error", "Error de autenticacion"))
+      alert(getAuthErrorMessage(err) || t("auth_error", "Error de autenticacion"))
     } finally {
       setLoading(false)
     }
@@ -96,6 +95,12 @@ export default function LoginPage() {
                 : t("signup_submit", "Crear cuenta")}
           </button>
         </form>
+
+        {modo === "registro" ? (
+          <p style={styles.help}>
+            El correo puede tardar unos minutos. Si no llega, revisa Spam y evita reenviar muchas veces seguidas.
+          </p>
+        ) : null}
 
         <button onClick={loginGoogle} style={styles.google}>
           {t("login_google", "Continuar con Google")}
@@ -182,5 +187,11 @@ const styles = {
     padding: 10,
     cursor: "pointer",
     fontWeight: 700
+  },
+  help: {
+    color: "#4b5563",
+    fontSize: 13,
+    lineHeight: 1.45,
+    margin: "10px 0 0"
   }
 }

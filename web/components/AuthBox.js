@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail";
 
 export default function AuthBox() {
   const [email, setEmail] = useState("");
@@ -8,31 +9,24 @@ export default function AuthBox() {
 
   async function signUp() {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      alert(error.message);
-    } else {
-      alert("Usuario creado. Ahora podés iniciar sesión.");
+    try {
+      await signUpWithEmail(supabase, { email, password });
+      alert("Usuario creado. Revisa tu email para confirmar la cuenta.");
+    } catch (error) {
+      alert(getAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
   }
 
   async function signIn() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      alert(error.message);
+    try {
+      await signInWithEmail(supabase, { email, password });
+    } catch (error) {
+      alert(getAuthErrorMessage(error));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -50,7 +44,7 @@ export default function AuthBox() {
 
       <input
         type="password"
-        placeholder="Contraseña"
+        placeholder="Contrasena"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={{ width: "100%", marginBottom: 12 }}

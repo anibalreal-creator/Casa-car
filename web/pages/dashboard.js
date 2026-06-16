@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import GlobalHeader from "../components/GlobalHeader";
 import FooterBlueBar from "../components/FooterBlueBar";
 import { supabase } from "../lib/supabaseClient";
+import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail";
 
 function toNumber(value) {
   const n = Number(value ?? 0);
@@ -66,22 +67,20 @@ export default function Dashboard() {
   async function signIn() {
     setMsg("");
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
+      await signInWithEmail(supabase, { email, password: pass });
       setMsg("✅ Login correcto");
     } catch (e) {
-      setMsg(`❌ ${e?.message || "Error"}`);
+      setMsg(`❌ ${getAuthErrorMessage(e)}`);
     }
   }
 
   async function signUp() {
     setMsg("");
     try {
-      const { error } = await supabase.auth.signUp({ email, password: pass });
-      if (error) throw error;
-      setMsg("✅ Cuenta creada. Revisá tu mail si la confirmación está activa.");
+      await signUpWithEmail(supabase, { email, password: pass });
+      setMsg("✅ Cuenta creada. Te enviamos un correo de confirmación. Revisá también Spam/Correo no deseado.");
     } catch (e) {
-      setMsg(`❌ ${e?.message || "Error"}`);
+      setMsg(`❌ ${getAuthErrorMessage(e)}`);
     }
   }
 
