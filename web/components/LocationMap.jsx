@@ -148,12 +148,12 @@ export default function LocationMap({ city, country, address, lat, lng }) {
 }
 
 const styles = {
-  wrap:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:18,padding:18},
+  wrap:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:18,padding:18,minWidth:0,maxWidth:"100%",overflow:"hidden"},
   head:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:8,flexWrap:"wrap"},
   actions:{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"},
   caption:{color:"#6b7280",marginBottom:12},
-  mapBox:{position:"relative"},
-  frame:{width:"100%",height:360,border:0,borderRadius:12,background:"#f8fafc"},
+  mapBox:{position:"relative",width:"100%",maxWidth:"100%",overflow:"hidden",borderRadius:12},
+  frame:{display:"block",width:"100%",maxWidth:"100%",height:360,border:0,borderRadius:12,background:"#f8fafc"},
   controls:{
     position:"absolute",
     top:12,
@@ -186,5 +186,5 @@ const styles = {
     fontWeight:700,
     cursor:"pointer"
   },
-  help:{fontSize:13,color:"#6b7280",marginTop:10}
+  help:{fontSize:13,color:"#6b7280",marginTop:10,overflowWrap:"break-word"}
 };

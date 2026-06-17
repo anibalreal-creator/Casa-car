@@ -89,12 +89,12 @@ export default function SmartLocationPicker({ setFormData }) {
 }
 
 const styles = {
-  wrap:{display:"grid",gap:8},
+  wrap:{display:"grid",gap:8,minWidth:0,maxWidth:"100%",overflow:"hidden"},
   label:{fontWeight:800,color:"#111827"},
-  input:{padding:"14px 16px",border:"1px solid #d1d5db",borderRadius:12,fontSize:16,background:"#fff"},
-  dropdown:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden"},
+  input:{width:"100%",maxWidth:"100%",minWidth:0,boxSizing:"border-box",padding:"14px 16px",border:"1px solid #d1d5db",borderRadius:12,fontSize:16,background:"#fff"},
+  dropdown:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:14,overflow:"hidden",minWidth:0,maxWidth:"100%"},
   option:{display:"block",width:"100%",textAlign:"left",padding:"12px 14px",border:"none",background:"#fff",cursor:"pointer",borderBottom:"1px solid #f3f4f6"},
-  main:{fontWeight:700,color:"#111827"},
+  main:{fontWeight:700,color:"#111827",overflowWrap:"break-word"},
   meta:{fontSize:13,color:"#6b7280",marginTop:4},
   help:{fontSize:13,color:"#6b7280"}
 };

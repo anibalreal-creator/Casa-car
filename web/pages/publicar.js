@@ -271,17 +271,17 @@ export default function Publicar() {
           <AdSlot slot="listing_inline" page="publicar_left_bottom" title={t("ads_premium_space", "Espacio premium")} compact />
         </aside>
 
-        <main style={styles.mainCol}>
+        <main className="cc-publish-main" style={styles.mainCol}>
           <h1 style={styles.title}>{t("publish_title", "Publicar anuncio")}</h1>
           <p style={styles.subtitle}>{t("publish_subtitle", "Ahora con ubicación inteligente, venta/alquiler y ficha técnica.")}</p>
-          <section style={styles.proPanel}>
+          <section className="cc-publish-pro-panel" style={styles.proPanel}>
             <div style={styles.stepHeader}>
               {[t("publish_step_basic", "Datos"), t("publish_step_location", "Ubicacion"), t("publish_step_media", "Fotos"), t("publish_step_preview", "Preview")].map((label, index) => (
                 <span key={label} style={{ ...styles.stepPill, ...(completion >= (index + 1) * 25 ? styles.stepPillDone : null) }}>{label}</span>
               ))}
             </div>
             <div style={styles.progressTrack}><div style={{ ...styles.progressFill, width: `${completion}%` }} /></div>
-            <div style={styles.proGrid}>
+            <div className="cc-publish-pro-grid" style={styles.proGrid}>
               <div style={styles.validationBox}>
                 <strong>{t("publish_readiness", "Estado de publicacion")}</strong>
                 {requiredMissing.length ? (
@@ -290,8 +290,8 @@ export default function Publicar() {
                   <div style={styles.readyText}>{t("publish_ready", "Listo para publicar con ficha completa.")}</div>
                 )}
               </div>
-              <div style={styles.previewCard}>
-                <div style={styles.previewImage}>{images[0]?.url ? <img src={images[0].url} alt={formData.title || "preview"} style={styles.previewImg} /> : t("publish_preview_image", "Preview")}</div>
+              <div className="cc-publish-preview-card" style={styles.previewCard}>
+                <div className="cc-publish-preview-image" style={styles.previewImage}>{images[0]?.url ? <img src={images[0].url} alt={formData.title || "preview"} style={styles.previewImg} /> : t("publish_preview_image", "Preview")}</div>
                 <div style={styles.previewBody}>
                   <strong>{formData.title || t("card_no_title", "Sin titulo")}</strong>
                   <span>{formData.currency} {formData.price || "--"} · {localizedCategoryLabel(formData.category, t)}</span>
@@ -314,9 +314,9 @@ export default function Publicar() {
               </div>
             </div>
           ) : null}
-          <form onSubmit={submit} style={{ ...styles.form, opacity: user ? 1 : 0.55, pointerEvents: user ? "auto" : "none" }} autoComplete="off">
+          <form className="cc-publish-form" onSubmit={submit} style={{ ...styles.form, opacity: user ? 1 : 0.55, pointerEvents: user ? "auto" : "none" }} autoComplete="off">
             <input style={styles.input} placeholder={t("publish_title_placeholder", "Título")} value={formData.title} onChange={(e)=>setFormData((p)=>({ ...p, title:e.target.value }))} required />
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <select style={styles.input} value={formData.category} onChange={(e)=>{
                 const category = e.target.value;
                 setFormData((p)=>({
@@ -333,7 +333,7 @@ export default function Publicar() {
                 {subtypeOptions.map((s)=><option key={s}>{s}</option>)}
               </select>
             </div>
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <select style={styles.input} value={formData.listing_type} onChange={(e)=>setFormData((p)=>({ ...p, listing_type:e.target.value }))}>
                 <option value="venta">{t("search_sale", "Venta")}</option>
                 <option value="alquiler">{t("search_rent", "Alquiler")}</option>
@@ -344,7 +344,7 @@ export default function Publicar() {
               </select>
             </div>
             <input style={styles.input} placeholder={t("publish_price_placeholder", "Precio")} value={formData.price} onChange={(e)=>setFormData((p)=>({ ...p, price:e.target.value }))} required />
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <select style={styles.input} value={formData.country} onChange={(e)=>setFormData((p)=>({ ...p, country:e.target.value }))}>
                 {COUNTRIES.map((c)=><option key={c}>{c}</option>)}
               </select>
@@ -353,15 +353,15 @@ export default function Publicar() {
               </select>
             </div>
             <SmartLocationPicker setFormData={setFormData} />
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <input style={styles.input} placeholder={t("publish_address", "Dirección")} value={formData.address} onChange={(e)=>setFormData((p)=>({ ...p, address:e.target.value }))} />
               <input style={styles.input} placeholder={t("publish_zone", "Zona / barrio")} value={formData.zone} onChange={(e)=>setFormData((p)=>({ ...p, zone:e.target.value }))} />
             </div>
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <input style={styles.input} placeholder={t("publish_city", "Ciudad")} value={formData.city} onChange={(e)=>setFormData((p)=>({ ...p, city:e.target.value }))} required />
               <input style={styles.input} placeholder={t("publish_state", "Provincia / estado")} value={formData.state} onChange={(e)=>setFormData((p)=>({ ...p, state:e.target.value }))} />
             </div>
-            <div style={styles.row}>
+            <div className="cc-publish-row" style={styles.row}>
               <input style={styles.input} placeholder={t("publish_phone", "WhatsApp")} value={formData.phone} onChange={(e)=>setFormData((p)=>({ ...p, phone:e.target.value }))} required />
               <input type="email" style={styles.input} placeholder={t("publish_contact_email", "Email de contacto")} value={formData.contact_email} onChange={(e)=>setFormData((p)=>({ ...p, contact_email:e.target.value }))} required />
             </div>
@@ -372,7 +372,7 @@ export default function Publicar() {
             <div style={styles.premiumBox}>
               <strong>{t("publish_premium", "Premium / pagos")}</strong>
               {ownerMode ? <div style={styles.ownerHint}>Modo dueño gratis activo para esta cuenta. Podés destacar sin pasar por Mercado Pago y este mensaje solo lo ves vos.</div> : null}
-              <div style={styles.row}>
+              <div className="cc-publish-row" style={styles.row}>
                 <label style={styles.check}><input type="checkbox" checked={!!formData.is_premium} onChange={(e)=>setFormData((p)=>({ ...p, is_premium:e.target.checked }))} /> {t("publish_premium_listing", "Publicación premium")}</label>
                 <select style={styles.input} value={formData.premium_plan} onChange={(e)=>setFormData((p)=>({ ...p, premium_plan:e.target.value }))}>
                   <option>{t("premium_plan_basic", "Destacado 7 días")}</option>
@@ -382,7 +382,7 @@ export default function Publicar() {
             </div>
             <MultiImageUploader images={images} setImages={setImages} />
             <LocationMap city={formData.city} country={formData.country} address={formData.address || formData.zone} lat={formData.lat} lng={formData.lng} />
-            <button type="submit" style={styles.submit} disabled={submitting}>{submitting ? t("publish_submitting", "Publicando...") : t("publish_submit", "Publicar")}</button>
+            <button className="cc-publish-submit" type="submit" style={styles.submit} disabled={submitting}>{submitting ? t("publish_submitting", "Publicando...") : t("publish_submit", "Publicar")}</button>
           </form>
         </main>
 
@@ -403,7 +403,31 @@ export default function Publicar() {
         .cc-publish-inline-ads {
           display: none;
         }
-        @media (max-width: 1640px) {
+        .cc-publish-wrap,
+        .cc-publish-main,
+        .cc-publish-pro-panel,
+        .cc-publish-form,
+        .cc-publish-preview-card {
+          min-width: 0;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+        .cc-publish-form :global(input),
+        .cc-publish-form :global(select),
+        .cc-publish-form :global(textarea),
+        .cc-publish-form :global(button),
+        .cc-publish-form :global(label),
+        .cc-publish-pro-panel :global(input),
+        .cc-publish-pro-panel :global(select),
+        .cc-publish-pro-panel :global(textarea),
+        .cc-publish-pro-panel :global(button),
+        .cc-publish-pro-panel :global(label) {
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+          overflow-wrap: break-word;
+        }
+        @media (max-width: 1780px) {
           .cc-publish-wrap {
             max-width: 980px !important;
             grid-template-columns: minmax(0, 1fr) !important;
@@ -417,7 +441,40 @@ export default function Publicar() {
         }
         @media (max-width: 760px) {
           .cc-publish-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
             padding-bottom: 96px !important;
+            gap: 14px !important;
+          }
+          .cc-publish-main > h1 {
+            font-size: 34px !important;
+            line-height: 1.08 !important;
+            overflow-wrap: break-word;
+          }
+          .cc-publish-main > p {
+            font-size: 16px !important;
+            line-height: 1.4 !important;
+          }
+          .cc-publish-pro-panel,
+          .cc-publish-form {
+            padding: 16px !important;
+            border-radius: 20px !important;
+          }
+          .cc-publish-row,
+          .cc-publish-pro-grid,
+          .cc-publish-inline-ads {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-publish-preview-card {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-publish-preview-image {
+            min-height: 110px;
+          }
+          .cc-publish-submit {
+            width: 100%;
           }
         }
       `}</style>
@@ -426,37 +483,37 @@ export default function Publicar() {
 }
 
 const styles = {
-  page:{background:"#f5f7fb",minHeight:"100vh",fontFamily:"Arial, sans-serif"},
+  page:{background:"#f5f7fb",minHeight:"100vh",fontFamily:"Arial, sans-serif",overflowX:"hidden"},
   wrap:{maxWidth:1660,boxSizing:'border-box',margin:"0 auto",padding:"26px 16px 48px",display:'grid',gridTemplateColumns:'320px minmax(0,948px) 320px',gap:20,alignItems:'start',justifyContent:'center'},
   sideCol:{display:'grid',gap:16,position:'sticky',top:110,width:'100%',maxWidth:320,minWidth:0,overflow:'hidden'},
-  mainCol:{minWidth:0},
-  title:{fontSize:42,margin:'0 0 8px 0',color:'#111827'},
+  mainCol:{minWidth:0,maxWidth:'100%',overflow:'hidden'},
+  title:{fontSize:42,margin:'0 0 8px 0',color:'#111827',overflowWrap:'break-word'},
   subtitle:{margin:'0 0 20px 0',color:'#64748b',fontSize:18},
-  proPanel:{display:'grid',gap:14,background:'#fff',border:'1px solid #e5e7eb',borderRadius:22,padding:18,boxShadow:'0 14px 28px rgba(15,23,42,.05)',marginBottom:16},
+  proPanel:{display:'grid',gap:14,background:'#fff',border:'1px solid #e5e7eb',borderRadius:22,padding:18,boxShadow:'0 14px 28px rgba(15,23,42,.05)',marginBottom:16,minWidth:0,maxWidth:'100%',overflow:'hidden'},
   stepHeader:{display:'flex',gap:8,flexWrap:'wrap'},
   stepPill:{padding:'8px 11px',borderRadius:999,background:'#f1f5f9',color:'#475569',fontSize:12,fontWeight:900},
   stepPillDone:{background:'#dbeafe',color:'#1d4ed8'},
   progressTrack:{height:8,background:'#e5e7eb',borderRadius:999,overflow:'hidden'},
   progressFill:{height:'100%',background:'linear-gradient(90deg,#1d4ed8,#22c55e)',borderRadius:999,transition:'width .2s ease'},
-  proGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:14,alignItems:'stretch'},
+  proGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,260px),1fr))',gap:14,alignItems:'stretch',minWidth:0},
   validationBox:{border:'1px solid #e5e7eb',borderRadius:16,padding:14,background:'#f8fafc',display:'grid',gap:8},
   missingList:{color:'#92400e',fontWeight:800,lineHeight:1.5},
   readyText:{color:'#166534',fontWeight:900},
-  previewCard:{border:'1px solid #e5e7eb',borderRadius:16,overflow:'hidden',background:'#fff',display:'grid',gridTemplateColumns:'110px 1fr',minHeight:110},
+  previewCard:{border:'1px solid #e5e7eb',borderRadius:16,overflow:'hidden',background:'#fff',display:'grid',gridTemplateColumns:'minmax(90px,110px) minmax(0,1fr)',minHeight:110,minWidth:0},
   previewImage:{display:'grid',placeItems:'center',background:'#eef2ff',color:'#1d4ed8',fontWeight:900,fontSize:12},
   previewImg:{width:'100%',height:'100%',objectFit:'cover'},
-  previewBody:{display:'grid',alignContent:'center',gap:6,padding:12,color:'#334155'},
-  inlineAds:{gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:14,margin:'0 0 16px 0'},
+  previewBody:{display:'grid',alignContent:'center',gap:6,padding:12,color:'#334155',minWidth:0,overflowWrap:'break-word'},
+  inlineAds:{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,280px),1fr))',gap:14,margin:'0 0 16px 0'},
   infoBox:{background:'#fff',border:'1px solid #e5e7eb',padding:16,borderRadius:16,marginBottom:16},
   infoActions:{display:'flex',gap:10,flexWrap:'wrap',marginTop:12},
   secondaryLink:{textDecoration:'none',background:'#fff',color:'#111827',padding:'10px 14px',borderRadius:12,border:'1px solid #d1d5db',fontWeight:800},
-  form:{display:'grid',gap:14,background:'#fff',border:'1px solid #e5e7eb',borderRadius:24,padding:22,boxShadow:'0 14px 28px rgba(15,23,42,.06)'},
-  row:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12},
-  input:{width:'100%',padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff'},
-  textarea:{width:'100%',minHeight:140,padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff',resize:'vertical'},
+  form:{display:'grid',gap:14,background:'#fff',border:'1px solid #e5e7eb',borderRadius:24,padding:22,boxShadow:'0 14px 28px rgba(15,23,42,.06)',minWidth:0,maxWidth:'100%',overflow:'hidden',boxSizing:'border-box'},
+  row:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,220px),1fr))',gap:12,minWidth:0},
+  input:{width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff'},
+  textarea:{width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',minHeight:140,padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff',resize:'vertical'},
   premiumBox:{display:'grid',gap:10,padding:18,border:'1px solid #e5e7eb',borderRadius:18,background:'#f8fafc'},
   ownerHint:{color:'#1d4ed8',fontWeight:800},
-  check:{display:'flex',alignItems:'center',gap:8,fontWeight:800},
+  check:{display:'flex',alignItems:'center',gap:8,fontWeight:800,minWidth:0,overflowWrap:'break-word'},
   submit:{background:'linear-gradient(135deg,#0f172a,#1d4ed8)',color:'#fff',border:'none',borderRadius:14,padding:'14px 18px',fontWeight:900,cursor:'pointer'},
   modalOverlay:{position:'fixed',inset:0,background:'rgba(15,23,42,.42)',zIndex:9999,display:'grid',placeItems:'center',padding:20},
   modal:{width:'min(460px,100%)',background:'#fff',borderRadius:18,border:'1px solid #e5e7eb',boxShadow:'0 24px 80px rgba(15,23,42,.28)',padding:22,display:'grid',gap:14},

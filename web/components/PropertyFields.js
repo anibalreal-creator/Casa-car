@@ -55,4 +55,10 @@ export default function PropertyFields({ formData, setFormData }) {
   );
 }
 
-const styles = { wrap: { display: 'grid', gap: 12, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 14, padding: 14 }, title: { margin: 0, fontSize: 18 }, grid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }, input: { padding: '14px 16px', border: '1px solid #d1d5db', borderRadius: 12, fontSize: 16, background: '#fff' }, checks: { display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: 15 } };
+const styles = {
+  wrap: { display: 'grid', gap: 12, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 14, padding: 14, minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
+  title: { margin: 0, fontSize: 18 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,180px),1fr))', gap: 12, minWidth: 0 },
+  input: { width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', padding: '14px 16px', border: '1px solid #d1d5db', borderRadius: 12, fontSize: 16, background: '#fff' },
+  checks: { display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 15, minWidth: 0 }
+};

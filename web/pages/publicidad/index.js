@@ -9,22 +9,22 @@ export default function PublicidadPage() {
   const { t, language } = useLang();
 
   return (
-    <div style={styles.page}>
+    <div className="cc-ads-page" style={styles.page}>
       <GlobalHeader />
-      <main style={styles.wrap}>
-        <section style={styles.hero}>
-          <div>
+      <main className="cc-ads-wrap" style={styles.wrap}>
+        <section className="cc-ads-hero" style={styles.hero}>
+          <div className="cc-ads-hero-copy">
             <div style={styles.kicker}>CASA-CAR ADS</div>
             <h1 style={styles.title}>{t('ads_page_title', 'Vendé espacios publicitarios automáticos dentro de Casa-Car')}</h1>
             <p style={styles.subtitle}>{t('ads_page_subtitle', 'Elegí un plan, reservá un slot y mostrá tu banner en las ubicaciones más visibles del sitio.')}</p>
-            <div style={styles.actions}>
+            <div className="cc-ads-actions" style={styles.actions}>
               <Link href="/publicidad/panel" style={styles.primary}>{t('ads_create_campaign', 'Crear campaña')}</Link>
               <Link href="/panel-empresas" style={styles.secondary}>{t('nav_company_panel', 'Panel empresas')}</Link>
               <Link href="/dashboard/company" style={styles.secondary}>{t('nav_company_dashboard', 'Dashboard empresa')}</Link>
               <a href="#planes" style={styles.secondary}>{t('ads_view_plans', 'Ver planes')}</a>
             </div>
           </div>
-          <div style={styles.sideCard}>
+          <div className="cc-ads-side-card" style={styles.sideCard}>
             <div style={styles.sideStat}><strong>5</strong><span>{t('ads_slots_ready', 'slots publicitarios listos')}</span></div>
             <div style={styles.sideStat}><strong>MP</strong><span>{t('ads_mp', 'cobro con Mercado Pago')}</span></div>
             <div style={styles.sideStat}><strong>Auto</strong><span>{t('ads_webhook', 'activación por webhook')}</span></div>
@@ -78,6 +78,52 @@ export default function PublicidadPage() {
         <AdSlot slot="footer_strip" page="global" title={t('ads_example_footer', 'Ejemplo de pie patrocinado')} />
       </main>
       <FooterBlueBar />
+      <style jsx>{`
+        .cc-ads-page,
+        .cc-ads-wrap,
+        .cc-ads-hero,
+        .cc-ads-hero-copy,
+        .cc-ads-side-card {
+          min-width: 0;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        @media (max-width: 760px) {
+          .cc-ads-wrap {
+            width: 100% !important;
+            padding: 18px 10px 96px !important;
+            gap: 18px !important;
+          }
+          .cc-ads-hero {
+            grid-template-columns: minmax(0, 1fr) !important;
+            padding: 18px !important;
+            border-radius: 20px !important;
+          }
+          .cc-ads-hero h1 {
+            font-size: clamp(36px, 12vw, 54px) !important;
+            line-height: 1.06 !important;
+            overflow-wrap: break-word;
+            hyphens: auto;
+          }
+          .cc-ads-hero p {
+            font-size: 17px !important;
+            line-height: 1.45 !important;
+          }
+          .cc-ads-actions {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-ads-actions :global(a) {
+            width: 100%;
+            text-align: center;
+          }
+          .cc-ads-wrap section h2 {
+            font-size: 28px !important;
+            line-height: 1.15 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -148,23 +194,23 @@ function translateSlotLabel(value, t) {
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: 'linear-gradient(180deg,#f8fbff 0%,#eef4ff 100%)', fontFamily: 'Arial, sans-serif' },
-  wrap: { maxWidth: 1400, margin: '0 auto', padding: '28px 16px 50px', display: 'grid', gap: 26 },
-  hero: { display: 'grid', gridTemplateColumns: '1.15fr .85fr', gap: 22, background: '#fff', borderRadius: 28, border: '1px solid #dbeafe', padding: 28, boxShadow: '0 16px 40px rgba(15,23,42,.07)' },
+  page: { minHeight: '100vh', background: 'linear-gradient(180deg,#f8fbff 0%,#eef4ff 100%)', fontFamily: 'Arial, sans-serif', overflowX: 'hidden' },
+  wrap: { width: '100%', maxWidth: 1400, margin: '0 auto', padding: '28px 16px 50px', display: 'grid', gap: 26, boxSizing: 'border-box' },
+  hero: { display: 'grid', gridTemplateColumns: 'minmax(0,1.15fr) minmax(0,.85fr)', gap: 22, background: '#fff', borderRadius: 28, border: '1px solid #dbeafe', padding: 28, boxShadow: '0 16px 40px rgba(15,23,42,.07)', minWidth: 0, overflow: 'hidden' },
   kicker: { display: 'inline-block', padding: '6px 10px', borderRadius: 999, background: '#dbeafe', color: '#1d4ed8', fontWeight: 900, fontSize: 12, letterSpacing: '.08em', marginBottom: 14 },
-  title: { fontSize: 50, lineHeight: 1.02, margin: '0 0 14px 0', color: '#0f172a' },
+  title: { fontSize: 50, lineHeight: 1.02, margin: '0 0 14px 0', color: '#0f172a', overflowWrap: 'break-word' },
   subtitle: { fontSize: 20, lineHeight: 1.65, color: '#475569', margin: 0, maxWidth: 840 },
   actions: { display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 20 },
   primary: { textDecoration: 'none', background: '#0f172a', color: '#fff', padding: '14px 18px', borderRadius: 14, fontWeight: 900 },
   secondary: { textDecoration: 'none', background: '#fff', color: '#0f172a', padding: '14px 18px', borderRadius: 14, fontWeight: 900, border: '1px solid #cbd5e1' },
-  sideCard: { background: 'linear-gradient(135deg,#0f172a,#2563eb)', color: '#fff', borderRadius: 24, padding: 22, display: 'grid', gap: 14 },
+  sideCard: { background: 'linear-gradient(135deg,#0f172a,#2563eb)', color: '#fff', borderRadius: 24, padding: 22, display: 'grid', gap: 14, minWidth: 0 },
   sideStat: { background: 'rgba(255,255,255,.12)', borderRadius: 18, padding: 16, display: 'grid', gap: 5 },
   section: { display: 'grid', gap: 18 },
   sectionHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: 14, flexWrap: 'wrap' },
   sectionKicker: { fontSize: 12, color: '#2563eb', fontWeight: 900, letterSpacing: '.08em' },
   h2: { margin: '6px 0 0 0', fontSize: 34, color: '#0f172a' },
   linkCta: { textDecoration: 'none', color: '#0f172a', fontWeight: 900 },
-  planGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 18 },
+  planGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,260px),1fr))', gap: 18 },
   planCard: { background: '#fff', border: '1px solid #dbeafe', borderRadius: 24, padding: 22, boxShadow: '0 14px 28px rgba(15,23,42,.06)' },
   badge: { display: 'inline-block', padding: '6px 10px', borderRadius: 999, background: '#ede9fe', color: '#6d28d9', fontWeight: 900, fontSize: 12 },
   planName: { margin: '16px 0 8px 0', fontSize: 34, color: '#0f172a' },
@@ -172,7 +218,7 @@ const styles = {
   planDesc: { margin: '12px 0 10px 0', color: '#475569', fontSize: 17, lineHeight: 1.6 },
   planMeta: { color: '#0f172a', fontWeight: 800 },
   featureList: { margin: '12px 0 0 18px', padding: 0, display: 'grid', gap: 6, color: '#334155' },
-  slotGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 },
+  slotGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,220px),1fr))', gap: 16 },
   slotCard: { textDecoration: 'none', background: '#fff', border: '1px solid #dbeafe', borderRadius: 20, padding: 18, display: 'grid', gap: 8, boxShadow: '0 10px 24px rgba(15,23,42,.05)' },
   slotTitle: { color: '#0f172a', fontWeight: 900, fontSize: 18 },
   slotMeta: { color: '#2563eb', fontWeight: 800, fontSize: 14 },

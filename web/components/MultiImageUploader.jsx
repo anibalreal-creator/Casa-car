@@ -111,19 +111,19 @@ export default function MultiImageUploader({ images, setImages }) {
 }
 
 const styles = {
-  wrap: { border: "1px dashed #94a3b8", borderRadius: 18, padding: 16, background: "#f8fafc", display: "grid", gap: 12 },
+  wrap: { border: "1px dashed #94a3b8", borderRadius: 18, padding: 16, background: "#f8fafc", display: "grid", gap: 12, minWidth: 0, maxWidth: "100%", overflow: "hidden" },
   dragging: { borderColor: "#1d4ed8", background: "#eff6ff" },
-  head: { display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center", flexWrap: "wrap" },
+  head: { display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center", flexWrap: "wrap", minWidth: 0 },
   label: { display: "block", fontWeight: 900, color: "#111827" },
-  help: { marginTop: 6, color: "#64748b", fontSize: 13, maxWidth: 620 },
-  pickButton: { display: "inline-grid", placeItems: "center", border: "none", background: "#111827", color: "#fff", borderRadius: 12, padding: "11px 14px", cursor: "pointer", fontWeight: 900 },
+  help: { marginTop: 6, color: "#64748b", fontSize: 13, maxWidth: 620, overflowWrap: "break-word" },
+  pickButton: { display: "inline-grid", placeItems: "center", border: "none", background: "#111827", color: "#fff", borderRadius: 12, padding: "11px 14px", cursor: "pointer", fontWeight: 900, maxWidth: "100%" },
   hiddenInput: { display: "none" },
   dropText: { border: "1px dashed #cbd5e1", borderRadius: 14, padding: "16px 14px", textAlign: "center", color: "#475569", fontWeight: 800, background: "#fff" },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12 },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%,150px),1fr))", gap: 12, minWidth: 0 },
   card: { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 14, overflow: "hidden", display: "grid" },
   img: { width: "100%", height: 118, objectFit: "cover", display: "block" },
   name: { padding: 8, fontSize: 12, color: "#4b5563", wordBreak: "break-word" },
-  actions: { display: "flex", gap: 6, padding: 8, paddingTop: 0 },
+  actions: { display: "flex", gap: 6, padding: 8, paddingTop: 0, flexWrap: "wrap" },
   secondary: { flex: 1, border: "1px solid #d1d5db", background: "#fff", color: "#111827", borderRadius: 8, padding: "8px 6px", cursor: "pointer", fontWeight: 800, fontSize: 12 },
   remove: { flex: 1, border: "none", background: "#ef4444", color: "#fff", borderRadius: 8, padding: "8px 6px", cursor: "pointer", fontWeight: 800, fontSize: 12 },
 };

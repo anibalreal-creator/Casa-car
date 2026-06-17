@@ -230,20 +230,20 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, onUseBanne
 }
 
 const styles = {
-  wrap: { display: 'grid', gap: 12, border: '1px solid #bfdbfe', background: '#f8fbff', borderRadius: 18, padding: 14 },
+  wrap: { display: 'grid', gap: 12, border: '1px solid #bfdbfe', background: '#f8fbff', borderRadius: 18, padding: 14, minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   header: { display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' },
   kicker: { color: '#1d4ed8', fontSize: 12, fontWeight: 900, letterSpacing: '.08em' },
   title: { margin: '4px 0 0 0', color: '#0f172a', fontSize: 20, lineHeight: 1.15 },
   size: { border: '1px solid #dbeafe', background: '#fff', color: '#1d4ed8', borderRadius: 999, padding: '7px 10px', fontWeight: 900, fontSize: 12 },
-  variantGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 10 },
-  variantButton: { border: '1px solid #dbeafe', background: '#fff', borderRadius: 14, padding: 8, cursor: 'pointer', display: 'grid', gap: 8, textAlign: 'left' },
+  variantGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,170px),1fr))', gap: 10, minWidth: 0 },
+  variantButton: { border: '1px solid #dbeafe', background: '#fff', borderRadius: 14, padding: 8, cursor: 'pointer', display: 'grid', gap: 8, textAlign: 'left', minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   variantButtonActive: { borderColor: '#1d4ed8', boxShadow: '0 0 0 3px rgba(29,78,216,.12)' },
-  variantPreview: { borderRadius: 10, overflow: 'hidden', display: 'grid', placeItems: 'center', minHeight: 92, boxSizing: 'border-box', background: '#eff6ff' },
+  variantPreview: { borderRadius: 10, overflow: 'hidden', display: 'grid', placeItems: 'center', minHeight: 0, boxSizing: 'border-box', background: '#eff6ff' },
   previewImage: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
   placeholder: { color: '#64748b', fontWeight: 900, fontSize: 12 },
   variantMeta: { color: '#334155', fontSize: 12, fontWeight: 800 },
   footer: { display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
-  useButton: { border: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 12, padding: '11px 14px', fontWeight: 900, cursor: 'pointer' },
+  useButton: { border: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 12, padding: '11px 14px', fontWeight: 900, cursor: 'pointer', maxWidth: '100%' },
   hint: { color: '#64748b', fontSize: 12, fontWeight: 700 },
   error: { color: '#be123c', fontSize: 12, fontWeight: 800 },
 };

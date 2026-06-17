@@ -113,15 +113,15 @@ export default function TourismFields({ formData, setFormData }) {
 }
 
 const styles = {
-  wrap: { display: 'grid', gap: 14, padding: 18, border: '1px solid #dbeafe', borderRadius: 18, background: '#f8fbff' },
+  wrap: { display: 'grid', gap: 14, padding: 18, border: '1px solid #dbeafe', borderRadius: 18, background: '#f8fbff', minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   head: { display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' },
   kicker: { fontSize: 12, fontWeight: 900, letterSpacing: '.12em', color: '#1d4ed8' },
   title: { margin: '4px 0 0', fontSize: 21, color: '#111827' },
-  switch: { display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #bfdbfe', background: '#fff', borderRadius: 999, padding: '9px 12px', fontWeight: 900 },
-  panel: { display: 'grid', gap: 10, border: '1px solid #e5e7eb', background: '#fff', borderRadius: 16, padding: 14 },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 12 },
-  input: { width: '100%', padding: '13px 14px', border: '1px solid #cbd5e1', borderRadius: 14, background: '#fff', fontSize: 14, boxSizing: 'border-box' },
-  textarea: { width: '100%', minHeight: 92, padding: '13px 14px', border: '1px solid #cbd5e1', borderRadius: 14, background: '#fff', resize: 'vertical', boxSizing: 'border-box' },
-  checks: { display: 'flex', flexWrap: 'wrap', gap: 12 },
-  check: { display: 'flex', alignItems: 'center', gap: 7, fontWeight: 800, color: '#334155' },
+  switch: { display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #bfdbfe', background: '#fff', borderRadius: 999, padding: '9px 12px', fontWeight: 900, maxWidth: '100%', minWidth: 0 },
+  panel: { display: 'grid', gap: 10, border: '1px solid #e5e7eb', background: '#fff', borderRadius: 16, padding: 14, minWidth: 0, overflow: 'hidden' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,190px),1fr))', gap: 12, minWidth: 0 },
+  input: { width: '100%', maxWidth: '100%', minWidth: 0, padding: '13px 14px', border: '1px solid #cbd5e1', borderRadius: 14, background: '#fff', fontSize: 14, boxSizing: 'border-box' },
+  textarea: { width: '100%', maxWidth: '100%', minWidth: 0, minHeight: 92, padding: '13px 14px', border: '1px solid #cbd5e1', borderRadius: 14, background: '#fff', resize: 'vertical', boxSizing: 'border-box' },
+  checks: { display: 'flex', flexWrap: 'wrap', gap: 12, minWidth: 0 },
+  check: { display: 'flex', alignItems: 'center', gap: 7, fontWeight: 800, color: '#334155', minWidth: 0, maxWidth: '100%' },
 };

@@ -297,21 +297,21 @@ export default function PublicidadPanelPage() {
   }, [campaigns]);
 
   return (
-    <div style={styles.page}>
+    <div className="cc-panel-page" style={styles.page}>
       <GlobalHeader />
-      <main style={styles.wrap}>
-        <section style={styles.hero}>
+      <main className="cc-panel-wrap" style={styles.wrap}>
+        <section className="cc-panel-hero" style={styles.hero}>
           <div>
             <div style={styles.kicker}>PANEL DE EMPRESAS</div>
             <h1 style={styles.title}>Subí tu banner, pagá y activalo automáticamente</h1>
             <p style={styles.subtitle}>Flujo listo para anunciantes: carga de creatividad, selección de plan, cobro con Mercado Pago y publicación automática por slot.</p>
-            <div style={styles.quickNav}>
+            <div className="cc-panel-quick-nav" style={styles.quickNav}>
               <a href='/publicidad' style={styles.quickSecondary}>Landing publicitaria</a>
               <a href='/panel-empresas' style={styles.quickSecondary}>Panel empresas</a>
               <a href='/dashboard/company' style={styles.quickSecondary}>Dashboard empresa</a>
             </div>
           </div>
-          <div style={styles.infoBox}>
+          <div className="cc-panel-info-box" style={styles.infoBox}>
             <div><strong>Plan:</strong> {selectedPlan.name}</div>
             <div><strong>Precio prueba:</strong> ARS {selectedPlan.price.toLocaleString('es-AR')}</div>
             <div><strong>Duración:</strong> {selectedPlan.durationDays} días</div>
@@ -319,7 +319,7 @@ export default function PublicidadPanelPage() {
           </div>
         </section>
 
-        <section style={styles.statsRow}>
+        <section className="cc-panel-stats" style={styles.statsRow}>
           {stats.map((item) => (
             <div key={item.label} style={styles.statCard}>
               <div style={styles.statLabel}>{item.label}</div>
@@ -331,13 +331,13 @@ export default function PublicidadPanelPage() {
 
         {notice ? <div style={styles.notice}>{notice}</div> : null}
 
-        <div style={styles.grid}>
-          <form onSubmit={submit} style={styles.form}>
+        <div className="cc-panel-grid" style={styles.grid}>
+          <form className="cc-panel-form" onSubmit={submit} style={styles.form}>
             <h2 style={styles.h2}>{editingId ? 'Editar campaña' : 'Nueva campaña'}</h2>
             <input style={styles.input} placeholder="Empresa" value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} required />
             <input style={styles.input} placeholder="Título del banner" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} required />
             <textarea style={{ ...styles.input, minHeight: 110 }} placeholder="Descripción" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-            <div style={styles.row}>
+            <div className="cc-panel-row" style={styles.row}>
               <select style={styles.input} value={form.plan_key} onChange={(e) => setForm((p) => ({ ...p, plan_key: e.target.value }))}>
                 {AD_PLANS.map((plan) => <option key={plan.key} value={plan.key}>{plan.name}</option>)}
               </select>
@@ -346,12 +346,12 @@ export default function PublicidadPanelPage() {
               </select>
             </div>
             <input style={styles.input} placeholder="URL destino" value={form.destination_url} onChange={(e) => setForm((p) => ({ ...p, destination_url: e.target.value }))} required />
-            <div style={styles.row}>
+            <div className="cc-panel-row" style={styles.row}>
               <input style={styles.input} placeholder="Ver más" value={form.cta_text} onChange={(e) => setForm((p) => ({ ...p, cta_text: e.target.value }))} />
               <input style={styles.input} placeholder="Contacto" value={form.contact_name} onChange={(e) => setForm((p) => ({ ...p, contact_name: e.target.value }))} />
             </div>
             <input style={styles.input} placeholder="Email" value={form.contact_email} onChange={(e) => setForm((p) => ({ ...p, contact_email: e.target.value }))} required />
-            <label style={styles.uploadBox}>
+            <label className="cc-panel-upload" style={styles.uploadBox}>
               <span style={styles.uploadTitle}>{editingId ? 'Cambiar banner' : 'Subir banner'}</span>
               <input type="file" accept="image/*" onChange={onFile} style={{ marginTop: 10 }} required={!editingId && !bannerPreview} />
               <span style={styles.uploadHelp}>{editingId ? 'Reemplaza la imagen sin perder la campaña.' : 'Se guarda en Supabase Storage. La campaña queda pendiente/inactiva y se publica automáticamente al aprobar el pago.'}</span>
@@ -362,7 +362,7 @@ export default function PublicidadPanelPage() {
               sourceImage={bannerPreview}
               onUseBanner={useGeneratedBanner}
             />
-            <div style={styles.slotPreviewBox}>
+            <div className="cc-panel-slot-preview" style={styles.slotPreviewBox}>
               <div style={styles.slotPreviewCopy}>
                 <strong>Ubicacion elegida: {selectedSlot?.label || 'Espacio publicitario'}</strong>
                 <span>{selectedSlot?.dimensions || 'Formato automatico'} - Pagina {selectedSlot?.page || 'Casa-Car'}</span>
@@ -370,7 +370,7 @@ export default function PublicidadPanelPage() {
               </div>
               <a href={locationHref(form.slot_key)} style={styles.previewSlotButton}>Ver donde aparece</a>
             </div>
-            <div style={styles.creativePreview}>
+            <div className="cc-panel-creative-preview" style={styles.creativePreview}>
               <div style={styles.creativePreviewInfo}>
                 <strong>Vista previa final del banner</strong>
                 <span>Asi queda el PNG en el formato elegido antes de guardarlo.</span>
@@ -388,10 +388,10 @@ export default function PublicidadPanelPage() {
                 Si Mercado Pago deja el boton Pagar en gris, normalmente falta validar el medio de pago, usar una cuenta compradora distinta a la vendedora o completar datos de la cuenta de Mercado Pago. Casa-Car ya crea la preferencia y vuelve por webhook cuando Mercado Pago aprueba.
               </div>
             ) : null}
-            <button type="submit" disabled={submitting} style={styles.button}>{submitting ? 'Procesando…' : (editingId ? 'Guardar cambios del banner' : 'Crear campaña y pagar con Mercado Pago')}</button>
+            <button className="cc-panel-submit" type="submit" disabled={submitting} style={styles.button}>{submitting ? 'Procesando…' : (editingId ? 'Guardar cambios del banner' : 'Crear campaña y pagar con Mercado Pago')}</button>
           </form>
 
-          <aside style={styles.sidebar}>
+          <aside className="cc-panel-sidebar" style={styles.sidebar}>
             <div style={styles.sidebarCard}>
               <h3 style={styles.sideTitle}>Slots disponibles</h3>
               <div style={styles.slotGrid}>
@@ -431,48 +431,133 @@ export default function PublicidadPanelPage() {
         </div>
       </main>
       <FooterBlueBar />
+      <style jsx>{`
+        .cc-panel-page,
+        .cc-panel-wrap,
+        .cc-panel-hero,
+        .cc-panel-grid,
+        .cc-panel-form,
+        .cc-panel-sidebar,
+        .cc-panel-info-box,
+        .cc-panel-creative-preview {
+          min-width: 0;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        .cc-panel-form :global(input),
+        .cc-panel-form :global(select),
+        .cc-panel-form :global(textarea),
+        .cc-panel-form :global(button) {
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
+        .cc-panel-upload :global(input[type='file']) {
+          width: 100%;
+          max-width: 100%;
+          white-space: normal;
+        }
+
+        @media (max-width: 900px) {
+          .cc-panel-hero,
+          .cc-panel-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .cc-panel-wrap {
+            width: 100% !important;
+            padding: 18px 10px 96px !important;
+            gap: 18px !important;
+          }
+          .cc-panel-hero,
+          .cc-panel-form,
+          .cc-panel-sidebar > :global(*) {
+            border-radius: 20px !important;
+            padding: 16px !important;
+          }
+          .cc-panel-hero h1 {
+            font-size: clamp(36px, 12vw, 54px) !important;
+            line-height: 1.06 !important;
+            overflow-wrap: break-word;
+            hyphens: auto;
+          }
+          .cc-panel-hero p {
+            font-size: 16px !important;
+            line-height: 1.45 !important;
+          }
+          .cc-panel-quick-nav {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-panel-quick-nav :global(a) {
+            width: 100%;
+            text-align: center;
+          }
+          .cc-panel-row,
+          .cc-panel-stats {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-panel-slot-preview {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+          .cc-panel-slot-preview :global(a),
+          .cc-panel-submit {
+            width: 100%;
+            text-align: center;
+          }
+          .cc-panel-upload :global(input[type='file'])::file-selector-button {
+            max-width: 100%;
+            margin-bottom: 8px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: '#f5f7fb', fontFamily: 'Arial, sans-serif' },
-  wrap: { maxWidth: 1400, margin: '0 auto', padding: '28px 16px 50px', display: 'grid', gap: 24 },
-  hero: { display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 20, background: '#fff', border: '1px solid #dbeafe', borderRadius: 26, padding: 24 },
+  page: { minHeight: '100vh', background: '#f5f7fb', fontFamily: 'Arial, sans-serif', overflowX: 'hidden' },
+  wrap: { width: '100%', maxWidth: 1400, margin: '0 auto', padding: '28px 16px 50px', display: 'grid', gap: 24, boxSizing: 'border-box' },
+  hero: { display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,.8fr)', gap: 20, background: '#fff', border: '1px solid #dbeafe', borderRadius: 26, padding: 24, minWidth: 0, overflow: 'hidden' },
   kicker: { display: 'inline-block', background: '#dbeafe', color: '#1d4ed8', borderRadius: 999, padding: '6px 10px', fontWeight: 900, fontSize: 12, letterSpacing: '.08em', marginBottom: 12 },
-  title: { margin: '0 0 12px 0', fontSize: 46, lineHeight: 1 },
+  title: { margin: '0 0 12px 0', fontSize: 46, lineHeight: 1, overflowWrap: 'break-word' },
   subtitle: { margin: 0, fontSize: 18, lineHeight: 1.6, color: '#475569' },
   quickNav:{display:'flex',gap:10,flexWrap:'wrap',marginTop:16},
   quickSecondary:{textDecoration:'none',background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',padding:'10px 12px',borderRadius:12,fontWeight:800},
-  infoBox: { background: 'linear-gradient(135deg,#0f172a,#2563eb)', color: '#fff', borderRadius: 20, padding: 20, display: 'grid', gap: 10, alignContent: 'start' },
+  infoBox: { background: 'linear-gradient(135deg,#0f172a,#2563eb)', color: '#fff', borderRadius: 20, padding: 20, display: 'grid', gap: 10, alignContent: 'start', minWidth: 0 },
   syncButton: { border:'1px solid rgba(255,255,255,.25)', background:'rgba(255,255,255,.12)', color:'#fff', borderRadius:12, padding:'12px 14px', fontWeight:900, cursor:'pointer' },
-  statsRow: { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14 },
+  statsRow: { display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))', gap:14 },
   statCard: { background:'#fff', border:'1px solid #e2e8f0', borderRadius:18, padding:18 },
   statLabel: { color:'#64748b', fontSize:13, fontWeight:800, textTransform:'uppercase' },
   statValue: { color:'#111827', fontSize:30, fontWeight:900, marginTop:8 },
   statHint: { color:'#64748b', fontSize:12, marginTop:4 },
   notice: { background:'#ecfeff', color:'#155e75', border:'1px solid #a5f3fc', borderRadius:16, padding:14, fontWeight:800 },
-  grid: { display: 'grid', gridTemplateColumns: '1.1fr .65fr', gap: 20, alignItems: 'start' },
-  form: { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 22, display: 'grid', gap: 14 },
+  grid: { display: 'grid', gridTemplateColumns: 'minmax(0,1.1fr) minmax(280px,.65fr)', gap: 20, alignItems: 'start', minWidth: 0 },
+  form: { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 24, padding: 22, display: 'grid', gap: 14, minWidth: 0, maxWidth: '100%', overflow: 'hidden', boxSizing: 'border-box' },
   h2: { margin: 0, fontSize: 30 },
-  row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
-  input: { width: '100%', border: '1px solid #cbd5e1', borderRadius: 12, padding: '14px 16px', fontSize: 15 },
-  uploadBox: { border: '1px dashed #94a3b8', borderRadius: 16, padding: 16, background: '#f8fafc', color: '#334155' },
+  row: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,220px),1fr))', gap: 12, minWidth: 0 },
+  input: { width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: 12, padding: '14px 16px', fontSize: 15 },
+  uploadBox: { border: '1px dashed #94a3b8', borderRadius: 16, padding: 16, background: '#f8fafc', color: '#334155', minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   uploadTitle: { display: 'block', fontWeight: 900 },
   uploadHelp: { display: 'block', marginTop: 8, fontSize: 13, color: '#64748b' },
   slotPreviewBox: { border: '1px solid #dbeafe', background: '#eff6ff', borderRadius: 16, padding: 12, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' },
-  slotPreviewCopy: { display: 'grid', gap: 4, color: '#334155', fontSize: 13 },
+  slotPreviewCopy: { display: 'grid', gap: 4, color: '#334155', fontSize: 13, minWidth: 0, overflowWrap: 'break-word' },
   previewSlotButton: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', background: '#1d4ed8', color: '#fff', borderRadius: 999, padding: '9px 12px', fontWeight: 900, fontSize: 13 },
-  creativePreview: { display: 'grid', gap: 10, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 18, padding: 12 },
+  creativePreview: { display: 'grid', gap: 10, background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 18, padding: 12, minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   creativePreviewInfo: { display: 'grid', gap: 4, color: '#334155', fontSize: 13 },
   smartPreviewFrame: { position: 'relative', overflow: 'hidden', borderRadius: 16, border: '1px solid #cbd5e1', background: '#fff', display: 'grid', placeItems: 'center', width: '100%' },
   smartPreviewImg: { width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#fff' },
   previewPlaceholder: { padding: 20, textAlign: 'center', color: '#64748b', fontWeight: 800 },
-  paymentHelp: { fontSize: 13, lineHeight: 1.45, color: '#475569', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: 12 },
+  paymentHelp: { fontSize: 13, lineHeight: 1.45, color: '#475569', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: 12, overflowWrap: 'break-word' },
   cancelButton: { border: '1px solid #fecaca', background: '#fff1f2', color: '#be123c', borderRadius: 999, padding: '8px 10px', fontWeight: 900, cursor: 'pointer' },
   preview: { width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 16, border: '1px solid #dbeafe' },
   button: { background: '#0f172a', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 18px', fontWeight: 900, cursor: 'pointer' },
-  sidebar: { display: 'grid', gap: 16 },
+  sidebar: { display: 'grid', gap: 16, minWidth: 0, maxWidth: '100%' },
   sidebarCard: { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 22, padding: 18 },
   sideTitle: { margin: '0 0 10px 0', fontSize: 22 },
   slotGrid: { display:'grid', gap:8 },
