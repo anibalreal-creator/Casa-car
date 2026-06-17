@@ -23,13 +23,14 @@ export default function GlobalHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { language, setLanguage, t, languages } = useLang();
   const navItems = useMemo(() => buildNav(t), [t]);
+  const publishHref = user ? '/publicar' : '/login?next=/publicar';
   const mobileBottomItems = useMemo(() => [
     { href: '/', label: t('nav_home', 'Inicio'), mark: 'I' },
     { href: '/buscar', label: t('nav_search', 'Buscar'), mark: 'B' },
-    { href: '/publicar', label: t('footer_publish', 'Publicar'), mark: '+' },
+    { href: publishHref, label: t('footer_publish', 'Publicar'), mark: '+' },
     { href: '/favoritos', label: t('nav_favorites', 'Favoritos'), mark: 'F' },
     { href: user ? '/mis-anuncios' : '/login', label: user ? t('nav_my_ads', 'Mis anuncios') : t('nav_login', 'Ingresar'), mark: user ? 'M' : 'E' },
-  ], [t, user]);
+  ], [t, user, publishHref]);
 
   useEffect(() => {
     let mounted = true;
@@ -101,7 +102,7 @@ export default function GlobalHeader() {
                 <button type="button" onClick={signOut} style={styles.buttonAlt}>{t('nav_logout', 'Cerrar sesión')}</button>
               ) : null}
 
-              <Link href="/publicar" style={styles.buttonPrimary}>{t('nav_publish', '+ Publicar anuncio')}</Link>
+              <Link href={publishHref} style={styles.buttonPrimary}>{t('nav_publish', '+ Publicar anuncio')}</Link>
             </div>
           </div>
 
@@ -159,7 +160,7 @@ export default function GlobalHeader() {
 
               {user ? <span style={styles.mobileUser}>{user.email}</span> : <Link href="/dashboard" style={styles.mobileLinkBox}>{t('nav_login', 'Ingresar')}</Link>}
               {user ? <button type="button" onClick={signOut} style={styles.mobileSecondary}>{t('nav_logout', 'Cerrar sesión')}</button> : null}
-              <Link href="/publicar" style={styles.mobilePrimary}>{t('nav_publish', '+ Publicar anuncio')}</Link>
+              <Link href={publishHref} style={styles.mobilePrimary}>{t('nav_publish', '+ Publicar anuncio')}</Link>
             </div>
           </div>
         </div>

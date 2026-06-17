@@ -5,6 +5,13 @@ import { supabase } from "../lib/supabase"
 import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail"
 import { useLang } from "../context/LanguageContext"
 
+function safeNextPath(value) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const path = String(raw || "/").trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/login")) return "/";
+  return path;
+}
+
 export default function LoginPage() {
   const { t } = useLang()
   const router = useRouter()
@@ -12,12 +19,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const nextPath = safeNextPath(router.query.next);
 
   useEffect(() => {
+    if (!router.isReady) return;
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.push("/")
+      if (data.session) router.replace(nextPath)
     })
-  }, [router])
+  }, [router, router.isReady, nextPath])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -35,7 +44,7 @@ export default function LoginPage() {
           email,
           password
         })
-        router.push("/")
+        router.push(nextPath)
       }
     } catch (err) {
       alert(getAuthErrorMessage(err) || t("auth_error", "Error de autenticacion"))
@@ -48,7 +57,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
       }
     })
 

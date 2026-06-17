@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import { useLang } from "../context/LanguageContext";
 import { CATEGORIES, SUBTYPES, CURRENCIES, COUNTRIES } from "../data/options";
 import { LANGUAGES } from "../data/globalConfig";
@@ -89,6 +90,7 @@ function createClientRequestId(userId) {
 }
 
 export default function Publicar() {
+  const router = useRouter();
   const initial = {
     title:"", category:"Propiedad", subtype:"Casa", listing_type:"venta",
     price:"", currency:"USD", country:"Argentina", language:"es",
@@ -130,20 +132,25 @@ export default function Publicar() {
     let mounted = true;
     supabaseBrowser.auth.getUser().then(({ data }) => {
       if (!mounted) return;
-      setUser(data?.user || null);
-      setOwnerMode(isOwnerEmail(data?.user?.email));
+      const currentUser = data?.user || null;
+      setUser(currentUser);
+      setOwnerMode(isOwnerEmail(currentUser?.email));
       setAuthChecked(true);
+      if (!currentUser) router.replace("/login?next=/publicar");
     });
     const { data: sub } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      setOwnerMode(isOwnerEmail(session?.user?.email));
+      if (!mounted) return;
+      const currentUser = session?.user || null;
+      setUser(currentUser);
+      setOwnerMode(isOwnerEmail(currentUser?.email));
       setAuthChecked(true);
+      if (!currentUser) router.replace("/login?next=/publicar");
     });
     return () => {
       mounted = false;
       sub?.subscription?.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   async function uploadImages() {
     const urls = [];
