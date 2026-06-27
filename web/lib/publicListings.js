@@ -34,7 +34,6 @@ export const PUBLIC_LISTING_SELECT = [
   'seo_slug',
   'seo_title',
   'seo_description',
-  'slug',
   'rooms',
   'bathrooms',
   'surface',
