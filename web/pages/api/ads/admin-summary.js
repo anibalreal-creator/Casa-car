@@ -1,6 +1,6 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { normalizeAdRecord } from '../../../lib/adHelpers';
-import { deriveCampaignState } from '../../../lib/campaignStatus';
+import { deriveCampaignState, isCampaignLive } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAdminRoute } from '../../../lib/apiRouteGuards';
 
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       ok: true,
       summary: {
         totalCampaigns: campaigns.length,
-        active: campaigns.filter((x) => x.active || x.status === 'active').length,
+        active: campaigns.filter(isCampaignLive).length,
         pending: campaigns.filter((x) => String(x.status).includes('pending')).length,
         paused: campaigns.filter((x) => x.status === 'paused').length,
         expired: campaigns.filter((x) => x.status === 'expired').length,

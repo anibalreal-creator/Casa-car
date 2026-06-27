@@ -1,4 +1,5 @@
 import { getPlanLimits, normalizePlanKey } from './adPlans';
+import { isCampaignLive, deriveCampaignState } from './campaignStatus';
 import { isOwnerEmail } from './owner';
 import { getCurrentMembership } from './permissions';
 
@@ -55,27 +56,26 @@ async function countPremiumListings(supabase, userId, excludeListingId) {
 }
 
 async function countActiveCampaigns(supabase, userId) {
-  const baseQuery = () => supabase
+  const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('id', { count: 'exact', head: true })
+    .select('id,status,active,starts_at,ends_at')
     .eq('user_id', userId);
 
-  const attempts = [
-    () => baseQuery().or('active.eq.true,status.eq.active,is_active.eq.true'),
-    () => baseQuery().or('active.eq.true,status.eq.active'),
-    () => baseQuery().or('status.eq.active,is_active.eq.true'),
-    () => baseQuery().eq('status', 'active'),
-    () => baseQuery().eq('active', true),
-    () => baseQuery().eq('is_active', true),
-  ];
+  if (error) throw error;
+  return (data || []).filter(isCampaignLive).length;
+}
 
-  let lastError = null;
-  for (const build of attempts) {
-    const { count, error } = await build();
-    if (!error) return Number(count || 0);
-    lastError = error;
-  }
-  throw lastError;
+async function countPlanCampaigns(supabase, userId) {
+  const { data, error } = await supabase
+    .from('ad_campaigns')
+    .select('id,status,active,starts_at,ends_at')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  return (data || []).filter((row) => {
+    const state = deriveCampaignState(row);
+    return ['active', 'scheduled', 'pending', 'pending_payment', 'payment_pending', 'awaiting_payment'].includes(state.status);
+  }).length;
 }
 
 export async function getListingLimitState(supabase, user, options = {}) {
@@ -91,7 +91,7 @@ export async function getListingLimitState(supabase, user, options = {}) {
   const [listingsCount, premiumListingsCount, campaignsCount, activeCampaignsCount] = await Promise.all([
     countRows(supabase.from('listings').select('id', { count: 'exact', head: true }).eq('user_id', user.id)),
     countPremiumListings(supabase, user.id, options.excludeListingId),
-    countRows(supabase.from('ad_campaigns').select('id', { count: 'exact', head: true }).eq('user_id', user.id)),
+    countPlanCampaigns(supabase, user.id),
     countActiveCampaigns(supabase, user.id),
   ]);
 

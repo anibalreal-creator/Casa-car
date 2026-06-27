@@ -15,17 +15,58 @@ export function normalizeCampaignStatus(status = '') {
   return String(status || '').trim().toLowerCase();
 }
 
+export function isTerminalCampaignStatus(status = '') {
+  return [
+    'archived',
+    'cancelled',
+    'canceled',
+    'cancelled_by_user',
+    'canceled_by_user',
+    'deleted',
+    'draft',
+    'inactive',
+    'paused',
+    'rejected',
+  ].includes(normalizeCampaignStatus(status));
+}
+
+export function isPendingCampaignStatus(status = '') {
+  return [
+    'awaiting_payment',
+    'pending',
+    'pending_payment',
+    'payment_pending',
+  ].includes(normalizeCampaignStatus(status));
+}
+
+export function isPaidActiveCampaignStatus(status = '') {
+  return [
+    'active',
+    'active_manual',
+    'active_paid',
+    'approved',
+    'paid',
+  ].includes(normalizeCampaignStatus(status));
+}
+
 export function deriveCampaignState(campaign = {}) {
   const status = normalizeCampaignStatus(campaign.status);
   const now = Date.now();
-  const startsAt = campaign.starts_at ? new Date(campaign.starts_at).getTime() : null;
-  const endsAt = campaign.ends_at ? new Date(campaign.ends_at).getTime() : null;
+  const startsAtIso = campaign.starts_at || campaign.start_date || campaign.approved_at || campaign.created_at || null;
+  const endsAtIso = campaign.ends_at || campaign.end_date || null;
+  const startsAt = startsAtIso ? new Date(startsAtIso).getTime() : null;
+  let endsAt = endsAtIso ? new Date(endsAtIso).getTime() : null;
 
-  if ([ 'paused', 'draft' ].includes(status)) {
+  if (!endsAt && startsAt && Number.isFinite(startsAt) && (isPaidActiveCampaignStatus(status) || campaign.active || campaign.is_active)) {
+    const durationMs = getCampaignDurationDays(campaign) * 24 * 60 * 60 * 1000;
+    if (durationMs > 0) endsAt = startsAt + durationMs;
+  }
+
+  if (isTerminalCampaignStatus(status)) {
     return { status, active: false };
   }
 
-  if ([ 'pending', 'pending_payment', 'payment_pending', 'awaiting_payment' ].includes(status)) {
+  if (isPendingCampaignStatus(status)) {
     return { status: status || 'pending_payment', active: false };
   }
 
@@ -37,11 +78,26 @@ export function deriveCampaignState(campaign = {}) {
     return { status: 'scheduled', active: false };
   }
 
-  if ([ 'scheduled', 'active', 'approved', 'paid' ].includes(status) || campaign.active || campaign.is_active) {
+  if (status === 'scheduled') {
+    return { status: 'active', active: true };
+  }
+
+  const explicitlyInactive =
+    (campaign.active === false && campaign.is_active !== true) ||
+    (campaign.is_active === false && campaign.active !== true);
+  if (explicitlyInactive) {
+    return { status: status || 'paused', active: false };
+  }
+
+  if (isPaidActiveCampaignStatus(status) || campaign.active || campaign.is_active) {
     return { status: 'active', active: true };
   }
 
   return { status: status || 'draft', active: !!campaign.active };
+}
+
+export function isCampaignLive(campaign = {}) {
+  return deriveCampaignState(campaign).active === true;
 }
 
 export function patchForCampaignAction(campaign = {}, action = '') {
@@ -55,7 +111,6 @@ export function patchForCampaignAction(campaign = {}, action = '') {
     return {
       status: 'active',
       active: true,
-      is_active: true,
       starts_at: startsAt,
       ends_at: endsAt,
       approved_at: campaign.approved_at || nowIso,
@@ -67,7 +122,6 @@ export function patchForCampaignAction(campaign = {}, action = '') {
     return {
       status: 'paused',
       active: false,
-      is_active: false,
     };
   }
 
@@ -75,7 +129,6 @@ export function patchForCampaignAction(campaign = {}, action = '') {
     return {
       status: 'expired',
       active: false,
-      is_active: false,
       ends_at: nowIso,
     };
   }
@@ -86,7 +139,6 @@ export function patchForCampaignAction(campaign = {}, action = '') {
     return {
       status: 'scheduled',
       active: false,
-      is_active: false,
       starts_at: startsAt,
       ends_at: endsAt,
     };

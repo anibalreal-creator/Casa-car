@@ -4,6 +4,7 @@ import { canManageCompany, getCurrentMembership } from '../../../lib/permissions
 import { parseOrThrow, campaignSchema } from '../../../lib/validation';
 import { ok, fail, methodNotAllowed } from '../../../lib/api';
 import { enforceCampaignActivationLimit, enforceCampaignCreationLimit } from '../../../lib/listingLimits';
+import { isCampaignLive } from '../../../lib/campaignStatus';
 
 export default async function handler(req, res) {
   try {
@@ -58,7 +59,7 @@ export default async function handler(req, res) {
 
         const activationQuota = await enforceCampaignActivationLimit(supabase, user, {
           campaignId: id,
-          alreadyActive: Boolean(existing.active || existing.is_active || String(existing.status || '').toLowerCase() === 'active'),
+          alreadyActive: isCampaignLive(existing),
         });
         if (!activationQuota.canActivateCampaign) {
           return res.status(activationQuota.canUseCompanyPanel ? 402 : 403).json(activationQuota.blockedResponse);

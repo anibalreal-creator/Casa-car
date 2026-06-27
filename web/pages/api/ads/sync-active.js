@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       if (currentStatus !== next.status || currentActive !== next.active) {
         const { error: updateError } = await supabase
           .from('ad_campaigns')
-          .update({ status: next.status, active: next.active, is_active: next.active })
+          .update({ status: next.status, active: next.active })
           .eq('id', row.id);
         if (!updateError) updated += 1;
       }

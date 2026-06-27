@@ -46,7 +46,6 @@ export default async function handler(req, res) {
       ends_at: endsAt,
       status: ownerMode ? 'active' : 'pending_payment',
       active: ownerMode,
-      is_active: ownerMode,
       slot: normalizedSlot,
       slot_key: normalizedSlot,
       target_url: body.target_url || body.destination_url || '',

@@ -1,7 +1,7 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { buildAdPreference, getAdPlan } from '../../../lib/adHelpers';
 import { isOwnerEmail, normalizeEmail } from '../../../lib/owner';
-import { patchForCampaignAction } from '../../../lib/campaignStatus';
+import { isCampaignLive, patchForCampaignAction } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
 import { enforceCampaignActivationLimit } from '../../../lib/listingLimits';
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
     const activationQuota = await enforceCampaignActivationLimit(supabase, user, {
       campaignId,
-      alreadyActive: Boolean(campaign.active || campaign.is_active || String(campaign.status || '').toLowerCase() === 'active'),
+      alreadyActive: isCampaignLive(campaign),
     });
     if (!activationQuota.canActivateCampaign) {
       return safeJson(res, activationQuota.canUseCompanyPanel ? 402 : 403, activationQuota.blockedResponse);

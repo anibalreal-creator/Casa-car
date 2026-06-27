@@ -2,6 +2,7 @@ import { requireUser } from '../../../../lib/auth';
 import { getCurrentMembership } from '../../../../lib/permissions';
 import { isOwnerEmail, ownerMembership } from '../../../../lib/owner';
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
+import { isCampaignLive } from '../../../../lib/campaignStatus';
 
 export default async function handler(req, res) {
   const user = await requireUser(req, res);
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
       supabase.from('listings').select('id, title, views, is_premium, highlighted, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
     ]);
 
-    const activeAds = (campaigns || []).filter((x) => x.active || x.status === 'active').length;
+    const activeAds = (campaigns || []).filter(isCampaignLive).length;
     const impressions = (campaigns || []).reduce((acc, item) => acc + Number(item.impressions || 0), 0);
     const clicks = (campaigns || []).reduce((acc, item) => acc + Number(item.clicks || 0), 0);
     const ctr = impressions ? Number(((clicks / impressions) * 100).toFixed(2)) : 0;

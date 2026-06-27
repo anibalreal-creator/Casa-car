@@ -1,5 +1,6 @@
-import { getAdStatusFromDates, normalizeAdRecord, sortAds } from './adHelpers';
+import { normalizeAdRecord, sortAds } from './adHelpers';
 import { getPlanDurationDays, getPlanLimits, getPlanRevenue } from './adPlans';
+import { deriveCampaignState, isCampaignLive as isDerivedCampaignLive } from './campaignStatus';
 
 function normalize(value) {
   return String(value || '').trim().toLowerCase();
@@ -14,24 +15,17 @@ export function planRevenue(plan) {
 }
 
 export function isCampaignLive(item = {}) {
-  const status = normalize(item.status || getAdStatusFromDates(item.starts_at, item.ends_at));
-  if (['expired', 'paused', 'draft', 'cancelled', 'pending_payment', 'pending'].includes(status)) return false;
-  const now = Date.now();
-  const startsAt = item.starts_at ? new Date(item.starts_at).getTime() : null;
-  const endsAt = item.ends_at ? new Date(item.ends_at).getTime() : null;
-  if (startsAt && Number.isFinite(startsAt) && now < startsAt) return false;
-  if (endsAt && Number.isFinite(endsAt) && now > endsAt) return false;
-  if (item.active === false && status !== 'scheduled') return false;
-  return true;
+  return isDerivedCampaignLive(item);
 }
 
 export async function syncCampaignStatuses(supabase, rows = []) {
   const synced = [];
   for (const row of rows) {
-    const nextStatus = getAdStatusFromDates(row.starts_at, row.ends_at);
-    const nextActive = nextStatus === 'active';
+    const next = deriveCampaignState(row);
+    const nextStatus = next.status;
+    const nextActive = next.active;
     const currentStatus = normalize(row.status);
-    const currentActive = row.active === true;
+    const currentActive = row.active === true || row.is_active === true;
     if (currentStatus !== nextStatus || currentActive !== nextActive) {
       try {
         const { data } = await supabase
@@ -106,7 +100,7 @@ export function summarizeCampaigns(rows = []) {
     acc.impressions += Number(item.impressions || 0);
     acc.clicks += Number(item.clicks || 0);
     acc.revenueEstimate += Number(item.revenueEstimate || 0);
-    if (item.active || item.status === 'active') acc.active += 1;
+    if (isCampaignLive(item)) acc.active += 1;
     return acc;
   }, { campaigns: 0, active: 0, impressions: 0, clicks: 0, revenueEstimate: 0 });
   summary.ctr = summary.impressions > 0 ? Number(((summary.clicks / summary.impressions) * 100).toFixed(2)) : 0;

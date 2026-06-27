@@ -1,19 +1,11 @@
-export function getActiveBanners(campaigns = [], slot = "") {
-  const now = new Date();
+import { isCampaignLive } from './campaignStatus';
 
+export function getActiveBanners(campaigns = [], slot = "") {
   return (campaigns || [])
     .filter((item) => {
       if (!item) return false;
-      if (slot && String(item.slot || "") !== String(slot)) return false;
-
-      const status = String(item.status || "").toLowerCase();
-      const activeFlag = item.active === true || status === "active" || status === "paid";
-
-      if (!activeFlag) return false;
-      if (item.starts_at && new Date(item.starts_at) > now) return false;
-      if (item.ends_at && new Date(item.ends_at) <= now) return false;
-
-      return true;
+      if (slot && String(item.slot || item.slot_key || "") !== String(slot)) return false;
+      return isCampaignLive(item);
     })
     .sort((a, b) => {
       const priority = { premium: 3, destacado: 2, basico: 1 };

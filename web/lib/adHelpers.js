@@ -1,5 +1,6 @@
 import { AD_PLANS, AD_SLOTS, getAdPlan, getPlanRank } from '../data/adPlans';
 import { normalizeSlotKey, getSlotLabel } from './adSlots';
+import { deriveCampaignState } from './campaignStatus';
 import { getSiteUrl } from './siteUrl';
 
 export function plusDaysIso(days = 7) {
@@ -21,6 +22,7 @@ export function getAdStatusFromDates(startsAt, endsAt) {
 export function normalizeAdRecord(item = {}) {
   const plan = getAdPlan(item.plan_key || item.plan || 'basico');
   const bannerUrl = item.banner_url || item.image_url || item.creative_url || '';
+  const derived = deriveCampaignState(item);
   return {
     ...item,
     plan_key: item.plan_key || item.plan || plan.key,
@@ -32,12 +34,15 @@ export function normalizeAdRecord(item = {}) {
     company_name: item.company_name || item.title || 'Empresa',
     banner_url: bannerUrl,
     destination_url: item.destination_url || item.link_url || '#',
-    status: item.status || getAdStatusFromDates(item.starts_at, item.ends_at),
+    status: derived.status || item.status || getAdStatusFromDates(item.starts_at, item.ends_at),
+    active: derived.active,
+    is_active: derived.active,
   };
 }
 
 export function toPublicAdRecord(item = {}) {
   const normalized = normalizeAdRecord(item);
+  const derived = deriveCampaignState(normalized);
   const destination = normalized.destination_url || '#';
   return {
     id: normalized.id,
@@ -52,8 +57,8 @@ export function toPublicAdRecord(item = {}) {
     destination_url: destination,
     target_url: destination,
     cta_text: normalized.cta_text || 'Ver mas',
-    status: normalized.status,
-    active: normalized.active === true || normalized.status === 'active',
+    status: derived.status,
+    active: derived.active,
   };
 }
 

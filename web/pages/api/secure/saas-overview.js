@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { getServerUser } from '../../../lib/auth';
+import { isCampaignLive } from '../../../lib/campaignStatus';
 
 const OWNER_EMAIL = 'anibalreal@hotmail.com';
 
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
   try {
     const [subsRes, campaignsRes, listingsRes, ownerAnalyticsRes] = await Promise.all([
       supabase.from('subscriptions').select('id,status'),
-      supabase.from('ad_campaigns').select('id,status,impressions,clicks'),
+      supabase.from('ad_campaigns').select('id,status,active,starts_at,ends_at,impressions,clicks'),
       supabase.from('listings').select('id,status,is_premium'),
       fetchOwnerAnalytics(req),
     ]);
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
     const subscriptions = countByStatus(subsRes.data || []);
     const campaignsByStatus = countByStatus(campaignsRes.data || []);
     const campaigns = {
-      active: campaignsByStatus.active || 0,
+      active: (campaignsRes.data || []).filter(isCampaignLive).length,
       paused: campaignsByStatus.paused || 0,
       expired: campaignsByStatus.expired || 0,
       impressions: (campaignsRes.data || []).reduce((sum, row) => sum + Number(row.impressions || 0), 0),

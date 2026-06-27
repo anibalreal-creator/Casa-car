@@ -1,6 +1,6 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { extractCampaignId } from '../../lib/adHelpers';
-import { patchForCampaignAction } from '../../lib/campaignStatus';
+import { isCampaignLive, patchForCampaignAction } from '../../lib/campaignStatus';
 import { mercadoPagoRequest } from '../../lib/mercadopago';
 import { enforceCampaignActivationLimit } from '../../lib/listingLimits';
 
@@ -129,8 +129,9 @@ export default async function handler(req, res) {
       status: paymentLookupError ? 'lookup_error' : 'ignored_unverified',
       event_type: 'payment_webhook_unverified',
       payload_json: {
-        body,
-        query: req.query,
+        data_id: pickDataId(body, req.query || {}),
+        type: String(body.type || req.query?.type || ''),
+        action: String(body.action || ''),
         error: paymentLookupError?.message || null,
       },
       created_at: new Date().toISOString(),
@@ -145,7 +146,7 @@ export default async function handler(req, res) {
 
   const { data: campaign, error: campaignError } = await supabase
     .from('ad_campaigns')
-    .select('id,user_id,contact_email,user_email,active,is_active,status,plan_key,plan,duration_days,starts_at,ends_at,approved_at,mercadopago_status')
+    .select('id,user_id,contact_email,user_email,active,status,plan_key,plan,duration_days,starts_at,ends_at,approved_at,mercadopago_status')
     .eq('id', campaignId)
     .maybeSingle();
 
@@ -162,7 +163,13 @@ export default async function handler(req, res) {
     provider_payment_id: providerPaymentId,
     status: providerStatus || 'received',
     event_type: 'payment_webhook',
-    payload_json: { body, query: req.query, payment: paymentDetails },
+    payload_json: {
+      data_id: pickDataId(body, req.query || {}),
+      provider_payment_id: providerPaymentId || null,
+      provider_status: providerStatus || null,
+      mapped_status: mappedStatus || null,
+      external_reference_found: Boolean(campaignId),
+    },
     created_at: new Date().toISOString(),
   });
 
@@ -173,7 +180,7 @@ export default async function handler(req, res) {
         email: campaign.contact_email || campaign.user_email || '',
       }, {
         campaignId,
-        alreadyActive: Boolean(campaign.active || campaign.is_active || String(campaign.status || '').toLowerCase() === 'active'),
+        alreadyActive: isCampaignLive(campaign),
       });
 
       if (!activationQuota.canActivateCampaign) {

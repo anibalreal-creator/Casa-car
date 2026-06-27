@@ -1,6 +1,7 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { allowMethods, safeJson } from '../../../lib/server/internalApi';
 import { checkRateLimit } from '../../../lib/server/rateLimit';
+import { isCampaignLive } from '../../../lib/campaignStatus';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -12,12 +13,7 @@ async function bumpCounter(supabase, campaignId, field) {
     .maybeSingle();
   if (error || !data) return null;
 
-  const now = Date.now();
-  const liveStatus = ['active', 'active_manual', 'active_paid'].includes(String(data.status || '').toLowerCase());
-  const startsAt = data.starts_at ? Date.parse(data.starts_at) : null;
-  const endsAt = data.ends_at ? Date.parse(data.ends_at) : null;
-  const inWindow = (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
-  if (!data.active || !liveStatus || !inWindow) return null;
+  if (!isCampaignLive(data)) return null;
 
   const next = Number(data?.[field] || 0) + 1;
   const { error: updateError } = await supabase

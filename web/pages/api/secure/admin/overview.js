@@ -2,6 +2,7 @@ import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { requireUser } from '../../../../lib/auth';
 import { isAdmin } from '../../../../lib/permissions';
 import { ok, fail, methodNotAllowed } from '../../../../lib/api';
+import { isCampaignLive } from '../../../../lib/campaignStatus';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res);
@@ -14,7 +15,7 @@ export default async function handler(req, res) {
     const [profiles, listings, campaigns, reviews, reports, subs, requests] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('listings').select('id,status,is_premium', { count: 'exact' }),
-      supabase.from('ad_campaigns').select('id,status,impressions,clicks', { count: 'exact' }),
+      supabase.from('ad_campaigns').select('id,status,active,starts_at,ends_at,impressions,clicks', { count: 'exact' }),
       supabase.from('reviews').select('id,rating', { count: 'exact' }),
       supabase.from('listing_reports').select('id,status', { count: 'exact' }),
       supabase.from('subscriptions').select('id,plan,active', { count: 'exact' }),
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
       premiumListings: (listings.data || []).filter((item) => item.is_premium).length,
       activeListings: (listings.data || []).filter((item) => item.status === 'active').length,
       campaigns: campaigns.count || 0,
-      activeCampaigns: campaignRows.filter((item) => item.status === 'active').length,
+      activeCampaigns: campaignRows.filter(isCampaignLive).length,
       reports: reports.count || 0,
       pendingReports: (reports.data || []).filter((item) => item.status === 'pending').length,
       subscriptions: subs.count || 0,

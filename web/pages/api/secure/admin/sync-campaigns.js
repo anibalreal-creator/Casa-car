@@ -13,7 +13,7 @@ async function syncCampaigns() {
     const currentStatus = String(campaign.status || '').toLowerCase();
     const currentActive = !!(campaign.active || campaign.is_active);
     if (next.status !== currentStatus || next.active !== currentActive) {
-      const patch = { status: next.status, active: next.active, is_active: next.active };
+      const patch = { status: next.status, active: next.active };
       const { error: updateError } = await supabase.from('ad_campaigns').update(patch).eq('id', campaign.id);
       if (!updateError) updated += 1;
     }

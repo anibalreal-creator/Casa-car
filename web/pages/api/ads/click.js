@@ -1,20 +1,9 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { checkRateLimit } from '../../../lib/server/rateLimit';
 import { allowMethods, safeJson } from '../../../lib/server/internalApi';
+import { isCampaignLive } from '../../../lib/campaignStatus';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isLiveCampaign(campaign = {}) {
-  const status = String(campaign.status || '').toLowerCase();
-  if (!['active', 'active_manual', 'active_paid', 'approved'].includes(status)) return false;
-  if (campaign.active === false) return false;
-  const now = Date.now();
-  const starts = campaign.starts_at ? new Date(campaign.starts_at).getTime() : null;
-  const ends = campaign.ends_at ? new Date(campaign.ends_at).getTime() : null;
-  if (starts && Number.isFinite(starts) && now < starts) return false;
-  if (ends && Number.isFinite(ends) && now > ends) return false;
-  return true;
-}
 
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
@@ -32,7 +21,7 @@ export default async function handler(req, res) {
       .eq('id', campaignId)
       .maybeSingle();
 
-    if (readError || !campaign || !isLiveCampaign(campaign)) return safeJson(res, 200, { ok: true, ignored: true });
+    if (readError || !campaign || !isCampaignLive(campaign)) return safeJson(res, 200, { ok: true, ignored: true });
 
     const currentClicks = Number(campaign.clicks || 0);
     const { error: updateError } = await supabase

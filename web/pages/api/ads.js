@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan, toPublicAdRecord } from '../../lib/adHelpers';
+import { isCampaignLive } from '../../lib/adCampaigns';
 import { normalizeSlotKey } from '../../lib/adSlots';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
@@ -20,7 +21,7 @@ function canManageCampaign(campaign, user) {
 
 function withHouseAds(items, slot) {
   const normalized = (items || []).map(normalizeAdRecord);
-  const active = normalized.filter((item) => item.status === 'active' && (!slot || item.slot_key === slot));
+  const active = normalized.filter((item) => isCampaignLive(item) && (!slot || item.slot_key === slot));
   if (active.length) return sortAds(active).map(toPublicAdRecord);
   return sortAds(getHouseAds().filter((item) => !slot || item.slot_key === slot).map(normalizeAdRecord)).map(toPublicAdRecord);
 }
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
         .from('ad_campaigns')
         .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(80);
       if (normalizedSlot) query = query.eq('slot_key', normalizedSlot);
       const { data, error } = await query;
       if (error) return res.status(200).json(withHouseAds([], normalizedSlot));
