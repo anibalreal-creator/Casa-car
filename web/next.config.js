@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const { URL } = require('url');
+const isProd = process.env.NODE_ENV === 'production';
 
 function parseAllowedImageHosts() {
   const candidates = [
@@ -38,6 +39,7 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self)' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
   { key: 'Cross-Origin-Resource-Policy', value: 'same-site' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
 ];
 
 const contentSecurityPolicy = [
@@ -49,9 +51,13 @@ const contentSecurityPolicy = [
   "media-src 'self' data: blob: https:",
   "font-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline' https:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  `script-src 'self' 'unsafe-inline'${isProd ? '' : " 'unsafe-eval'"} https:`,
   "connect-src 'self' https: wss:",
   "frame-src 'self' https:",
+  "form-action 'self'",
+  "manifest-src 'self'",
+  "worker-src 'self' blob:",
+  ...(isProd ? ['upgrade-insecure-requests'] : []),
 ].join('; ');
 
 securityHeaders.push({ key: 'Content-Security-Policy', value: contentSecurityPolicy });

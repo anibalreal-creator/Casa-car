@@ -28,7 +28,7 @@ export function requireInternalRequest(req, res) {
 }
 
 export function requireAdminDebugKey(req, res) {
-  const expected = process.env.ADMIN_DASHBOARD_KEY || process.env.CASA_CAR_ADMIN_KEY || process.env.NEXT_PUBLIC_ADMIN_DASHBOARD_KEY || '';
+  const expected = process.env.ADMIN_DASHBOARD_KEY || process.env.CASA_CAR_ADMIN_KEY || '';
   if (!expected) {
     safeJson(res, 404, { error: 'Not found' });
     return false;

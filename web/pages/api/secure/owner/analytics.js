@@ -3,10 +3,10 @@ import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { isOwnerEmail } from '../../../../lib/owner';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Metodo no permitido' });
   const user = await requireUser(req, res);
   if (!user) return;
-  if (!isOwnerEmail(user.email)) return res.status(403).json({ error: 'Solo el dueño puede ver estas métricas' });
+  if (!isOwnerEmail(user.email)) return res.status(403).json({ error: 'Solo el dueno puede ver estas metricas' });
 
   try {
     const supabase = getSupabaseServer();
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       dailyUniqueUsers: stats.unique_users_today,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'No se pudieron cargar métricas en vivo' });
+    return res.status(500).json({ error: 'No se pudieron cargar metricas en vivo' });
   }
 }
 

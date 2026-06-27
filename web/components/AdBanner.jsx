@@ -128,7 +128,7 @@ export default function AdBanner({
     )
   }
 
-  const target = ad.target_url || '#'
+  const target = ad.destination_url || ad.target_url || '#'
   const image = ad.banner_url || ''
 
   return (
@@ -169,7 +169,7 @@ export default function AdBanner({
         <div style={{ padding: 18 }}>
           <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 8 }}>{(ad.plan || 'PLAN').toUpperCase()}</div>
           <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1 }}>{ad.title || 'Publicidad Casa-Car'}</div>
-          <div style={{ marginTop: 8, opacity: 0.9 }}>{ad.contact_email || 'Anunciante'}</div>
+          <div style={{ marginTop: 8, opacity: 0.9 }}>{ad.company_name || 'Anunciante'}</div>
         </div>
       )}
     </a>

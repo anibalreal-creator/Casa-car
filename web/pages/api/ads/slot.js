@@ -1,5 +1,7 @@
 import { normalizeSlotKey } from '../../../lib/adSlots'
 import { createClient } from '@supabase/supabase-js'
+import { toPublicAdRecord } from '../../../lib/adHelpers'
+import { checkRateLimit } from '../../../lib/server/rateLimit'
 
 function pickWeightedCampaign(campaigns) {
   if (!campaigns.length) return null
@@ -31,6 +33,9 @@ function pickWeightedCampaign(campaigns) {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  if (!checkRateLimit(req, res, { name: 'ads-slot', limit: 180, windowMs: 60_000 })) return
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('*')
+    .select('id,title,company_name,plan_key,plan,slot_key,slot,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
     .eq('slot', slot)
     .eq('active', true)
     .in('status', ['active', 'active_manual', 'active_paid'])
@@ -56,14 +61,14 @@ export default async function handler(req, res) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ error: 'No se pudo cargar publicidad' })
   }
 
   const campaigns = Array.isArray(data) ? data : []
   const campaign = pickWeightedCampaign(campaigns)
 
   return res.status(200).json({
-    campaign: campaign || null,
+    campaign: campaign ? toPublicAdRecord(campaign) : null,
     slot,
     page,
     totalCandidates: campaigns.length,

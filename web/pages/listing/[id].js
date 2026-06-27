@@ -34,6 +34,7 @@ import { slugify } from '../../lib/slugify';
 import { fetchJsonCached } from '../../lib/clientFetchCache';
 import { isTourismListing } from '../../lib/tourism';
 import { getListingDetailHref } from '../../lib/listingRoutes';
+import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from '../../lib/publicListings';
 
 const SPEC_LABELS = {
   brand: 'Marca', model: 'Modelo', year: 'Año', km: 'Kilómetros', fuel: 'Combustible', transmission: 'Transmisión',
@@ -69,7 +70,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
     if (seoSlug) {
       result = await supabase
         .from('listings')
-        .select('*')
+        .select(PUBLIC_LISTING_SELECT)
         .eq('status', 'active')
         .eq('seo_slug', seoSlug)
         .maybeSingle();
@@ -77,7 +78,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
       if (!result.data) {
         result = await supabase
           .from('listings')
-          .select('*')
+          .select(PUBLIC_LISTING_SELECT)
           .eq('status', 'active')
           .eq('slug', seoSlug)
           .maybeSingle();
@@ -86,7 +87,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
       if (!result.data) {
         const { data: candidates } = await supabase
           .from('listings')
-          .select('*')
+          .select(PUBLIC_LISTING_SELECT)
           .eq('status', 'active')
           .limit(2000);
         const match = (candidates || []).find((row) => slugify(getListingSeoSlug(row)) === seoSlug);
@@ -95,7 +96,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
     } else {
       result = await supabase
         .from('listings')
-        .select('*')
+        .select(PUBLIC_LISTING_SELECT)
         .eq('status', 'active')
         .eq('id', id)
         .maybeSingle();
@@ -103,7 +104,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
 
     if (result?.error || !result?.data) return { notFound: true };
     res?.setHeader?.('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
-    return { props: { initialItem: normalizeListingForSeo(result.data) } };
+    return { props: { initialItem: normalizeListingForSeo(toPublicListingRecord(result.data, { includeContact: true })) } };
   } catch {
     return { notFound: true };
   }

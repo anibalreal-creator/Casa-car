@@ -1,6 +1,7 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
-import { getHouseAds, normalizeAdRecord, sortAds, getAdStatusFromDates } from '../../../lib/adHelpers';
+import { getHouseAds, normalizeAdRecord, sortAds, getAdStatusFromDates, toPublicAdRecord } from '../../../lib/adHelpers';
 import { normalizeSlotKey } from '../../../lib/adSlots';
+import { checkRateLimit } from '../../../lib/server/rateLimit';
 
 function isActiveNow(item = {}) {
   const status = item.status || getAdStatusFromDates(item.starts_at, item.ends_at);
@@ -15,22 +16,7 @@ function isActiveNow(item = {}) {
 }
 
 function shape(items = []) {
-  return items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    slot: item.slot_label,
-    slot_key: item.slot_key,
-    image: item.banner_url,
-    company_name: item.company_name,
-    destination_url: item.destination_url,
-    cta_text: item.cta_text || 'Ver más',
-    status: item.status,
-    plan_key: item.plan_key,
-    starts_at: item.starts_at || null,
-    ends_at: item.ends_at || null,
-    clicks: Number(item.clicks || 0),
-    impressions: Number(item.impressions || 0),
-  }));
+  return items.map(toPublicAdRecord);
 }
 
 async function syncStatuses(supabase, rows = []) {
@@ -46,7 +32,7 @@ async function syncStatuses(supabase, rows = []) {
         .from('ad_campaigns')
         .update({ status: nextStatus, active: nextActive })
         .eq('id', row.id)
-        .select('*')
+        .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
         .single();
       current = data || { ...row, status: nextStatus, active: nextActive };
     }
@@ -70,18 +56,25 @@ async function registerImpressions(supabase, items = []) {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!checkRateLimit(req, res, { name: 'ads-active', limit: 120, windowMs: 60_000 })) return;
+
   const supabase = getSupabaseServer();
   const { slot = '' } = req.query || {};
   const normalizedSlot = normalizeSlotKey(slot || '', '');
   try {
-    const { data, error } = await supabase.from('ad_campaigns').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('ad_campaigns')
+      .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
+      .order('created_at', { ascending: false })
+      .limit(50);
     if (error) throw error;
     const synced = await syncStatuses(supabase, Array.isArray(data) ? data : []);
     const campaigns = sortAds(synced.map(normalizeAdRecord)).filter((item) => isActiveNow(item) && (!normalizedSlot || item.slot_key === normalizedSlot));
     const result = campaigns.length ? campaigns : sortAds(getHouseAds().map(normalizeAdRecord)).filter((item) => !normalizedSlot || item.slot_key === normalizedSlot);
     await registerImpressions(supabase, result);
     return res.status(200).json({ ads: shape(result) });
-  } catch (error) {
+  } catch {
     const result = sortAds(getHouseAds().map(normalizeAdRecord)).filter((item) => !normalizedSlot || item.slot_key === normalizedSlot);
     return res.status(200).json({ ads: shape(result) });
   }

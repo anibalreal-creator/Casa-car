@@ -53,7 +53,7 @@ export default async function handler(req, res) {
       ownerAnalytics: ownerAnalyticsRes || null,
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'No se pudo cargar el overview SaaS' });
+    return res.status(500).json({ error: 'No se pudo cargar el overview SaaS' });
   }
 }
 

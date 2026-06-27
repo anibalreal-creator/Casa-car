@@ -8,7 +8,9 @@ export default async function handler(req, res) {
   if (!user) return;
 
   const supabase = getSupabaseServer();
-  const membership = isOwnerEmail(user.email) ? ownerMembership() : await getCurrentMembership(user.id).catch(() => ({ plan: 'FREE', active: false }));
+  const membership = isOwnerEmail(user.email)
+    ? ownerMembership()
+    : await getCurrentMembership(user.id).catch(() => ({ plan: 'FREE', active: false }));
 
   try {
     const [{ data: campaigns }, { data: listings }] = await Promise.all([
@@ -40,8 +42,10 @@ export default async function handler(req, res) {
     return res.status(200).json({
       membership,
       metrics: { campaigns: 0, activeAds: 0, premiumListings: 0, totalViews: 0, impressions: 0, clicks: 0, ctr: 0 },
-      campaigns: [], listings: [], verification:{ verified:false, pending:false, latestRequest:null },
-      warning: error.message || 'No se pudieron cargar métricas reales',
+      campaigns: [],
+      listings: [],
+      verification: { verified: false, pending: false, latestRequest: null },
+      warning: 'No se pudieron cargar metricas reales',
     });
   }
 }

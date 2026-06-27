@@ -4,9 +4,11 @@ export function ok(res, payload = {}, status = 200) {
 
 export function fail(res, error, fallbackMessage = 'Error inesperado') {
   const statusCode = Number(error?.statusCode || error?.status || 500);
+  const isServerError = statusCode >= 500;
+  const exposeDetails = process.env.NODE_ENV !== 'production' && !isServerError;
   return res.status(statusCode).json({
-    error: error?.message || fallbackMessage,
-    details: error?.details || null,
+    error: isServerError ? fallbackMessage : (error?.message || fallbackMessage),
+    details: exposeDetails ? (error?.details || null) : null,
   });
 }
 

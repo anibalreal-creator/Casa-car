@@ -41,9 +41,9 @@ export default async function handler(req, res) {
       lastError = error;
     }
 
-    if (!updated && lastError) return safeJson(res, 500, { error: lastError.message });
+    if (!updated && lastError) return safeJson(res, 500, { error: 'No se pudo dar de baja la publicidad' });
     return safeJson(res, 200, { ok: true, campaign: normalizeAdRecord(updated) });
   } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudo dar de baja la publicidad' });
+    return safeJson(res, 500, { error: 'No se pudo dar de baja la publicidad' });
   }
 }

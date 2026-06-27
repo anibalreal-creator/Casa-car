@@ -18,10 +18,10 @@ export default async function handler(req, res) {
   try {
     const supabase = getSupabaseServer();
     const { data, error } = await supabase.from("verification_requests").insert(payload).select("*").single();
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) return res.status(500).json({ error: "No se pudo enviar la solicitud" });
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(500).json({ error: error.message || "No se pudo enviar la solicitud" });
+    return res.status(500).json({ error: "No se pudo enviar la solicitud" });
   }
 }
 

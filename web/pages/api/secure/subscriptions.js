@@ -61,10 +61,10 @@ export default async function handler(req, res) {
     try {
       const supabase = getSupabaseServer();
       const { data, error } = await supabase.from("subscriptions").upsert(payload, { onConflict: "user_id" }).select("*").single();
-      if (error) return res.status(500).json({ error: error.message });
+      if (error) return res.status(500).json({ error: "No se pudo guardar el plan" });
       return res.status(200).json({ subscription: data, planInfo: PLAN_CATALOG[plan], ownerMode });
     } catch (error) {
-      return res.status(500).json({ error: error.message || "No se pudo guardar el plan" });
+      return res.status(500).json({ error: "No se pudo guardar el plan" });
     }
   }
 

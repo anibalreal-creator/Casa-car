@@ -16,9 +16,7 @@ export default async function handler(req, res) {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      return res.status(500).json({ error: error.message || 'No se pudo leer campañas' });
-    }
+    if (error) return res.status(500).json({ error: 'No se pudo leer campanias' });
 
     const rows = campaigns || [];
     const ingresos = rows
@@ -29,9 +27,9 @@ export default async function handler(req, res) {
     const impressions = rows.reduce((acc, item) => acc + Number(item.impressions || 0), 0);
     const ctr = impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0;
 
-    return res.status(200).json({ campañas: rows, ingresos, clicks, impressions, ctr });
+    return res.status(200).json({ campanias: rows, ingresos, clicks, impressions, ctr });
   } catch (error) {
-    console.error('admin-ads error:', error);
-    return res.status(500).json({ error: error.message || 'Admin ads error' });
+    console.error('admin ads summary failed');
+    return res.status(500).json({ error: 'Admin ads error' });
   }
 }

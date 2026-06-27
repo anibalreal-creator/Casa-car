@@ -419,6 +419,19 @@ using (
   and coalesce((storage.foldername(name))[2], '') = auth.uid()::text
 );
 
+update storage.buckets
+set
+  public = false,
+  file_size_limit = 10485760,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif']::text[]
+where id = 'anuncios';
+
+update storage.buckets
+set
+  file_size_limit = 10485760,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif']::text[]
+where id = 'listings';
+
 do $$
 begin
   if to_regprocedure('public.set_updated_at_timestamp()') is not null then

@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'No se pudieron cargar campanias' });
     }
 
     let campaigns = (data || []).map((item) => {
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     }
 
     const { data: current, error: currentError } = await supabase.from('ad_campaigns').select('*').eq('id', id).maybeSingle();
-    if (currentError) return res.status(500).json({ error: currentError.message });
+    if (currentError) return res.status(500).json({ error: 'No se pudo cargar la campania' });
     if (!current) return res.status(404).json({ error: 'Campaña no encontrada' });
 
     let actionName = action;
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
     const { error } = await supabase.from('ad_campaigns').update(patch).eq('id', id);
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     }
 
     return res.status(200).json({ ok: true });

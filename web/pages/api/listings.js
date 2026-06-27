@@ -5,6 +5,7 @@ import { buildListingSlug } from '../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../lib/api';
 import { enforceListingCreationLimit, enforcePremiumActivationLimit } from '../../lib/listingLimits';
 import { findListingByClientRequestId, sanitizeClientRequestId } from '../../lib/listingRequestId';
+import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from '../../lib/publicListings';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -109,13 +110,13 @@ export default async function handler(req, res) {
       }
 
       if (id) {
-        const { data, error } = await supabase.from('listings').select('*').eq('id', id).single();
+        const { data, error } = await supabase.from('listings').select(PUBLIC_LISTING_SELECT).eq('id', id).eq('status', 'active').single();
         if (error) throw error;
         const [item] = await enrichListings(supabase, [data]);
-        return ok(res, item);
+        return ok(res, toPublicListingRecord(item, { includeContact: true }));
       }
 
-      let query = supabase.from('listings').select('*', { count: 'exact' }).eq('status', 'active');
+      let query = supabase.from('listings').select(PUBLIC_LISTING_SELECT, { count: 'exact' }).eq('status', 'active');
       if (user_id) query = query.eq('user_id', user_id);
       const sortDescriptor = parseSort(sort);
       query = query.order('is_premium', { ascending: false }).order('highlighted', { ascending: false }).order(sortDescriptor.column, { ascending: sortDescriptor.ascending }).range(pagination.from, pagination.to);
@@ -125,7 +126,7 @@ export default async function handler(req, res) {
       const items = await enrichListings(supabase, data || []);
       const filtered = items.filter((item) => itemMatches(item, { category, q, country, state, city, type }));
       return ok(res, {
-        items: filtered,
+        items: filtered.map((item) => toPublicListingRecord(item)),
         page: pagination.page,
         pageSize: pagination.pageSize,
         total: Number(count || filtered.length),

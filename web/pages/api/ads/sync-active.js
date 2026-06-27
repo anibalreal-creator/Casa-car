@@ -7,6 +7,7 @@ import { isOwnerEmail } from '../../../lib/owner';
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
+
   try {
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
     }
 
     return safeJson(res, 200, { ok: true, syncedAt: now, updated, total: rows.length });
-  } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudieron sincronizar campañas' });
+  } catch {
+    return safeJson(res, 500, { error: 'No se pudieron sincronizar campanias' });
   }
 }

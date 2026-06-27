@@ -38,6 +38,6 @@ export default async function handler(req, res) {
     rows.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     return safeJson(res, 200, { campaigns: rows.slice(0, 50).map(normalizeAdRecord) });
   } catch (error) {
-    return safeJson(res, 500, { error: error.message, campaigns: [] });
+    return safeJson(res, 500, { error: 'No se pudieron cargar campanias', campaigns: [] });
   }
 }

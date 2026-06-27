@@ -11,7 +11,7 @@ export async function trackImpression(adId) {
       })
     });
   } catch (error) {
-    console.error('trackImpression error', error);
+    console.error('trackImpression failed');
   }
 }
 
@@ -28,6 +28,6 @@ export async function trackClick(adId) {
       })
     });
   } catch (error) {
-    console.error('trackClick error', error);
+    console.error('trackClick failed');
   }
 }

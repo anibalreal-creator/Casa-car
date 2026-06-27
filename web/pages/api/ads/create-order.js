@@ -83,11 +83,11 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) return safeJson(res, response.status, { error: data?.message || data?.error || 'No se pudo crear la orden' });
+    if (!response.ok) return safeJson(res, response.status, { error: 'No se pudo crear la orden' });
 
     await supabase.from('ad_campaigns').update({ mercadopago_status: 'preference_created', mp_preference_id: data.id || null }).eq('id', campaignId);
     return safeJson(res, 200, { ok: true, checkout_url: data.init_point, chosen_checkout_url: data.init_point, sandbox_url: data.sandbox_init_point || null });
   } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudo crear la orden publicitaria' });
+    return safeJson(res, 500, { error: 'No se pudo crear la orden publicitaria' });
   }
 }

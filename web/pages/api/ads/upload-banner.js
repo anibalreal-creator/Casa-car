@@ -1,13 +1,3 @@
-
-export default async function handler(req, res) {
-  return res.status(200).json({ ok: true, message: "La subida se realiza desde el navegador con Supabase Storage." });
+export default function handler(_req, res) {
+  return res.status(404).json({ error: "Not found" });
 }
-
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '8mb',
-    },
-    responseLimit: '8mb',
-  },
-};

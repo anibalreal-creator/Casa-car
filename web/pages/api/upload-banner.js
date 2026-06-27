@@ -1,6 +1,3 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-  return res.status(200).json({ ok: true, message: "Upload listo para conectar con storage" });
+export default function handler(_req, res) {
+  return res.status(404).json({ error: "Not found" });
 }

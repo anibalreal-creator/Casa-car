@@ -29,6 +29,6 @@ export default async function handler(req, res) {
     const result = await syncCampaigns();
     return res.status(200).json(result);
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'No se pudieron sincronizar campañas' });
+    return res.status(500).json({ error: 'No se pudieron sincronizar campanias' });
   }
 }

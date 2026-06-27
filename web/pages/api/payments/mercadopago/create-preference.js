@@ -25,7 +25,11 @@ export default async function handler(req, res) {
     }
 
     const supabase = getSupabaseServer();
-    const { data: listing, error } = await supabase.from("listings").select("*").eq("id", String(listingId)).maybeSingle();
+    const { data: listing, error } = await supabase
+      .from("listings")
+      .select("id,user_id,title,price,currency")
+      .eq("id", String(listingId))
+      .maybeSingle();
     if (error) throw error;
     if (!listing) return res.status(404).json({ error: "Anuncio no encontrado" });
     if (!listing.user_id || String(listing.user_id) !== String(user.id)) {
@@ -48,7 +52,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("create premium preference error:", error);
+    console.error("create premium preference failed");
     res.status(500).json({ error: "Error creando preferencia" });
   }
 }

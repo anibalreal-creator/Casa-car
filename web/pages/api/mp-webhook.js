@@ -145,12 +145,12 @@ export default async function handler(req, res) {
 
   const { data: campaign, error: campaignError } = await supabase
     .from('ad_campaigns')
-    .select('*')
+    .select('id,user_id,contact_email,user_email,active,is_active,status,plan_key,plan,duration_days,starts_at,ends_at,approved_at,mercadopago_status')
     .eq('id', campaignId)
     .maybeSingle();
 
   if (campaignError) {
-    return res.status(500).json({ error: campaignError.message });
+    return res.status(500).json({ error: 'No se pudo cargar la campania' });
   }
   if (!campaign) {
     return res.status(404).json({ error: 'Campaña no encontrada' });
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
     });
 
     if (updateError) {
-      return res.status(500).json({ error: updateError.message });
+      return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     }
   } else if (mappedStatus === 'pending') {
     const updateError = await updateCampaign(supabase, campaignId, {
@@ -218,7 +218,7 @@ export default async function handler(req, res) {
     });
 
     if (updateError) {
-      return res.status(500).json({ error: updateError.message });
+      return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     }
   } else if (mappedStatus === 'rejected') {
     const updateError = await updateCampaign(supabase, campaignId, {
@@ -230,7 +230,7 @@ export default async function handler(req, res) {
     });
 
     if (updateError) {
-      return res.status(500).json({ error: updateError.message });
+      return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     }
   }
 

@@ -50,8 +50,8 @@ export default async function handler(req, res) {
       planInfo,
     });
   } catch (error) {
-    console.error("create subscription preference error:", error);
-    return res.status(500).json({ error: error.message || "Error creando checkout" });
+    console.error("create subscription preference failed");
+    return res.status(500).json({ error: "Error creando checkout" });
   }
 }
 

@@ -47,6 +47,6 @@ export default async function handler(req, res) {
       campaigns,
     });
   } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudo cargar el resumen', summary: null, campaigns: [] });
+    return safeJson(res, 500, { error: 'No se pudo cargar el resumen', summary: null, campaigns: [] });
   }
 }

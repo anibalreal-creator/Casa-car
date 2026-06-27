@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
     if (!premium && !highlighted) {
       const expired = await mirrorFeaturedState(supabase, listingId, 'expire');
-      if (expired.error) return res.status(500).json({ error: expired.error.message });
+      if (expired.error) return res.status(500).json({ error: 'No se pudo actualizar premium' });
       return res.status(200).json({ ok: true, item: expired.data });
     }
 
@@ -37,9 +37,9 @@ export default async function handler(req, res) {
     }
 
     const activated = await mirrorFeaturedState(supabase, listingId, 'activate', { planKey: 'PREMIUM', days: 30 });
-    if (activated.error) return res.status(500).json({ error: activated.error.message });
+    if (activated.error) return res.status(500).json({ error: 'No se pudo activar premium' });
     return res.status(200).json({ ok: true, item: activated.data });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'No se pudo activar premium' });
+    return res.status(500).json({ error: 'No se pudo activar premium' });
   }
 }

@@ -2,16 +2,21 @@ import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { getAdPlan, getAdStatusFromDates } from '../../../lib/adHelpers';
 import { requireResourceOwner } from '../../../lib/apiRouteGuards';
 import { isOwnerEmail } from '../../../lib/owner';
+import { checkRateLimit } from '../../../lib/server/rateLimit';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!checkRateLimit(req, res, { name: 'ads-renew', limit: 20, windowMs: 60_000 })) return;
+
   try {
     const supabase = getSupabaseServer();
-    const { campaignId = '' } = req.body || {};
-    if (!campaignId) return res.status(400).json({ error: 'Falta campaignId' });
+    const campaignId = String(req.body?.campaignId || '').trim();
+    if (!campaignId || !UUID_RE.test(campaignId)) return res.status(400).json({ error: 'campaignId invalido' });
 
     const { data, error } = await supabase.from('ad_campaigns').select('*').eq('id', campaignId).single();
-    if (error || !data) return res.status(404).json({ error: 'Campaña no encontrada' });
+    if (error || !data) return res.status(404).json({ error: 'Campania no encontrada' });
 
     const user = await requireResourceOwner(req, res, async () => data);
     if (!user) return;
@@ -37,9 +42,9 @@ export default async function handler(req, res) {
       .select('*')
       .single();
 
-    if (updateError) throw updateError;
-    return res.status(200).json({ ok: true, campaign: updated, message: `Campaña renovada por ${plan.durationDays} días.` });
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'No se pudo renovar la campaña' });
+    if (updateError) return res.status(500).json({ error: 'No se pudo renovar la campania' });
+    return res.status(200).json({ ok: true, campaign: updated, message: `Campania renovada por ${plan.durationDays} dias.` });
+  } catch {
+    return res.status(500).json({ error: 'No se pudo renovar la campania' });
   }
 }

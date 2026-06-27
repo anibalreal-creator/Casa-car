@@ -2,6 +2,7 @@ import { getSupabaseServer } from "../../../lib/supabaseServer";
 import { getSiteUrl } from "../../../lib/siteUrl";
 import { checkRateLimit } from "../../../lib/server/rateLimit";
 import { calculateTourismQuote } from "../../../lib/tourism";
+import { PUBLIC_LISTING_SELECT } from "../../../lib/publicListings";
 
 function sanitize(value = "", max = 500) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -72,7 +73,12 @@ export default async function handler(req, res) {
     const listingId = sanitize(body.listing_id, 120);
     if (!listingId) return res.status(400).json({ error: "Falta listing_id" });
 
-    const { data: listing, error } = await supabase.from("listings").select("*").eq("id", listingId).maybeSingle();
+    const { data: listing, error } = await supabase
+      .from("listings")
+      .select(PUBLIC_LISTING_SELECT)
+      .eq("id", listingId)
+      .eq("status", "active")
+      .maybeSingle();
     if (error) throw error;
     if (!listing) return res.status(404).json({ error: "Alojamiento no encontrado" });
 
@@ -109,7 +115,11 @@ export default async function handler(req, res) {
     };
 
     let saved = null;
-    const insert = await supabase.from("tourism_reservations").insert(payload).select("*").maybeSingle();
+    const insert = await supabase
+      .from("tourism_reservations")
+      .insert(payload)
+      .select("id,listing_id,check_in,check_out,guests,nights,total_estimate,currency,status,created_at")
+      .maybeSingle();
     if (!insert.error) saved = insert.data;
 
     if (insert.error) {
@@ -131,12 +141,21 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       ok: true,
-      reservation: saved || payload,
+      reservation: saved || {
+        listing_id: payload.listing_id,
+        check_in: payload.check_in,
+        check_out: payload.check_out,
+        guests: payload.guests,
+        nights: payload.nights,
+        total_estimate: payload.total_estimate,
+        currency: payload.currency,
+        status: payload.status,
+      },
       checkout_url: checkoutUrl,
       message: checkoutUrl ? "Checkout creado." : "Solicitud de reserva enviada.",
     });
-  } catch (error) {
-    return res.status(500).json({ error: error.message || "No se pudo crear la reserva" });
+  } catch {
+    return res.status(500).json({ error: "No se pudo crear la reserva" });
   }
 }
 

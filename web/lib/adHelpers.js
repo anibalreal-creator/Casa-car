@@ -36,6 +36,27 @@ export function normalizeAdRecord(item = {}) {
   };
 }
 
+export function toPublicAdRecord(item = {}) {
+  const normalized = normalizeAdRecord(item);
+  const destination = normalized.destination_url || '#';
+  return {
+    id: normalized.id,
+    title: normalized.title,
+    company_name: normalized.company_name,
+    plan_key: normalized.plan_key,
+    plan_name: normalized.plan_name,
+    slot_key: normalized.slot_key,
+    slot_label: normalized.slot_label,
+    banner_url: normalized.banner_url,
+    image: normalized.banner_url,
+    destination_url: destination,
+    target_url: destination,
+    cta_text: normalized.cta_text || 'Ver mas',
+    status: normalized.status,
+    active: normalized.active === true || normalized.status === 'active',
+  };
+}
+
 export function sortAds(items = []) {
   return [...items].sort((a, b) => {
     const planDiff = getPlanRank(b.plan_key) - getPlanRank(a.plan_key);

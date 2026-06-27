@@ -1,9 +1,12 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { allowMethods, requireInternalRequest, safeJson } from '../../lib/server/internalApi';
+import { requireAdminRoute } from '../../lib/apiRouteGuards';
 
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
+  const admin = await requireAdminRoute(req, res, { allowLocalDev: false });
+  if (!admin) return;
 
   try {
     const supabase = getSupabaseServer();
@@ -15,7 +18,7 @@ export default async function handler(req, res) {
 
     if (error) throw error;
     return safeJson(res, 200, Array.isArray(data) ? data : []);
-  } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudieron cargar eventos admin' });
+  } catch {
+    return safeJson(res, 500, { error: 'No se pudieron cargar eventos admin' });
   }
 }

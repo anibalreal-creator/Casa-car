@@ -1,9 +1,12 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
-import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan } from '../../lib/adHelpers';
+import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan, toPublicAdRecord } from '../../lib/adHelpers';
 import { normalizeSlotKey } from '../../lib/adSlots';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
 import { enforceCampaignCreationLimit } from '../../lib/listingLimits';
+import { checkRateLimit } from '../../lib/server/rateLimit';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function canManageCampaign(campaign, user) {
   const userId = String(user?.id || '');
@@ -18,25 +21,26 @@ function canManageCampaign(campaign, user) {
 function withHouseAds(items, slot) {
   const normalized = (items || []).map(normalizeAdRecord);
   const active = normalized.filter((item) => item.status === 'active' && (!slot || item.slot_key === slot));
-  if (active.length) return sortAds(active);
-  return sortAds(getHouseAds().filter((item) => !slot || item.slot_key === slot).map(normalizeAdRecord));
+  if (active.length) return sortAds(active).map(toPublicAdRecord);
+  return sortAds(getHouseAds().filter((item) => !slot || item.slot_key === slot).map(normalizeAdRecord)).map(toPublicAdRecord);
 }
 
 export default async function handler(req, res) {
   const supabase = getSupabaseServer();
 
   if (req.method === 'GET') {
-    const { slot, company, contact_email } = req.query;
+    if (!checkRateLimit(req, res, { name: 'ads-public-read', limit: 120, windowMs: 60_000 })) return;
+    const { slot } = req.query;
     const normalizedSlot = normalizeSlotKey(slot || '', '');
     try {
-      let query = supabase.from('ad_campaigns').select('*').order('created_at', { ascending: false });
+      let query = supabase
+        .from('ad_campaigns')
+        .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at')
+        .order('created_at', { ascending: false })
+        .limit(20);
       if (normalizedSlot) query = query.eq('slot_key', normalizedSlot);
-      if (company) query = query.ilike('company_name', `%${company}%`);
-      if (contact_email) query = query.eq('contact_email', contact_email);
       const { data, error } = await query;
-      if (error) {
-        return res.status(200).json(withHouseAds([], normalizedSlot));
-      }
+      if (error) return res.status(200).json(withHouseAds([], normalizedSlot));
       return res.status(200).json(withHouseAds(data || [], normalizedSlot));
     } catch {
       return res.status(200).json(withHouseAds([], normalizedSlot));
@@ -44,6 +48,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    if (!checkRateLimit(req, res, { name: 'ads-write', limit: 30, windowMs: 60_000 })) return;
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
 
@@ -54,60 +59,56 @@ export default async function handler(req, res) {
 
     const body = req.body || {};
     const plan = getAdPlan(body.plan_key || 'basico');
-    const startsAt = body.starts_at || null;
-    const endsAt = body.ends_at || null;
     const payload = {
       user_id: user.id,
       company_name: body.company_name || body.title || '',
-      title: body.title || body.company_name || 'Campaña publicitaria',
+      title: body.title || body.company_name || 'Campania publicitaria',
       description: body.description || '',
       plan_key: plan.key,
       slot_key: normalizeSlotKey(body.slot_key || body.slot || 'home_middle'),
       banner_url: body.banner_url || '',
       destination_url: body.destination_url || '',
-      cta_text: body.cta_text || 'Ver más',
+      cta_text: body.cta_text || 'Ver mas',
       contact_name: body.contact_name || '',
       contact_email: body.contact_email || user.email || '',
       status: body.status || 'pending_payment',
       active: false,
-      starts_at: startsAt,
-      ends_at: endsAt,
+      starts_at: body.starts_at || null,
+      ends_at: body.ends_at || null,
       mercadopago_status: body.mercadopago_status || null,
       mercadopago_payment_id: body.mercadopago_payment_id || null,
     };
 
     const { data, error } = await supabase.from('ad_campaigns').insert(payload).select('*').single();
-    if (error) {
-      return res.status(500).json({
-        error: error.message,
-        hint: 'Ejecutá la migración supabase/migrations/20260318_ads_system.sql para habilitar campañas publicitarias.',
-      });
-    }
+    if (error) return res.status(500).json({ error: 'No se pudo crear la campania' });
     return res.status(200).json(normalizeAdRecord(data));
   }
 
   if (req.method === 'PATCH') {
+    if (!checkRateLimit(req, res, { name: 'ads-write', limit: 30, windowMs: 60_000 })) return;
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
 
-    const { id } = req.query;
+    const campaignId = String(req.query?.id || '').trim();
+    if (!campaignId || !UUID_RE.test(campaignId)) return res.status(400).json({ error: 'id invalido' });
     const body = req.body || {};
+
     const { data: existing, error: existingError } = await supabase
       .from('ad_campaigns')
       .select('*')
-      .eq('id', id)
+      .eq('id', campaignId)
       .maybeSingle();
 
-    if (existingError) return res.status(500).json({ error: existingError.message });
+    if (existingError) return res.status(500).json({ error: 'No se pudo cargar la campania' });
     if (!existing) return res.status(404).json({ error: 'Campania no encontrada' });
     if (!canManageCampaign(existing, user)) return res.status(403).json({ error: 'No autorizado' });
 
     const payload = {};
-    ['company_name','title','description','plan_key','slot_key','banner_url','destination_url','cta_text','contact_name','contact_email','starts_at','ends_at'].forEach((key) => {
+    ['company_name', 'title', 'description', 'plan_key', 'slot_key', 'banner_url', 'destination_url', 'cta_text', 'contact_name', 'contact_email', 'starts_at', 'ends_at'].forEach((key) => {
       if (body[key] !== undefined) payload[key] = body[key];
     });
-    const { data, error } = await supabase.from('ad_campaigns').update(payload).eq('id', id).select('*').single();
-    if (error) return res.status(500).json({ error: error.message });
+    const { data, error } = await supabase.from('ad_campaigns').update(payload).eq('id', campaignId).select('*').single();
+    if (error) return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     return res.status(200).json(normalizeAdRecord(data));
   }
 

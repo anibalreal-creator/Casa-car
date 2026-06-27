@@ -71,7 +71,7 @@ async function logEvent(supabase, payload) {
   try {
     await supabase.from('payment_events').insert(payload);
   } catch (err) {
-    console.log('payment_events insert falló:', err);
+    console.warn('payment_events insert failed');
   }
 }
 
@@ -87,15 +87,14 @@ export default async function handler(req, res) {
     const type = body.type || req.query.type || null;
     const dataId = body?.data?.id || req.query['data.id'] || req.query.id || null;
 
-    console.log('WEBHOOK MP BODY:', body);
-    console.log('WEBHOOK MP QUERY:', req.query);
+    console.info('WEBHOOK MP received:', { type: String(type || 'unknown'), hasDataId: Boolean(dataId) });
 
     if (!dataId) {
       await logEvent(supabase, {
         provider: 'mercadopago',
         event_type: 'webhook_without_data_id',
         status: 'ignored',
-        payload_json: { body, query: req.query },
+        payload_json: { event: 'missing_data_id' },
       });
       return res.status(200).json({ ok: true, ignored: true });
     }
@@ -106,7 +105,7 @@ export default async function handler(req, res) {
         event_type: String(type || 'unknown'),
         status: 'ignored',
         mercadopago_payment_id: String(dataId),
-        payload_json: { body, query: req.query },
+        payload_json: { event: 'ignored_non_payment' },
       });
       return res.status(200).json({ ok: true, ignored: true });
     }
@@ -127,7 +126,13 @@ export default async function handler(req, res) {
       event_type: 'payment_webhook',
       status,
       mercadopago_payment_id: paymentId,
-      payload_json: payment,
+      payload_json: {
+        id: paymentId,
+        status,
+        currency_id: payment?.currency_id || null,
+        transaction_amount: payment?.transaction_amount || null,
+        external_reference: payment?.external_reference || null,
+      },
     });
 
     if (subscription) {
@@ -139,8 +144,8 @@ export default async function handler(req, res) {
           payment,
         });
         if (activated.error) {
-          console.log('ERROR UPDATE SUBSCRIPTION APPROVED:', activated.error);
-          return res.status(500).json({ error: 'No se pudo activar suscripcion', detalle: activated.error });
+          console.warn('subscription activation failed');
+          return res.status(500).json({ error: 'No se pudo activar suscripcion' });
         }
         return res.status(200).json({
           ok: true,
@@ -160,7 +165,7 @@ export default async function handler(req, res) {
     if (status === 'approved') {
       const { data: listing, error: listingReadError } = await supabase
         .from('listings')
-        .select('*')
+        .select('id,user_id')
         .eq('id', String(listingId))
         .maybeSingle();
       if (listingReadError) throw listingReadError;
@@ -168,7 +173,7 @@ export default async function handler(req, res) {
       if (listing?.user_id) {
         const premiumQuota = await enforcePremiumActivationLimit(supabase, {
           id: listing.user_id,
-          email: listing.contact_email || '',
+          email: '',
         }, { excludeListingId: listingId });
         if (!premiumQuota.canActivatePremium) {
           await supabase
@@ -190,8 +195,8 @@ export default async function handler(req, res) {
 
       const activated = await mirrorFeaturedState(supabase, String(listingId), 'activate', { planKey: 'PREMIUM', days: 30 });
       if (activated.error) {
-        console.log('ERROR UPDATE LISTING APPROVED:', activated.error);
-        return res.status(500).json({ error: 'No se pudo actualizar listing', detalle: activated.error });
+        console.warn('listing activation failed');
+        return res.status(500).json({ error: 'No se pudo actualizar listing' });
       }
       await supabase.from('listings').update({ mercadopago_status: 'approved', mercadopago_payment_id: paymentId }).eq('id', String(listingId));
     } else {
@@ -204,26 +209,23 @@ export default async function handler(req, res) {
         .eq('id', String(listingId));
 
       if (updateError) {
-        console.log('ERROR UPDATE LISTING STATUS:', updateError);
+        console.warn('listing payment status update failed');
       }
     }
 
     return res.status(200).json({ ok: true, status, listingId });
   } catch (err) {
-    console.log('ERROR WEBHOOK MP:', err);
+    console.error('mercadopago webhook failed');
 
     await logEvent(supabase, {
       provider: 'mercadopago',
       event_type: 'webhook_error',
       status: 'error',
-      payload_json: {
-        message: err?.message || 'unknown',
-        stack: err?.stack || null,
-      },
+      payload_json: { error: 'webhook_failed' },
     });
 
     return res.status(500).json({
-      error: err.message || 'Webhook error',
+      error: 'Webhook error',
     });
   }
 }

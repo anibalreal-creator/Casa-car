@@ -34,8 +34,8 @@ export default async function handler(req, res) {
 
     const payload = {
       user_id: user.id,
-      name: body.name || body.title || 'Campaña nueva',
-      title: body.title || body.name || 'Campaña nueva',
+      name: body.name || body.title || 'Campania nueva',
+      title: body.title || body.name || 'Campania nueva',
       company_name: body.company_name || body.name || '',
       plan: String(plan.key || 'basico').toUpperCase(),
       plan_key: plan.key,
@@ -55,11 +55,11 @@ export default async function handler(req, res) {
       notes: body.notes || '',
       contact_name: body.contact_name || '',
       contact_email: user.email || body.contact_email || '',
-      cta_text: body.cta_text || 'Ver más',
+      cta_text: body.cta_text || 'Ver mas',
     };
 
     const { data, error } = await supabase.from('ad_campaigns').insert(payload).select('*').single();
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) return res.status(500).json({ error: 'No se pudo crear la campania' });
 
     if (ownerMode) {
       const patch = patchForCampaignAction(data, 'activate');
@@ -69,10 +69,10 @@ export default async function handler(req, res) {
 
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(error.statusCode || 500).json({
-      error: error.message || 'No se pudo crear la campaña',
-      details: error.details || null,
-    });
+    if (error.statusCode && error.statusCode < 500) {
+      return res.status(error.statusCode).json({ error: error.message || 'Datos invalidos' });
+    }
+    return res.status(500).json({ error: 'No se pudo crear la campania' });
   }
 }
 

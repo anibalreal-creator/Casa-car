@@ -14,13 +14,11 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const sessionKey = cut(body.session_key || req.headers['x-session-key'] || 'anon', 120);
     const userId = serverUser?.id || null;
-    const userEmail = serverUser?.email || null;
     const path = cut(body.path || '/', 200);
     const supabase = getSupabaseServer();
     const payload = {
       session_key: sessionKey,
       user_id: userId,
-      user_email: userEmail,
       is_authenticated: !!userId,
       path,
       current_path: path,
@@ -31,8 +29,8 @@ export default async function handler(req, res) {
     const { error } = await supabase.from('presence_heartbeats').upsert(payload, { onConflict: 'session_key' });
     if (error) throw error;
     return res.status(200).json({ ok: true });
-  } catch (error) {
-    return res.status(200).json({ ok: false, ignored: true, message: error.message || 'heartbeat skipped' });
+  } catch {
+    return res.status(200).json({ ok: false, ignored: true });
   }
 }
 

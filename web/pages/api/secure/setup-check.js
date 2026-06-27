@@ -29,10 +29,10 @@ export default async function handler(req, res) {
         .select('*', { count: 'exact', head: true });
 
       results[table] = error
-        ? { ok: false, error: error.message }
+        ? { ok: false, error: 'No se pudo validar la tabla' }
         : { ok: true, count: count ?? 0 };
     } catch (e) {
-      results[table] = { ok: false, error: e.message };
+      results[table] = { ok: false, error: 'No se pudo validar la tabla' };
     }
   }
 

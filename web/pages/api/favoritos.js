@@ -1,93 +1,87 @@
-import { supabaseAdmin } from "../../lib/supabaseAdmin"
-import { getServerUser } from "../../lib/auth"
-import { isAdmin } from "../../lib/permissions"
+import { supabaseAdmin } from "../../lib/supabaseAdmin";
+import { getServerUser } from "../../lib/auth";
+import { isAdmin } from "../../lib/permissions";
+import { checkRateLimit } from "../../lib/server/rateLimit";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function handler(req, res) {
+  try {
+    if (req.method === "GET") {
+      if (!checkRateLimit(req, res, { name: "favorites-read", limit: 120, windowMs: 60_000 })) return;
+      const { listing_id, user_id } = req.query;
 
-try{
+      if (listing_id) {
+        const listingId = String(listing_id || "").trim();
+        if (!UUID_RE.test(listingId)) return res.status(400).json({ error: "listing_id invalido" });
+        const { count, error } = await supabaseAdmin
+          .from("favoritos")
+          .select("id", { count: "exact", head: true })
+          .eq("listing_id", listingId);
+        if (error) throw error;
+        return res.json({ count: Number(count || 0) });
+      }
 
-if(req.method==="GET"){
+      if (user_id) {
+        const userId = String(user_id || "").trim();
+        if (!UUID_RE.test(userId)) return res.status(400).json({ error: "user_id invalido" });
+        const user = await getServerUser(req);
+        if (!user) return res.status(401).json({ error: "No autorizado" });
+        if (String(user.id) !== userId && !(await isAdmin(user.id, user.email))) {
+          return res.status(403).json({ error: "No autorizado" });
+        }
 
-const {listing_id,user_id}=req.query
+        const { data, error } = await supabaseAdmin
+          .from("favoritos")
+          .select("id,listing_id,created_at")
+          .eq("user_id", userId);
+        if (error) throw error;
+        return res.json(data || []);
+      }
 
-if(listing_id){
+      return res.status(400).json({ error: "Falta parametro" });
+    }
 
-const {data,error}=await supabaseAdmin
-.from("favoritos")
-.select("*")
-.eq("listing_id",listing_id)
+    if (req.method === "POST") {
+      if (!checkRateLimit(req, res, { name: "favorites-write", limit: 60, windowMs: 60_000 })) return;
+      const user = await getServerUser(req);
+      if (!user) return res.status(401).json({ error: "No autorizado" });
+      const listingId = String(req.body?.listing_id || "").trim();
+      if (!UUID_RE.test(listingId)) return res.status(400).json({ error: "listing_id invalido" });
+      const userId = user.id;
 
-if(error) throw error
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from("favoritos")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("listing_id", listingId)
+        .limit(1);
+      if (existingError) throw existingError;
 
-return res.json({count:data.length})
-}
+      if ((existing || []).length > 0) {
+        await supabaseAdmin
+          .from("favoritos")
+          .delete()
+          .eq("user_id", userId)
+          .eq("listing_id", listingId);
+        return res.json({ action: "removed" });
+      }
 
-if(user_id){
-const user = await getServerUser(req)
-if(!user) return res.status(401).json({error:"No autorizado"})
-if(String(user.id)!==String(user_id) && !(await isAdmin(user.id,user.email))){
-return res.status(403).json({error:"No autorizado"})
-}
+      await supabaseAdmin.from("favoritos").insert({ user_id: userId, listing_id: listingId });
+      return res.json({ action: "added" });
+    }
 
-const {data,error}=await supabaseAdmin
-.from("favoritos")
-.select("*")
-.eq("user_id",user_id)
-
-if(error) throw error
-
-return res.json(data)
-}
-
-}
-
-if(req.method==="POST"){
-
-const user = await getServerUser(req)
-if(!user) return res.status(401).json({error:"No autorizado"})
-const {listing_id}=req.body
-const user_id=user.id
-
-const {data:existing}=await supabaseAdmin
-.from("favoritos")
-.select("*")
-.eq("user_id",user_id)
-.eq("listing_id",listing_id)
-
-if(existing.length>0){
-
-await supabaseAdmin
-.from("favoritos")
-.delete()
-.eq("user_id",user_id)
-.eq("listing_id",listing_id)
-
-return res.json({action:"removed"})
-}
-
-await supabaseAdmin
-.from("favoritos")
-.insert({
-user_id,
-listing_id
-})
-
-return res.json({action:"added"})
-}
-
-}catch(err){
-
-res.status(500).json({error:err.message})
-
-}
-
+    return res.status(405).json({ error: "Method not allowed" });
+  } catch {
+    return res.status(500).json({ error: "No se pudo procesar favoritos" });
+  }
 }
 
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '1mb',
+      sizeLimit: "1mb",
     },
-    responseLimit: '4mb',
+    responseLimit: "1mb",
   },
 };

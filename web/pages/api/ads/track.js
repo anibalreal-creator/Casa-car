@@ -2,20 +2,29 @@ import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { allowMethods, safeJson } from '../../../lib/server/internalApi';
 import { checkRateLimit } from '../../../lib/server/rateLimit';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 async function bumpCounter(supabase, campaignId, field) {
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select(field)
+    .select(`${field},status,active,starts_at,ends_at`)
     .eq('id', campaignId)
     .maybeSingle();
-  if (error) throw error;
+  if (error || !data) return null;
+
+  const now = Date.now();
+  const liveStatus = ['active', 'active_manual', 'active_paid'].includes(String(data.status || '').toLowerCase());
+  const startsAt = data.starts_at ? Date.parse(data.starts_at) : null;
+  const endsAt = data.ends_at ? Date.parse(data.ends_at) : null;
+  const inWindow = (!startsAt || startsAt <= now) && (!endsAt || endsAt >= now);
+  if (!data.active || !liveStatus || !inWindow) return null;
 
   const next = Number(data?.[field] || 0) + 1;
   const { error: updateError } = await supabase
     .from('ad_campaigns')
     .update({ [field]: next })
     .eq('id', campaignId);
-  if (updateError) throw updateError;
+  if (updateError) return null;
   return { [field]: next };
 }
 
@@ -83,9 +92,13 @@ export default async function handler(req, res) {
     if (campaignId.startsWith('house-')) {
       return safeJson(res, 200, { ok: true, ignored: true, reason: 'house_ad' });
     }
+    if (!UUID_RE.test(campaignId)) {
+      return safeJson(res, 400, { error: 'campaignId invalido' });
+    }
 
     const field = eventType === 'click' ? 'clicks' : 'impressions';
     const counter = await bumpCounter(supabase, campaignId, field);
+    if (!counter) return safeJson(res, 200, { ok: true, ignored: true });
 
     try {
       await insertAnalyticsEvent(supabase, { campaignId, eventType, slot, page });
@@ -100,6 +113,6 @@ export default async function handler(req, res) {
       ...counter,
     });
   } catch (error) {
-    return safeJson(res, 500, { error: error.message || 'No se pudo registrar el evento publicitario' });
+    return safeJson(res, 200, { ok: true });
   }
 }

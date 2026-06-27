@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       checkedAt: new Date().toISOString(),
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'No se pudo validar el estado SaaS' });
+    return res.status(500).json({ ok: false, error: 'No se pudo validar el estado SaaS' });
   }
 }
 

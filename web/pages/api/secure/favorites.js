@@ -1,5 +1,6 @@
 import { getSupabaseServer } from "../../../lib/supabaseServer";
 import { getServerUser } from "../../../lib/auth";
+import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from "../../../lib/publicListings";
 
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
@@ -45,19 +46,19 @@ export default async function handler(req, res) {
 
       const { data: listings, error: listingsError } = await supabase
         .from("listings")
-        .select("*")
+        .select(PUBLIC_LISTING_SELECT)
         .in("id", ids);
 
       if (listingsError) {
-        console.error("Error cargando listings de favoritos:", listingsError);
+        console.error("favorites listings load failed");
         return res.status(200).json({
           ids,
           items: [],
-          details_error: listingsError.message || "No se pudieron cargar los detalles",
+          warning: "No se pudieron cargar los detalles",
         });
       }
 
-      const map = new Map((listings || []).map((item) => [String(item.id), item]));
+      const map = new Map((listings || []).map((item) => [String(item.id), toPublicListingRecord(item)]));
       const ordered = ids.map((id) => map.get(String(id))).filter(Boolean);
 
       return res.status(200).json({
@@ -125,7 +126,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: "Método no permitido" });
   } catch (error) {
-    console.error("Error en favorites API:", error);
-    return res.status(500).json({ error: error?.message || "Error interno", ids: [], items: [] });
+    console.error("favorites api failed");
+    return res.status(500).json({ error: "Error interno", ids: [], items: [] });
   }
 }

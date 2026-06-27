@@ -3,6 +3,8 @@ import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { addDays, getPlanDurationDays } from '../../../../lib/adPlans';
 import { isOwnerEmail } from '../../../../lib/owner';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default async function handler(req, res) {
   const user = await requireUser(req, res);
   if (!user) return;
@@ -13,6 +15,7 @@ export default async function handler(req, res) {
   try {
     const { campaignId } = req.body || {};
     if (!campaignId) return res.status(400).json({ error: 'Falta campaignId' });
+    if (!UUID_RE.test(String(campaignId))) return res.status(400).json({ error: 'Campania invalida' });
 
     const { data: campaign, error: readError } = await supabase
       .from('ad_campaigns')
@@ -46,6 +49,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true, campaign: data });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'No se pudo renovar la campania' });
   }
 }

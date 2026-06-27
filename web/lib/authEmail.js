@@ -33,7 +33,7 @@ export function getAuthErrorMessage(error) {
   if (message.toLowerCase().includes("invalid login credentials")) {
     return "Email o contrasena incorrectos.";
   }
-  return message;
+  return "No se pudo completar la autenticacion. Revisa los datos o intenta nuevamente en unos minutos.";
 }
 
 export function assertEmailSendCooldown(action, email) {
