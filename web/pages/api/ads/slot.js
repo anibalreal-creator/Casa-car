@@ -10,10 +10,11 @@ function pickWeightedCampaign(campaigns) {
   const weighted = campaigns.map((campaign) => {
     const impressions = Number(campaign.impressions || 0)
     const clicks = Number(campaign.clicks || 0)
+    const planKey = String(campaign.plan_key || '').toLowerCase()
     const planBonus =
-      campaign.plan === 'Premium' || campaign.plan === 'PREMIUM'
+      planKey === 'premium'
         ? 3
-        : campaign.plan === 'Destacado' || campaign.plan === 'DESTACADO'
+        : planKey === 'destacado' || planKey === 'featured'
         ? 2
         : 1
 
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('id,title,company_name,plan_key,plan,slot_key,slot,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
+    .select('id,title,company_name,plan_key,slot_key,slot,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
     .or(`slot.eq.${slot},slot_key.eq.${slot}`)
     .order('created_at', { ascending: false })
     .limit(80)
