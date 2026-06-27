@@ -9,8 +9,11 @@ export default function CompanyBannerUploader({ onUploaded }) {
     if (!file) return;
     setUploading(true);
     try {
+      const { data: auth } = await supabaseBrowser.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!userId) throw new Error("Tenes que iniciar sesion para subir un banner");
       const ext = file.name.split('.').pop();
-      const path = `ads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = `ads/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, { upsert: false, cacheControl: "3600" });
       if (error) throw error;
       const { data } = supabaseBrowser.storage.from("listings").getPublicUrl(path);

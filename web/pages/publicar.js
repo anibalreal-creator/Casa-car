@@ -152,14 +152,14 @@ export default function Publicar() {
     };
   }, [router]);
 
-  async function uploadImages() {
+  async function uploadImages(userId) {
     const urls = [];
     for (const item of images) {
       const file = item.file;
       if (!file) continue;
       const ext = file.name.split(".").pop();
       const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const path = `public/${safeName}`;
+      const path = `publicar/${userId}/${safeName}`;
       await withTransientRetry(async () => {
         const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, { cacheControl: "3600", upsert: true });
         if (error) throw error;
@@ -198,7 +198,7 @@ export default function Publicar() {
         // El backend vuelve a validar el cupo al guardar. Si esta consulta falla transitoriamente, seguimos.
       }
 
-      const uploaded = await uploadImages();
+      const uploaded = await uploadImages(nextUser.id);
       const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
       const clientRequestId = createClientRequestId(nextUser.id);
       let data;

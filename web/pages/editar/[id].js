@@ -85,14 +85,14 @@ export default function EditarAnuncio() {
     setNewFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function uploadNewFiles() {
+  async function uploadNewFiles(userId) {
     const urls = [];
     for (const item of newFiles) {
       const file = item.file;
       if (!file) continue;
       const ext = file.name.split(".").pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const path = `public/${fileName}`;
+      const path = `editar/${userId}/${fileName}`;
       const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, {
         cacheControl: "3600",
         upsert: false,
@@ -108,9 +108,14 @@ export default function EditarAnuncio() {
     e.preventDefault();
     setSaving(true);
     try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const currentUserId = sessionData?.session?.user?.id;
+      if (!currentUserId) throw new Error("Tenes que iniciar sesion para editar el anuncio.");
+
       let finalImages = [...(form.images || [])];
       if (newFiles.length) {
-        const uploaded = await uploadNewFiles();
+        const uploaded = await uploadNewFiles(currentUserId);
         finalImages = [...finalImages, ...uploaded];
       }
 
@@ -122,9 +127,6 @@ export default function EditarAnuncio() {
         images: finalImages,
         main_image_index: safeMain,
       };
-
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
 
       const res = await fetch(`/api/secure/listings`, {
         method: "PUT",

@@ -125,10 +125,10 @@ export default function PublicidadPanelPage() {
     setNotice('Imagen adaptada lista para presentar y subir con la campania.');
   }
 
-  async function uploadBanner() {
+  async function uploadBanner(userId) {
     if (!bannerFile) return bannerPreview || '';
     const ext = bannerFile.name.split('.').pop();
-    const path = `ads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `ads/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabaseBrowser.storage.from('listings').upload(path, bannerFile, { cacheControl: '3600', upsert: false });
     if (error) throw error;
     const { data } = supabaseBrowser.storage.from('listings').getPublicUrl(path);
@@ -143,7 +143,7 @@ export default function PublicidadPanelPage() {
       const auth = await supabaseBrowser.auth.getSession();
       const currentUser = auth?.data?.session?.user || null;
       if (!currentUser) throw new Error('Tenés que iniciar sesión para crear o editar una campaña.');
-      const banner_url = await uploadBanner();
+      const banner_url = await uploadBanner(currentUser.id);
 
       if (editingId) {
         const res = await fetch(`/api/ads?id=${editingId}`, {
