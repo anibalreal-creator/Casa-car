@@ -196,6 +196,7 @@ export default function CompanyDashboardPage() {
                       <td>
                         <div style={styles.actionLinks}>
                           <a href={`/publicidad/panel?edit=${item.id}`} style={styles.inlineLink}>{t('change_banner', 'Cambiar banner')}</a>
+                          <a href={`/publicidad/panel?republicar=${item.id}`} style={styles.inlineLink}>{t('republish_campaign', 'Republicar')}</a>
                           {item.banner_url ? <a href={item.banner_url} target="_blank" rel="noreferrer" style={styles.inlineLink}>{t('view_banner', 'Ver banner')}</a> : null}
                           <a href={slotLocationHref(item.slot_key)} style={styles.inlineLink}>{t('view_location', 'Ver ubicacion')}</a>
                         </div>

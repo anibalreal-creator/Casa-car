@@ -43,6 +43,7 @@ export default function PublicidadPanelPage() {
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState('');
   const [editingId, setEditingId] = useState('');
+  const [republishingId, setRepublishingId] = useState('');
   const [cancellingId, setCancellingId] = useState('');
 
   useEffect(() => {
@@ -68,15 +69,19 @@ export default function PublicidadPanelPage() {
   useEffect(() => {
     if (!router.isReady) return;
     const edit = String(router.query.edit || '');
+    const republish = edit ? '' : String(router.query.republicar || '');
     setEditingId(edit);
-  }, [router.isReady, router.query.edit]);
+    setRepublishingId(republish);
+  }, [router.isReady, router.query.edit, router.query.republicar]);
 
   useEffect(() => {
-    if (!editingId) {
+    const selectedId = editingId || republishingId;
+    if (!selectedId) {
       setBannerPreview('');
+      setBannerFile(null);
       return;
     }
-    const selected = campaigns.find((item) => String(item.id) === String(editingId));
+    const selected = campaigns.find((item) => String(item.id) === String(selectedId));
     if (!selected) return;
     setForm({
       company_name: selected.company_name || '',
@@ -91,7 +96,10 @@ export default function PublicidadPanelPage() {
     });
     setBannerPreview(selected.banner_url || '');
     setBannerFile(null);
-  }, [editingId, campaigns, user?.email]);
+    if (republishingId && !editingId) {
+      setNotice('Datos copiados. Revisalos y republica con Mercado Pago para crear una campania nueva.');
+    }
+  }, [editingId, republishingId, campaigns, user?.email]);
 
   async function loadCampaigns(currentUser = user) {
     try {
@@ -158,6 +166,7 @@ export default function PublicidadPanelPage() {
         if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la campaña');
         setNotice('Banner actualizado correctamente.');
         setEditingId('');
+        setRepublishingId('');
         router.replace('/publicidad/panel', undefined, { shallow: true });
         await loadCampaigns(currentUser);
         setBannerFile(null);
@@ -263,6 +272,12 @@ export default function PublicidadPanelPage() {
   const availableSlots = AD_SLOTS.filter((slot) => selectedPlan.slots.includes(slot.key));
   const selectedSlot = availableSlots.find((slot) => slot.key === form.slot_key) || availableSlots[0] || AD_SLOTS[0];
   const previewAspectRatio = slotAspectRatio(selectedSlot?.dimensions);
+  const isRepublishing = Boolean(republishingId && !editingId);
+  const submitCta = editingId
+    ? 'Guardar cambios del banner'
+    : isRepublishing
+      ? 'Republicar y pagar con Mercado Pago'
+      : 'Crear campaña y pagar con Mercado Pago';
   useEffect(() => {
     if (!availableSlots.some((slot) => slot.key === form.slot_key)) {
       setForm((prev) => ({ ...prev, slot_key: availableSlots[0]?.key || 'home_middle' }));
@@ -333,7 +348,12 @@ export default function PublicidadPanelPage() {
 
         <div className="cc-panel-grid" style={styles.grid}>
           <form className="cc-panel-form" onSubmit={submit} style={styles.form}>
-            <h2 style={styles.h2}>{editingId ? 'Editar campaña' : 'Nueva campaña'}</h2>
+            {isRepublishing ? (
+              <div style={styles.republishNotice}>
+                Republicar: se copiaron los datos y el banner de la campania anterior. Al confirmar se crea una campania nueva, con nuevo pago y metricas desde cero.
+              </div>
+            ) : null}
+            <h2 style={styles.h2}>{editingId ? 'Editar campaña' : (isRepublishing ? 'Republicar campaña' : 'Nueva campaña')}</h2>
             <input style={styles.input} placeholder="Empresa" value={form.company_name} onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))} required />
             <input style={styles.input} placeholder="Título del banner" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} required />
             <textarea style={{ ...styles.input, minHeight: 110 }} placeholder="Descripción" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
@@ -388,7 +408,7 @@ export default function PublicidadPanelPage() {
                 Si Mercado Pago deja el boton Pagar en gris, normalmente falta validar el medio de pago, usar una cuenta compradora distinta a la vendedora o completar datos de la cuenta de Mercado Pago. Casa-Car ya crea la preferencia y vuelve por webhook cuando Mercado Pago aprueba.
               </div>
             ) : null}
-            <button className="cc-panel-submit" type="submit" disabled={submitting} style={styles.button}>{submitting ? 'Procesando…' : (editingId ? 'Guardar cambios del banner' : 'Crear campaña y pagar con Mercado Pago')}</button>
+            <button className="cc-panel-submit" type="submit" disabled={submitting} style={styles.button}>{submitting ? 'Procesando...' : submitCta}</button>
           </form>
 
           <aside className="cc-panel-sidebar" style={styles.sidebar}>
@@ -413,6 +433,7 @@ export default function PublicidadPanelPage() {
                   <div style={styles.campaignMeta}>Estado: {item.status}{item.active || item.is_active ? ' · activa' : ' · inactiva'}</div>
                   <div style={styles.linkRow}>
                     <a href={`/publicidad/panel?edit=${item.id}`} style={styles.inlineLink}>Cambiar banner</a>
+                    <a href={`/publicidad/panel?republicar=${item.id}`} style={styles.inlineLink}>Republicar</a>
                     {item.banner_url ? <a href={item.banner_url} target="_blank" rel="noreferrer" style={styles.subtleLink}>Ver banner</a> : null}
                     <a href={locationHref(item.slot_key)} style={styles.subtleLink}>Ver ubicación</a>
                     <button
@@ -554,6 +575,7 @@ const styles = {
   smartPreviewImg: { width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#fff' },
   previewPlaceholder: { padding: 20, textAlign: 'center', color: '#64748b', fontWeight: 800 },
   paymentHelp: { fontSize: 13, lineHeight: 1.45, color: '#475569', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 14, padding: 12, overflowWrap: 'break-word' },
+  republishNotice: { fontSize: 13, lineHeight: 1.45, color: '#155e75', background: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: 14, padding: 12, fontWeight: 800, overflowWrap: 'break-word' },
   cancelButton: { border: '1px solid #fecaca', background: '#fff1f2', color: '#be123c', borderRadius: 999, padding: '8px 10px', fontWeight: 900, cursor: 'pointer' },
   preview: { width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 16, border: '1px solid #dbeafe' },
   button: { background: '#0f172a', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 18px', fontWeight: 900, cursor: 'pointer' },
