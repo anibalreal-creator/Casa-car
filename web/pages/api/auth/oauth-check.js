@@ -41,6 +41,11 @@ export default async function handler(req, res) {
       headers: { accept: "application/json" },
     });
 
+    const redirectLocation = response.headers.get("location");
+    if (response.status >= 300 && response.status < 400 && redirectLocation) {
+      return res.status(200).json({ ok: true, redirectUrl: redirectLocation });
+    }
+
     const contentType = response.headers.get("content-type") || "";
     const payload = contentType.includes("application/json")
       ? await response.json().catch(() => null)
