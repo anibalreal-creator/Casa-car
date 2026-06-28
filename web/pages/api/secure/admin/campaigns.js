@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { normalizeAdRecord } from '../../../../lib/adHelpers';
+import { syncCampaignStatuses } from '../../../../lib/adCampaigns';
 import { patchForCampaignAction, deriveCampaignState } from '../../../../lib/campaignStatus';
 import { requireUser } from '../../../../lib/auth';
 import { isAdmin } from '../../../../lib/permissions';
@@ -24,7 +25,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'No se pudieron cargar campanias' });
     }
 
-    let campaigns = (data || []).map((item) => {
+    const synced = await syncCampaignStatuses(supabase, data || []);
+    let campaigns = synced.map((item) => {
       const normalized = normalizeAdRecord(item);
       const derived = deriveCampaignState(normalized);
       return { ...normalized, status: derived.status, active: derived.active, is_active: derived.active };

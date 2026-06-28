@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { normalizeAdRecord } from '../../../lib/adHelpers';
+import { syncCampaignStatuses } from '../../../lib/adCampaigns';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
 
@@ -36,7 +37,8 @@ export default async function handler(req, res) {
     }
 
     rows.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-    return safeJson(res, 200, { campaigns: rows.slice(0, 50).map(normalizeAdRecord) });
+    const synced = await syncCampaignStatuses(supabase, rows.slice(0, 50));
+    return safeJson(res, 200, { campaigns: synced.map(normalizeAdRecord) });
   } catch (error) {
     return safeJson(res, 500, { error: 'No se pudieron cargar campanias', campaigns: [] });
   }

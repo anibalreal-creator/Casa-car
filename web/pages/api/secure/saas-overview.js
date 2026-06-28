@@ -1,6 +1,8 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { getServerUser } from '../../../lib/auth';
 import { isCampaignLive } from '../../../lib/campaignStatus';
+import { normalizeAdRecord } from '../../../lib/adHelpers';
+import { syncCampaignStatuses } from '../../../lib/adCampaigns';
 
 const OWNER_EMAIL = 'anibalreal@hotmail.com';
 
@@ -22,19 +24,20 @@ export default async function handler(req, res) {
   try {
     const [subsRes, campaignsRes, listingsRes, ownerAnalyticsRes] = await Promise.all([
       supabase.from('subscriptions').select('id,status'),
-      supabase.from('ad_campaigns').select('id,status,active,starts_at,ends_at,impressions,clicks'),
+      supabase.from('ad_campaigns').select('*'),
       supabase.from('listings').select('id,status,is_premium'),
       fetchOwnerAnalytics(req),
     ]);
 
     const subscriptions = countByStatus(subsRes.data || []);
-    const campaignsByStatus = countByStatus(campaignsRes.data || []);
+    const campaignRows = (await syncCampaignStatuses(supabase, campaignsRes.data || [])).map(normalizeAdRecord);
+    const campaignsByStatus = countByStatus(campaignRows);
     const campaigns = {
-      active: (campaignsRes.data || []).filter(isCampaignLive).length,
+      active: campaignRows.filter(isCampaignLive).length,
       paused: campaignsByStatus.paused || 0,
       expired: campaignsByStatus.expired || 0,
-      impressions: (campaignsRes.data || []).reduce((sum, row) => sum + Number(row.impressions || 0), 0),
-      clicks: (campaignsRes.data || []).reduce((sum, row) => sum + Number(row.clicks || 0), 0),
+      impressions: campaignRows.reduce((sum, row) => sum + Number(row.impressions || 0), 0),
+      clicks: campaignRows.reduce((sum, row) => sum + Number(row.clicks || 0), 0),
     };
     const listings = {
       active: (listingsRes.data || []).filter((row) => row.status === 'active').length,

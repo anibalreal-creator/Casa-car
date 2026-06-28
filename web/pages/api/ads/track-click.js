@@ -1,6 +1,7 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { checkRateLimit } from '../../../lib/server/rateLimit';
 import { allowMethods, safeJson } from '../../../lib/server/internalApi';
+import { isCampaignLive } from '../../../lib/campaignStatus';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -16,10 +17,10 @@ export default async function handler(req, res) {
     const supabase = getSupabaseServer();
     const { data, error } = await supabase
       .from('ad_campaigns')
-      .select('clicks,status,active')
+      .select('*')
       .eq('id', campaignId)
       .maybeSingle();
-    if (error || !data || data.active === false) return safeJson(res, 200, { ok: true, ignored: true });
+    if (error || !data || !isCampaignLive(data)) return safeJson(res, 200, { ok: true, ignored: true });
 
     const current = Number(data.clicks || 0);
     await supabase.from('ad_campaigns').update({ clicks: current + 1 }).eq('id', campaignId);

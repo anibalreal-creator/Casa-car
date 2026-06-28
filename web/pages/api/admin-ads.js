@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { requireAdminRoute } from '../../lib/apiRouteGuards';
+import { normalizeAdRecord } from '../../lib/adHelpers';
+import { isCampaignLive, syncCampaignStatuses } from '../../lib/adCampaigns';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -18,9 +20,9 @@ export default async function handler(req, res) {
 
     if (error) return res.status(500).json({ error: 'No se pudo leer campanias' });
 
-    const rows = campaigns || [];
+    const rows = (await syncCampaignStatuses(supabase, campaigns || [])).map(normalizeAdRecord);
     const ingresos = rows
-      .filter((item) => ['active', 'paid'].includes(String(item.status || '').toLowerCase()))
+      .filter(isCampaignLive)
       .reduce((acc, item) => acc + Number(item.amount || 0), 0);
 
     const clicks = rows.reduce((acc, item) => acc + Number(item.clicks || 0), 0);

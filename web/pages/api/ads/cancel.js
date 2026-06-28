@@ -3,14 +3,6 @@ import { normalizeAdRecord } from '../../../lib/adHelpers';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireResourceOwner } from '../../../lib/apiRouteGuards';
 
-const CANCEL_PATCHES = [
-  { status: 'paused', active: false, is_active: false, mercadopago_status: 'cancelled_by_user' },
-  { status: 'paused', active: false, is_active: false },
-  { status: 'paused', active: false },
-  { active: false, is_active: false },
-  { active: false },
-];
-
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
@@ -30,6 +22,18 @@ export default async function handler(req, res) {
     let updated = null;
     let lastError = null;
     const now = new Date().toISOString();
+    const cancelPatch = { status: 'paused', active: false, is_active: false, mercadopago_status: 'cancelled_by_user', ends_at: now };
+    const cancelPatchNoIsActive = { status: 'paused', active: false, mercadopago_status: 'cancelled_by_user', ends_at: now };
+    const cancelPatchMinimal = { status: 'paused', active: false, ends_at: now };
+    const CANCEL_PATCHES = [
+      cancelPatch,
+      cancelPatchNoIsActive,
+      cancelPatchMinimal,
+      { active: false, is_active: false, ends_at: now },
+      { active: false, ends_at: now },
+      { status: 'paused', active: false },
+      { active: false },
+    ];
     const patches = CANCEL_PATCHES.flatMap((patch) => [{ ...patch, updated_at: now }, patch]);
 
     for (const patch of patches) {

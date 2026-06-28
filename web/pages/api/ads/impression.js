@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     const supabase = getSupabaseServer();
     const { data: campaign, error: readError } = await supabase
       .from('ad_campaigns')
-      .select('id,status,active,starts_at,ends_at')
+      .select('*')
       .eq('id', campaignId)
       .maybeSingle();
 

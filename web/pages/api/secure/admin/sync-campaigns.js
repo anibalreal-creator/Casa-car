@@ -1,5 +1,5 @@
 import { getSupabaseServer } from '../../../../lib/supabaseServer';
-import { deriveCampaignState } from '../../../../lib/campaignStatus';
+import { buildCampaignStatePatch } from '../../../../lib/campaignStatus';
 import { requireAdminRoute } from '../../../../lib/apiRouteGuards';
 
 async function syncCampaigns() {
@@ -9,11 +9,8 @@ async function syncCampaigns() {
 
   let updated = 0;
   for (const campaign of data || []) {
-    const next = deriveCampaignState(campaign);
-    const currentStatus = String(campaign.status || '').toLowerCase();
-    const currentActive = !!(campaign.active || campaign.is_active);
-    if (next.status !== currentStatus || next.active !== currentActive) {
-      const patch = { status: next.status, active: next.active };
+    const patch = buildCampaignStatePatch(campaign);
+    if (Object.keys(patch).length) {
       const { error: updateError } = await supabase.from('ad_campaigns').update(patch).eq('id', campaign.id);
       if (!updateError) updated += 1;
     }

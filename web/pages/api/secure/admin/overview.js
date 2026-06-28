@@ -3,6 +3,8 @@ import { requireUser } from '../../../../lib/auth';
 import { isAdmin } from '../../../../lib/permissions';
 import { ok, fail, methodNotAllowed } from '../../../../lib/api';
 import { isCampaignLive } from '../../../../lib/campaignStatus';
+import { normalizeAdRecord } from '../../../../lib/adHelpers';
+import { syncCampaignStatuses } from '../../../../lib/adCampaigns';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return methodNotAllowed(res);
@@ -15,14 +17,14 @@ export default async function handler(req, res) {
     const [profiles, listings, campaigns, reviews, reports, subs, requests] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('listings').select('id,status,is_premium', { count: 'exact' }),
-      supabase.from('ad_campaigns').select('id,status,active,starts_at,ends_at,impressions,clicks', { count: 'exact' }),
+      supabase.from('ad_campaigns').select('*', { count: 'exact' }),
       supabase.from('reviews').select('id,rating', { count: 'exact' }),
       supabase.from('listing_reports').select('id,status', { count: 'exact' }),
       supabase.from('subscriptions').select('id,plan,active', { count: 'exact' }),
       supabase.from('verification_requests').select('id,status', { count: 'exact' }),
     ]);
 
-    const campaignRows = campaigns.data || [];
+    const campaignRows = (await syncCampaignStatuses(supabase, campaigns.data || [])).map(normalizeAdRecord);
     const ctr = campaignRows.reduce((acc, item) => {
       const impressions = Number(item.impressions || 0);
       const clicks = Number(item.clicks || 0);

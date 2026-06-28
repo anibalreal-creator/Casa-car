@@ -1,5 +1,6 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { normalizeAdRecord } from '../../../lib/adHelpers';
+import { syncCampaignStatuses } from '../../../lib/adCampaigns';
 import { deriveCampaignState, isCampaignLive } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAdminRoute } from '../../../lib/apiRouteGuards';
@@ -21,7 +22,8 @@ export default async function handler(req, res) {
     const { data, error } = await supabase.from('ad_campaigns').select('*').order('created_at', { ascending: false }).limit(500);
     if (error) throw error;
 
-    const campaigns = (data || []).map(normalizeAdRecord).map((item) => {
+    const synced = await syncCampaignStatuses(supabase, data || []);
+    const campaigns = synced.map(normalizeAdRecord).map((item) => {
       const derived = deriveCampaignState(item);
       const clicks = Number(item.clicks || 0);
       const impressions = Number(item.impressions || 0);

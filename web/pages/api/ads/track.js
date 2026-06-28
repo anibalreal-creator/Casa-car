@@ -8,7 +8,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 async function bumpCounter(supabase, campaignId, field) {
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select(`${field},status,active,starts_at,ends_at`)
+    .select('*')
     .eq('id', campaignId)
     .maybeSingle();
   if (error || !data) return null;

@@ -1,5 +1,5 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
-import { deriveCampaignState } from '../../../lib/campaignStatus';
+import { buildCampaignStatePatch } from '../../../lib/campaignStatus';
 import { allowMethods, requireInternalRequest, safeJson } from '../../../lib/server/internalApi';
 import { requireAuthenticatedRoute } from '../../../lib/apiRouteGuards';
 import { isOwnerEmail } from '../../../lib/owner';
@@ -23,13 +23,11 @@ export default async function handler(req, res) {
     const now = new Date().toISOString();
 
     for (const row of rows) {
-      const next = deriveCampaignState(row);
-      const currentStatus = String(row.status || '').toLowerCase();
-      const currentActive = Boolean(row.active || row.is_active);
-      if (currentStatus !== next.status || currentActive !== next.active) {
+      const patch = buildCampaignStatePatch(row);
+      if (Object.keys(patch).length) {
         const { error: updateError } = await supabase
           .from('ad_campaigns')
-          .update({ status: next.status, active: next.active })
+          .update(patch)
           .eq('id', row.id);
         if (!updateError) updated += 1;
       }

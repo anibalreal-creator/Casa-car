@@ -2,6 +2,7 @@ import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { requireUser } from '../../../../lib/auth';
 import { isAdmin } from '../../../../lib/permissions';
 import { AD_PLANS } from '../../../../data/adPlans';
+import { syncCampaignStatuses } from '../../../../lib/adCampaigns';
 
 const PLAN_VALUES = AD_PLANS.reduce((acc, item) => {
   acc[String(item.key || '').trim().toUpperCase()] = Number(item.price || 0);
@@ -44,7 +45,8 @@ export default async function handler(req, res) {
     if (event.event_type === 'click') eventsByCampaign[key].clicks += 1;
   }
 
-  const rows = (campaigns || []).map((campaign) => {
+  const syncedCampaigns = await syncCampaignStatuses(supabase, campaigns || []);
+  const rows = syncedCampaigns.map((campaign) => {
     const stats = eventsByCampaign[campaign.id] || { impressions: 0, clicks: 0 };
     const clicks = Number(stats.clicks || campaign.clicks || 0);
     const impressions = Number(stats.impressions || campaign.impressions || 0);

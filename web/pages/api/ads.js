@@ -1,6 +1,6 @@
 import { getSupabaseServer } from '../../lib/supabaseServer';
 import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan, toPublicAdRecord } from '../../lib/adHelpers';
-import { isCampaignLive } from '../../lib/adCampaigns';
+import { isCampaignLive, syncCampaignStatuses } from '../../lib/adCampaigns';
 import { normalizeSlotKey } from '../../lib/adSlots';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
 import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
@@ -36,13 +36,13 @@ export default async function handler(req, res) {
     try {
       let query = supabase
         .from('ad_campaigns')
-        .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at')
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(80);
-      if (normalizedSlot) query = query.eq('slot_key', normalizedSlot);
+        .limit(500);
       const { data, error } = await query;
       if (error) return res.status(200).json(withHouseAds([], normalizedSlot));
-      return res.status(200).json(withHouseAds(data || [], normalizedSlot));
+      const synced = await syncCampaignStatuses(supabase, Array.isArray(data) ? data : []);
+      return res.status(200).json(withHouseAds(synced || [], normalizedSlot));
     } catch {
       return res.status(200).json(withHouseAds([], normalizedSlot));
     }

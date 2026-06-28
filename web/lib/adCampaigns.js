@@ -1,6 +1,6 @@
 import { normalizeAdRecord, sortAds } from './adHelpers';
 import { getPlanDurationDays, getPlanLimits, getPlanRevenue } from './adPlans';
-import { deriveCampaignState, isCampaignLive as isDerivedCampaignLive } from './campaignStatus';
+import { buildCampaignStatePatch, deriveCampaignState, isCampaignLive as isDerivedCampaignLive } from './campaignStatus';
 
 function normalize(value) {
   return String(value || '').trim().toLowerCase();
@@ -22,21 +22,18 @@ export async function syncCampaignStatuses(supabase, rows = []) {
   const synced = [];
   for (const row of rows) {
     const next = deriveCampaignState(row);
-    const nextStatus = next.status;
-    const nextActive = next.active;
-    const currentStatus = normalize(row.status);
-    const currentActive = row.active === true || row.is_active === true;
-    if (currentStatus !== nextStatus || currentActive !== nextActive) {
+    const patch = buildCampaignStatePatch(row);
+    if (Object.keys(patch).length) {
       try {
         const { data } = await supabase
           .from('ad_campaigns')
-          .update({ status: nextStatus, active: nextActive })
+          .update(patch)
           .eq('id', row.id)
           .select('*')
           .single();
-        synced.push(data || { ...row, status: nextStatus, active: nextActive });
+        synced.push(data || { ...row, ...patch, status: next.status, active: next.active });
       } catch {
-        synced.push({ ...row, status: nextStatus, active: nextActive });
+        synced.push({ ...row, ...patch, status: next.status, active: next.active });
       }
     } else {
       synced.push(row);

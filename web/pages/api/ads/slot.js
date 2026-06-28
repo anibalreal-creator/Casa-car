@@ -1,7 +1,7 @@
 import { normalizeSlotKey } from '../../../lib/adSlots'
 import { createClient } from '@supabase/supabase-js'
 import { toPublicAdRecord } from '../../../lib/adHelpers'
-import { isCampaignLive } from '../../../lib/adCampaigns'
+import { isCampaignLive, syncCampaignStatuses } from '../../../lib/adCampaigns'
 import { checkRateLimit } from '../../../lib/server/rateLimit'
 
 function pickWeightedCampaign(campaigns) {
@@ -52,16 +52,16 @@ export default async function handler(req, res) {
 
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('id,title,company_name,plan_key,slot_key,slot,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
-    .or(`slot.eq.${slot},slot_key.eq.${slot}`)
+    .select('*')
     .order('created_at', { ascending: false })
-    .limit(80)
+    .limit(500)
 
   if (error) {
     return res.status(500).json({ error: 'No se pudo cargar publicidad' })
   }
 
-  const campaigns = (Array.isArray(data) ? data : []).filter(isCampaignLive)
+  const synced = await syncCampaignStatuses(supabase, Array.isArray(data) ? data : [])
+  const campaigns = synced.filter((item) => isCampaignLive(item) && normalizeSlotKey(item.slot_key || item.slot || '', '') === slot)
   const campaign = pickWeightedCampaign(campaigns)
 
   return res.status(200).json({

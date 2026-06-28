@@ -19,7 +19,12 @@ export function getAdminApiKey() {
 export function hasValidAdminApiKey(req) {
   const expected = getAdminApiKey();
   if (!expected) return false;
+  const authHeader = String(header(req, 'authorization') || '').trim();
+  const bearerToken = authHeader.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7).trim()
+    : '';
   const received = String(
+    bearerToken ||
     header(req, 'x-admin-key') ||
     req?.query?.admin_key ||
     req?.body?.admin_key ||

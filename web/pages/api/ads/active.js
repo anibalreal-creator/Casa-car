@@ -32,9 +32,9 @@ export default async function handler(req, res) {
   try {
     const { data, error } = await supabase
       .from('ad_campaigns')
-      .select('id,title,company_name,plan_key,slot_key,banner_url,destination_url,cta_text,status,active,starts_at,ends_at,created_at,impressions,clicks')
+      .select('*')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(500);
     if (error) throw error;
     const synced = await syncCampaignStatuses(supabase, Array.isArray(data) ? data : []);
     const campaigns = sortAds(synced.map(normalizeAdRecord)).filter((item) => isCampaignLive(item) && (!normalizedSlot || item.slot_key === normalizedSlot));

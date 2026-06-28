@@ -6,6 +6,12 @@
       "use": "@vercel/next"
     }
   ],
+  "crons": [
+    {
+      "path": "/api/secure/admin/sync-campaigns",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "routes": [
     {
       "src": "/listing/([^/]+)",
