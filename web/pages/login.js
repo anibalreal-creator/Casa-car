@@ -133,10 +133,19 @@ export default function LoginPage() {
           </p>
         ) : null}
 
-        {GOOGLE_AUTH_ENABLED ? (
-          <button onClick={loginGoogle} style={styles.google}>
-            {t("login_google", "Continuar con Google")}
-          </button>
+        <button
+          type="button"
+          onClick={loginGoogle}
+          style={{ ...styles.google, ...(GOOGLE_AUTH_ENABLED ? {} : styles.googleUnavailable) }}
+        >
+          {GOOGLE_AUTH_ENABLED
+            ? t("login_google", "Continuar con Google")
+            : "Google no disponible por ahora"}
+        </button>
+        {!GOOGLE_AUTH_ENABLED ? (
+          <p style={styles.googleHelp}>
+            Crea la cuenta con email y contrasena hasta que Google quede habilitado en Supabase.
+          </p>
         ) : null}
 
         <button
@@ -210,6 +219,17 @@ const styles = {
     padding: 14,
     fontWeight: 700,
     cursor: "pointer"
+  },
+  googleUnavailable: {
+    background: "#f9fafb",
+    color: "#6b7280",
+    borderStyle: "dashed"
+  },
+  googleHelp: {
+    color: "#6b7280",
+    fontSize: 13,
+    lineHeight: 1.4,
+    margin: "8px 0 0"
   },
   switchBtn: {
     width: "100%",
