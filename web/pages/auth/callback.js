@@ -5,7 +5,10 @@ import { useRouter } from "next/router";
 function safeNextPath(value) {
   const raw = Array.isArray(value) ? value[0] : value;
   const path = String(raw || "/dashboard").trim();
-  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/login")) return "/dashboard";
+  if (!path.startsWith("/") || path.startsWith("//")) return "/dashboard";
+  if (path.startsWith("/login") && !(path.startsWith("/login?recover=1") || path.startsWith("/login?recover=true"))) {
+    return "/dashboard";
+  }
   return path;
 }
 
@@ -48,7 +51,7 @@ export default function AuthCallback() {
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h2>Procesando autenticación…</h2>
+      <h2>Procesando autenticacion...</h2>
     </div>
   );
 }

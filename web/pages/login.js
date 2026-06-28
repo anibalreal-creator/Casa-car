@@ -2,7 +2,14 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { supabase } from "../lib/supabase"
-import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail"
+import {
+  getAuthErrorMessage,
+  sendPasswordRecoveryEmail,
+  signInWithEmail,
+  signUpWithEmail,
+  updateRecoveredPassword,
+  verifyPasswordRecoveryCode,
+} from "../lib/authEmail"
 import { useLang } from "../context/LanguageContext"
 
 function safeNextPath(value) {
@@ -28,30 +35,80 @@ export default function LoginPage() {
   const [modo, setModo] = useState("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [repeatPassword, setRepeatPassword] = useState("")
+  const [recoveryCode, setRecoveryCode] = useState("")
+  const [recoveryVerified, setRecoveryVerified] = useState(false)
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState("")
   const nextPath = safeNextPath(router.query.next);
 
   useEffect(() => {
     if (!router.isReady) return;
+    const isRecoveryRedirect = router.query.recover === "1" || router.query.recover === "true";
     const authNotice = getAuthQueryMessage(router.query.auth_error || router.query.error_description || router.query.error);
     if (authNotice) setNotice(authNotice);
     supabase.auth.getSession().then(({ data }) => {
+      if (isRecoveryRedirect) {
+        setModo("reset");
+        if (data.session) {
+          setRecoveryVerified(true);
+          setNotice("Correo verificado. Escribi tu nueva contrasena para terminar la recuperacion.");
+        }
+        return;
+      }
+
       if (data.session) router.replace(nextPath)
     })
   }, [router, router.isReady, nextPath])
 
+  function changeMode(nextMode) {
+    setModo(nextMode);
+    setNotice("");
+    setPassword("");
+    setRepeatPassword("");
+    setRecoveryCode("");
+    setRecoveryVerified(false);
+  }
+
+  function validateRepeatedPassword() {
+    if (password.length < 6) {
+      throw new Error("La contrasena debe tener al menos 6 caracteres.");
+    }
+    if (password !== repeatPassword) {
+      throw new Error("Las contrasenas no coinciden.");
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
+    setNotice("")
 
     try {
       if (modo === "registro") {
+        validateRepeatedPassword();
         await signUpWithEmail(supabase, {
           email,
           password
         })
-        alert(t("signup_created", "Cuenta creada. Te enviamos un correo de confirmacion. Revisa tambien Spam/Correo no deseado."))
+        setNotice(t("signup_created", "Cuenta creada. Te enviamos un correo de confirmacion. Revisa tambien Spam/Correo no deseado."));
+      } else if (modo === "recuperar") {
+        await sendPasswordRecoveryEmail(supabase, email);
+        setModo("reset");
+        setNotice("Te enviamos un correo con codigo de verificacion y enlace de recuperacion. Revisa tambien Spam/Correo no deseado.");
+      } else if (modo === "reset") {
+        validateRepeatedPassword();
+        if (!recoveryVerified) {
+          await verifyPasswordRecoveryCode(supabase, { email, code: recoveryCode });
+          setRecoveryVerified(true);
+        }
+        await updateRecoveredPassword(supabase, password);
+        setNotice("Contrasena actualizada correctamente. Ya podes ingresar.");
+        setModo("login");
+        setPassword("");
+        setRepeatPassword("");
+        setRecoveryCode("");
+        setRecoveryVerified(false);
       } else {
         await signInWithEmail(supabase, {
           email,
@@ -60,7 +117,7 @@ export default function LoginPage() {
         router.push(nextPath)
       }
     } catch (err) {
-      alert(getAuthErrorMessage(err) || t("auth_error", "Error de autenticacion"))
+      setNotice(err?.message || getAuthErrorMessage(err) || t("auth_error", "Error de autenticacion"))
     } finally {
       setLoading(false)
     }
@@ -96,6 +153,21 @@ export default function LoginPage() {
     }
   }
 
+  function getTitle() {
+    if (modo === "registro") return t("signup_title", "Crear cuenta");
+    if (modo === "recuperar") return "Recuperar contrasena";
+    if (modo === "reset") return "Cambiar contrasena";
+    return t("login_title", "Iniciar sesion");
+  }
+
+  function getSubmitLabel() {
+    if (loading) return t("login_processing", "Procesando...");
+    if (modo === "registro") return t("signup_submit", "Crear cuenta");
+    if (modo === "recuperar") return "Enviar codigo";
+    if (modo === "reset") return "Guardar nueva contrasena";
+    return t("login_submit", "Entrar");
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
@@ -104,36 +176,60 @@ export default function LoginPage() {
         </Link>
 
         <h1 style={styles.title}>
-          {modo === "login" ? t("login_title", "Iniciar sesion") : t("signup_title", "Crear cuenta")}
+          {getTitle()}
         </h1>
 
         {notice ? <p style={styles.notice}>{notice}</p> : null}
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="email"
-            placeholder={t("login_email_placeholder", "Email")}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-            required
-          />
+          {modo !== "reset" || !recoveryVerified ? (
+            <input
+              type="email"
+              placeholder={t("login_email_placeholder", "Email")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={styles.input}
+              required
+            />
+          ) : null}
 
-          <input
-            type="password"
-            placeholder={t("login_password_placeholder", "Contrasena")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-            required
-          />
+          {modo !== "recuperar" ? (
+            <input
+              type="password"
+              placeholder={modo === "reset" ? "Nueva contrasena" : t("login_password_placeholder", "Contrasena")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={styles.input}
+              required
+            />
+          ) : null}
+
+          {modo === "registro" || modo === "reset" ? (
+            <input
+              type="password"
+              placeholder="Repetir contrasena"
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              style={styles.input}
+              required
+            />
+          ) : null}
+
+          {modo === "reset" && !recoveryVerified ? (
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="Codigo de verificacion"
+              value={recoveryCode}
+              onChange={(e) => setRecoveryCode(e.target.value)}
+              style={styles.input}
+              required
+            />
+          ) : null}
 
           <button type="submit" style={styles.primary} disabled={loading}>
-            {loading
-              ? t("login_processing", "Procesando...")
-              : modo === "login"
-                ? t("login_submit", "Entrar")
-                : t("signup_submit", "Crear cuenta")}
+            {getSubmitLabel()}
           </button>
         </form>
 
@@ -142,19 +238,52 @@ export default function LoginPage() {
             El correo puede tardar unos minutos. Si no llega, revisa Spam y evita reenviar muchas veces seguidas.
           </p>
         ) : null}
+        {modo === "recuperar" ? (
+          <p style={styles.help}>
+            Te enviaremos un codigo de verificacion y un enlace seguro. No reenvies muchas veces seguidas para evitar el limite de Supabase.
+          </p>
+        ) : null}
+        {modo === "reset" ? (
+          <p style={styles.help}>
+            Ingresa el codigo recibido por email. Si abriste el enlace del correo, el codigo puede no ser necesario.
+          </p>
+        ) : null}
+
+        {modo === "login" || modo === "registro" ? (
+          <button
+            type="button"
+            onClick={loginGoogle}
+            style={styles.google}
+            disabled={loading}
+          >
+            <span style={styles.googleMark}>G</span>
+            <span>{t("login_google", "Continuar con Google")}</span>
+          </button>
+        ) : null}
+
+        {modo === "login" ? (
+          <button
+            type="button"
+            onClick={() => changeMode("recuperar")}
+            style={styles.secondaryBtn}
+          >
+            Recuperar contrasena
+          </button>
+        ) : null}
+
+        {modo === "recuperar" ? (
+          <button
+            type="button"
+            onClick={() => changeMode("reset")}
+            style={styles.secondaryBtn}
+          >
+            Ya tengo codigo
+          </button>
+        ) : null}
 
         <button
           type="button"
-          onClick={loginGoogle}
-          style={styles.google}
-          disabled={loading}
-        >
-          <span style={styles.googleMark}>G</span>
-          <span>{t("login_google", "Continuar con Google")}</span>
-        </button>
-
-        <button
-          onClick={() => setModo(modo === "login" ? "registro" : "login")}
+          onClick={() => changeMode(modo === "login" ? "registro" : "login")}
           style={styles.switchBtn}
         >
           {modo === "login" ? t("login_no_account", "No tengo cuenta") : t("login_have_account", "Ya tengo cuenta")}
@@ -247,6 +376,17 @@ const styles = {
     background: "transparent",
     color: "#2563eb",
     padding: 10,
+    cursor: "pointer",
+    fontWeight: 700
+  },
+  secondaryBtn: {
+    width: "100%",
+    marginTop: 12,
+    border: "1px solid #d1d5db",
+    background: "#fff",
+    color: "#111827",
+    borderRadius: 12,
+    padding: 12,
     cursor: "pointer",
     fontWeight: 700
   },

@@ -17,6 +17,12 @@ export function getAuthRedirectUrl() {
   return `${window.location.origin}/auth/callback`;
 }
 
+export function getRecoveryRedirectUrl() {
+  if (typeof window === "undefined") return undefined;
+  const next = encodeURIComponent("/login?recover=1");
+  return `${window.location.origin}/auth/callback?next=${next}`;
+}
+
 export function isEmailRateLimitError(error) {
   const message = String(error?.message || error || "").toLowerCase();
   const status = Number(error?.status || error?.code || 0);
@@ -73,6 +79,53 @@ export async function signUpWithEmail(supabaseClient, { email, password }) {
   }
 
   rememberEmailSend("signup", normalizedEmail);
+  return data;
+}
+
+export async function sendPasswordRecoveryEmail(supabaseClient, email) {
+  const normalizedEmail = cleanEmail(email);
+  if (!supabaseClient) throw new Error("Supabase no esta configurado.");
+  if (!normalizedEmail) throw new Error("Completa el email.");
+
+  assertEmailSendCooldown("password-recovery", normalizedEmail);
+
+  const { data, error } = await supabaseClient.auth.resetPasswordForEmail(normalizedEmail, {
+    redirectTo: getRecoveryRedirectUrl(),
+  });
+
+  if (error) {
+    if (isEmailRateLimitError(error)) rememberEmailSend("password-recovery", normalizedEmail);
+    throw new Error(getAuthErrorMessage(error));
+  }
+
+  rememberEmailSend("password-recovery", normalizedEmail);
+  return data;
+}
+
+export async function verifyPasswordRecoveryCode(supabaseClient, { email, code }) {
+  const normalizedEmail = cleanEmail(email);
+  const token = String(code || "").trim().replace(/\s+/g, "");
+  if (!supabaseClient) throw new Error("Supabase no esta configurado.");
+  if (!normalizedEmail || !token) throw new Error("Completa email y codigo de verificacion.");
+
+  const { data, error } = await supabaseClient.auth.verifyOtp({
+    email: normalizedEmail,
+    token,
+    type: "recovery",
+  });
+
+  if (error) throw new Error("Codigo invalido o vencido. Revisa el correo y vuelve a intentarlo.");
+  return data;
+}
+
+export async function updateRecoveredPassword(supabaseClient, password) {
+  if (!supabaseClient) throw new Error("Supabase no esta configurado.");
+  if (!password || String(password).length < 6) {
+    throw new Error("La contrasena debe tener al menos 6 caracteres.");
+  }
+
+  const { data, error } = await supabaseClient.auth.updateUser({ password });
+  if (error) throw new Error(getAuthErrorMessage(error));
   return data;
 }
 
