@@ -105,7 +105,12 @@ export default async function handler(req, res) {
       const pagination = parsePagination(restQuery);
 
       if (id) {
-        const { data, error } = await supabase.from('listings').select('*').eq('id', id).maybeSingle();
+        let byId = supabase.from('listings').select('*').eq('id', id);
+        if (mine === '1') {
+          if (!currentUser) return res.status(401).json({ error: 'No autorizado' });
+          byId = byId.eq('user_id', currentUser.id);
+        }
+        const { data, error } = await byId.maybeSingle();
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'No encontrado' });
         if (data.status !== 'active' && data.user_id !== currentUser?.id) {

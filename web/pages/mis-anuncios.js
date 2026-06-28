@@ -158,6 +158,7 @@ export default function MisAnuncios() {
                     <div style={styles.actions}>
                       <Link href={getListingDetailHref(item)} style={styles.link}>{t("action_view", "Ver")}</Link>
                       <Link href={getListingEditHref(item)} style={styles.linkAlt}>{t("action_edit", "Editar")}</Link>
+                      <Link href={`/publicar?republicar=${encodeURIComponent(item.id)}`} style={styles.linkAlt}>{t("action_republish", "Republicar")}</Link>
                       <button type="button" onClick={() => removeItem(item.id)} style={styles.danger}>{t("action_delete", "Eliminar")}</button>
                     </div>
                     {!item.is_premium ? (

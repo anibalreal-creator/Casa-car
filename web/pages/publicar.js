@@ -89,6 +89,82 @@ function createClientRequestId(userId) {
   return `${userId || 'user'}:${Date.now()}:${random}`;
 }
 
+function normalizeListingImages(images) {
+  if (Array.isArray(images)) return images.filter(Boolean).map(String);
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+    } catch {
+      return images ? [images] : [];
+    }
+  }
+  return [];
+}
+
+function imageUrlsToPreviewItems(urls = []) {
+  return normalizeListingImages(urls).map((url, index) => ({
+    name: `republicar-${index}-${Math.random().toString(36).slice(2, 7)}`,
+    url,
+    existing: true,
+  }));
+}
+
+function cleanSpecsForRepublish(specs = {}) {
+  const next = { ...(specs || {}) };
+  delete next.client_request_id;
+  return next;
+}
+
+function buildRepublishForm(item = {}, fallback = {}, fallbackEmail = '') {
+  const specs = item.specs_json || {};
+  return {
+    ...fallback,
+    title: item.title || '',
+    category: item.category || fallback.category || 'Propiedad',
+    subtype: item.subtype || fallback.subtype || 'Casa',
+    listing_type: item.listing_type || fallback.listing_type || 'venta',
+    price: item.price ?? '',
+    currency: item.currency || fallback.currency || 'USD',
+    country: item.country || fallback.country || 'Argentina',
+    language: item.language || fallback.language || 'es',
+    city: item.city || '',
+    state: item.state || '',
+    zone: item.zone || '',
+    address: item.address || '',
+    lat: item.lat ?? '',
+    lng: item.lng ?? '',
+    description: item.description || '',
+    phone: item.phone || '',
+    contact_email: item.contact_email || specs.contact_email || fallbackEmail || '',
+    rooms: item.rooms ?? '',
+    bathrooms: item.bathrooms ?? '',
+    surface: item.surface ?? '',
+    total_surface: item.total_surface ?? specs.total_surface ?? '',
+    garages_count: item.garages_count ?? specs.garages_count ?? '',
+    antiquity: item.antiquity ?? specs.antiquity ?? '',
+    floor: item.floor ?? specs.floor ?? '',
+    toilets: item.toilets ?? specs.toilets ?? '',
+    orientation: item.orientation || specs.orientation || '',
+    construction_status: item.construction_status || specs.construction_status || '',
+    advertiser_type: item.advertiser_type || specs.advertiser_type || '',
+    commission_share: item.commission_share || specs.commission_share || '',
+    pool: Boolean(item.pool || specs.pool),
+    garage: Boolean(item.garage || specs.garage),
+    furnished: Boolean(item.furnished || specs.furnished),
+    patio: Boolean(item.patio || specs.patio),
+    balcony: Boolean(item.balcony || specs.balcony),
+    terrace: Boolean(item.terrace || specs.terrace),
+    sum: Boolean(item.sum || specs.sum),
+    security24h: Boolean(item.security24h || specs.security24h),
+    pet_friendly: Boolean(item.pet_friendly || specs.pet_friendly),
+    professional_use: Boolean(item.professional_use || specs.professional_use),
+    is_premium: false,
+    premium_plan: fallback.premium_plan || 'Destacado 7 días',
+    specs_json: cleanSpecsForRepublish(specs),
+  };
+}
+
 export default function Publicar() {
   const router = useRouter();
   const initial = {
@@ -108,6 +184,9 @@ export default function Publicar() {
   const [user, setUser] = useState(null);
   const [ownerMode, setOwnerMode] = useState(false);
   const [paymentPrompt, setPaymentPrompt] = useState(null);
+  const [republishingId, setRepublishingId] = useState("");
+  const [republishing, setRepublishing] = useState(false);
+  const [republishNotice, setRepublishNotice] = useState("");
   const subtypeOptions = useMemo(() => SUBTYPES?.[formData.category] || [], [formData.category]);
   const { t, language } = useLang();
   const requiredMissing = useMemo(() => {
@@ -123,6 +202,10 @@ export default function Publicar() {
     return missing;
   }, [formData, images.length, t]);
   const completion = Math.max(12, Math.round(((8 - requiredMissing.length) / 8) * 100));
+  const isRepublishing = Boolean(republishingId);
+  const publishTitle = isRepublishing ? 'Republicar anuncio' : t("publish_title", "Publicar anuncio");
+  const publishSubmitLabel = isRepublishing ? 'Republicar anuncio' : t("publish_submit", "Publicar");
+  const publishSuccessMessage = isRepublishing ? 'Anuncio republicado correctamente' : t("publish_success", "Anuncio publicado correctamente");
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, language: language || prev.language || "es" }));
@@ -136,7 +219,7 @@ export default function Publicar() {
       setUser(currentUser);
       setOwnerMode(isOwnerEmail(currentUser?.email));
       setAuthChecked(true);
-      if (!currentUser) router.replace("/login?next=/publicar");
+      if (!currentUser) router.replace(`/login?next=${encodeURIComponent(router.asPath || "/publicar")}`);
     });
     const { data: sub } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
@@ -144,7 +227,7 @@ export default function Publicar() {
       setUser(currentUser);
       setOwnerMode(isOwnerEmail(currentUser?.email));
       setAuthChecked(true);
-      if (!currentUser) router.replace("/login?next=/publicar");
+      if (!currentUser) router.replace(`/login?next=${encodeURIComponent(router.asPath || "/publicar")}`);
     });
     return () => {
       mounted = false;
@@ -152,11 +235,53 @@ export default function Publicar() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (!router.isReady) return;
+    const id = String(router.query.republicar || '').trim();
+    setRepublishingId(id);
+    if (!id || !user?.id) {
+      if (!id) setRepublishNotice('');
+      return;
+    }
+
+    let cancelled = false;
+    async function loadListingForRepublish() {
+      setRepublishing(true);
+      setRepublishNotice('');
+      try {
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData?.session?.access_token;
+        const { data } = await fetchJsonWithRetry(`/api/secure/listings?id=${encodeURIComponent(id)}&mine=1`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }, 2);
+        if (cancelled) return;
+        if (String(data?.user_id || '') !== String(user.id)) {
+          throw new Error('No se puede republicar un anuncio de otra cuenta.');
+        }
+        setFormData(buildRepublishForm(data, initial, user.email || ''));
+        setImages(imageUrlsToPreviewItems(data.images));
+        setRepublishNotice('Datos copiados. Revisalos y publicalo de nuevo cuando quieras.');
+      } catch (error) {
+        if (!cancelled) setRepublishNotice(error.message || 'No se pudo cargar el anuncio para republicar.');
+      } finally {
+        if (!cancelled) setRepublishing(false);
+      }
+    }
+
+    loadListingForRepublish();
+    return () => {
+      cancelled = true;
+    };
+  }, [router.isReady, router.query.republicar, user?.id, user?.email]);
+
   async function uploadImages(userId) {
     const urls = [];
     for (const item of images) {
       const file = item.file;
-      if (!file) continue;
+      if (!file) {
+        if (item.url) urls.push(item.url);
+        continue;
+      }
       const ext = file.name.split(".").pop();
       const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const path = `publicar/${userId}/${safeName}`;
@@ -227,7 +352,7 @@ export default function Publicar() {
       }
       setImages([]);
       setFormData(initial);
-      alert(t("publish_success", "Anuncio publicado correctamente"));
+      alert(publishSuccessMessage);
       window.location.replace("/mis-anuncios");
     } catch (err) {
       alert(err.message || "Error publicando");
@@ -272,8 +397,10 @@ export default function Publicar() {
         </aside>
 
         <main className="cc-publish-main" style={styles.mainCol}>
-          <h1 style={styles.title}>{t("publish_title", "Publicar anuncio")}</h1>
+          <h1 style={styles.title}>{publishTitle}</h1>
           <p style={styles.subtitle}>{t("publish_subtitle", "Ahora con ubicación inteligente, venta/alquiler y ficha técnica.")}</p>
+          {republishNotice ? <div style={styles.republishNotice}>{republishNotice}</div> : null}
+          {republishing ? <div style={styles.infoBox}>Cargando datos del anuncio anterior...</div> : null}
           <section className="cc-publish-pro-panel" style={styles.proPanel}>
             <div style={styles.stepHeader}>
               {[t("publish_step_basic", "Datos"), t("publish_step_location", "Ubicacion"), t("publish_step_media", "Fotos"), t("publish_step_preview", "Preview")].map((label, index) => (
@@ -382,7 +509,7 @@ export default function Publicar() {
             </div>
             <MultiImageUploader images={images} setImages={setImages} />
             <LocationMap city={formData.city} country={formData.country} address={formData.address || formData.zone} lat={formData.lat} lng={formData.lng} />
-            <button className="cc-publish-submit" type="submit" style={styles.submit} disabled={submitting}>{submitting ? t("publish_submitting", "Publicando...") : t("publish_submit", "Publicar")}</button>
+            <button className="cc-publish-submit" type="submit" style={styles.submit} disabled={submitting || republishing}>{submitting ? t("publish_submitting", "Publicando...") : publishSubmitLabel}</button>
           </form>
         </main>
 
@@ -505,6 +632,7 @@ const styles = {
   previewBody:{display:'grid',alignContent:'center',gap:6,padding:12,color:'#334155',minWidth:0,overflowWrap:'break-word'},
   inlineAds:{gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,280px),1fr))',gap:14,margin:'0 0 16px 0'},
   infoBox:{background:'#fff',border:'1px solid #e5e7eb',padding:16,borderRadius:16,marginBottom:16},
+  republishNotice:{background:'#ecfeff',border:'1px solid #a5f3fc',color:'#155e75',padding:14,borderRadius:16,marginBottom:16,fontWeight:800,lineHeight:1.45},
   infoActions:{display:'flex',gap:10,flexWrap:'wrap',marginTop:12},
   secondaryLink:{textDecoration:'none',background:'#fff',color:'#111827',padding:'10px 14px',borderRadius:12,border:'1px solid #d1d5db',fontWeight:800},
   form:{display:'grid',gap:14,background:'#fff',border:'1px solid #e5e7eb',borderRadius:24,padding:22,boxShadow:'0 14px 28px rgba(15,23,42,.06)',minWidth:0,maxWidth:'100%',overflow:'hidden',boxSizing:'border-box'},
