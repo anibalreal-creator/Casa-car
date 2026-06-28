@@ -5,8 +5,6 @@ import { supabase } from "../lib/supabase"
 import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail"
 import { useLang } from "../context/LanguageContext"
 
-const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
-
 function safeNextPath(value) {
   const raw = Array.isArray(value) ? value[0] : value;
   const path = String(raw || "/").trim();
@@ -69,20 +67,32 @@ export default function LoginPage() {
   }
 
   async function loginGoogle() {
-    if (!GOOGLE_AUTH_ENABLED) {
-      setNotice("Google todavia no esta habilitado para crear cuentas. Ingresa con email y contrasena.");
-      return;
-    }
+    setLoading(true);
+    setNotice("");
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          skipBrowserRedirect: true
+        }
+      })
+
+      if (error) throw error;
+      if (!data?.url) throw new Error("No se pudo generar la URL de Google.");
+
+      const check = await fetch(`/api/auth/oauth-check?url=${encodeURIComponent(data.url)}`);
+      const checkData = await check.json().catch(() => ({}));
+      if (!check.ok || !checkData.ok) {
+        throw new Error(checkData.error || "Google todavia no esta habilitado en Supabase.");
       }
-    })
 
-    if (error) {
-      alert(error.message || t("google_login_error", "No se pudo iniciar con Google"))
+      window.location.assign(checkData.redirectUrl || data.url);
+    } catch (error) {
+      setNotice(error?.message || t("google_login_error", "No se pudo iniciar con Google"));
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -136,17 +146,12 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={loginGoogle}
-          style={{ ...styles.google, ...(GOOGLE_AUTH_ENABLED ? {} : styles.googleUnavailable) }}
+          style={styles.google}
+          disabled={loading}
         >
-          {GOOGLE_AUTH_ENABLED
-            ? t("login_google", "Continuar con Google")
-            : "Google no disponible por ahora"}
+          <span style={styles.googleMark}>G</span>
+          <span>{t("login_google", "Continuar con Google")}</span>
         </button>
-        {!GOOGLE_AUTH_ENABLED ? (
-          <p style={styles.googleHelp}>
-            Crea la cuenta con email y contrasena hasta que Google quede habilitado en Supabase.
-          </p>
-        ) : null}
 
         <button
           onClick={() => setModo(modo === "login" ? "registro" : "login")}
@@ -212,24 +217,28 @@ const styles = {
   google: {
     width: "100%",
     marginTop: 12,
-    border: "1px solid #d1d5db",
-    background: "#fff",
-    color: "#111827",
+    border: "none",
+    background: "#0b1730",
+    color: "#fff",
     borderRadius: 12,
     padding: 14,
     fontWeight: 700,
-    cursor: "pointer"
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10
   },
-  googleUnavailable: {
-    background: "#f9fafb",
-    color: "#6b7280",
-    borderStyle: "dashed"
-  },
-  googleHelp: {
-    color: "#6b7280",
-    fontSize: 13,
-    lineHeight: 1.4,
-    margin: "8px 0 0"
+  googleMark: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    background: "#fff",
+    color: "#1d4ed8",
+    fontWeight: 900
   },
   switchBtn: {
     width: "100%",

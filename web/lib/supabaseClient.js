@@ -7,7 +7,12 @@ export const hasSupabaseEnv = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = hasSupabaseEnv
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
     })
   : null;
 
