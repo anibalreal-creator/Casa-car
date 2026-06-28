@@ -5,11 +5,23 @@ import { supabase } from "../lib/supabase"
 import { getAuthErrorMessage, signInWithEmail, signUpWithEmail } from "../lib/authEmail"
 import { useLang } from "../context/LanguageContext"
 
+const GOOGLE_AUTH_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
+
 function safeNextPath(value) {
   const raw = Array.isArray(value) ? value[0] : value;
   const path = String(raw || "/").trim();
   if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/login")) return "/";
   return path;
+}
+
+function getAuthQueryMessage(value) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const message = String(raw || "").trim().toLowerCase();
+  if (!message) return "";
+  if (message.includes("provider") || message.includes("google") || message.includes("unsupported")) {
+    return "Google todavia no esta habilitado para crear cuentas. Ingresa con email y contrasena.";
+  }
+  return "No se pudo completar el ingreso. Intenta nuevamente o usa email y contrasena.";
 }
 
 export default function LoginPage() {
@@ -19,10 +31,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [notice, setNotice] = useState("")
   const nextPath = safeNextPath(router.query.next);
 
   useEffect(() => {
     if (!router.isReady) return;
+    const authNotice = getAuthQueryMessage(router.query.auth_error || router.query.error_description || router.query.error);
+    if (authNotice) setNotice(authNotice);
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) router.replace(nextPath)
     })
@@ -54,6 +69,11 @@ export default function LoginPage() {
   }
 
   async function loginGoogle() {
+    if (!GOOGLE_AUTH_ENABLED) {
+      setNotice("Google todavia no esta habilitado para crear cuentas. Ingresa con email y contrasena.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -76,6 +96,8 @@ export default function LoginPage() {
         <h1 style={styles.title}>
           {modo === "login" ? t("login_title", "Iniciar sesion") : t("signup_title", "Crear cuenta")}
         </h1>
+
+        {notice ? <p style={styles.notice}>{notice}</p> : null}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
@@ -111,9 +133,11 @@ export default function LoginPage() {
           </p>
         ) : null}
 
-        <button onClick={loginGoogle} style={styles.google}>
-          {t("login_google", "Continuar con Google")}
-        </button>
+        {GOOGLE_AUTH_ENABLED ? (
+          <button onClick={loginGoogle} style={styles.google}>
+            {t("login_google", "Continuar con Google")}
+          </button>
+        ) : null}
 
         <button
           onClick={() => setModo(modo === "login" ? "registro" : "login")}
@@ -202,5 +226,15 @@ const styles = {
     fontSize: 13,
     lineHeight: 1.45,
     margin: "10px 0 0"
+  },
+  notice: {
+    background: "#fff7ed",
+    border: "1px solid #fed7aa",
+    color: "#9a3412",
+    borderRadius: 12,
+    padding: "12px 14px",
+    fontSize: 14,
+    lineHeight: 1.4,
+    margin: "0 0 14px"
   }
 }

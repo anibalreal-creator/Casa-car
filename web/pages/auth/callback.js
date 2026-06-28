@@ -9,6 +9,19 @@ function safeNextPath(value) {
   return path;
 }
 
+function readOAuthError() {
+  if (typeof window === "undefined") return "";
+  const search = new URLSearchParams(window.location.search || "");
+  const hash = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+  return (
+    search.get("error_description") ||
+    search.get("error") ||
+    hash.get("error_description") ||
+    hash.get("error") ||
+    ""
+  );
+}
+
 export default function AuthCallback() {
   const router = useRouter();
 
@@ -16,11 +29,17 @@ export default function AuthCallback() {
     if (!router.isReady) return;
     const handleAuth = async () => {
       try {
+        const oauthError = readOAuthError();
+        if (oauthError) {
+          router.push(`/login?auth_error=${encodeURIComponent(oauthError)}`);
+          return;
+        }
+
         await supabase.auth.exchangeCodeForSession(window.location.href);
         router.push(safeNextPath(router.query.next));
       } catch (error) {
         console.error("Auth callback error:", error);
-        router.push("/login");
+        router.push(`/login?auth_error=${encodeURIComponent(error?.message || "auth_error")}`);
       }
     };
 
