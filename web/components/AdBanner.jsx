@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react'
 
-const slotRatios = {
-  home_top: 1200 / 220,
-  home_middle: 1200 / 180,
-  search_sidebar: 320 / 420,
-  listing_inline: 1200 / 220,
-  footer_strip: 1200 / 140,
-}
-
 export default function AdBanner({
   slot,
   page = 'global',
@@ -72,16 +64,7 @@ export default function AdBanner({
   }
 
   const handleImageLoad = (event) => {
-    const expected = slotRatios[slot]
-    const width = event.currentTarget?.naturalWidth || 0
-    const height = event.currentTarget?.naturalHeight || 0
-    if (!expected || !width || !height) {
-      setFitMode('contain')
-      return
-    }
-    const ratio = width / height
-    const drift = Math.abs(ratio - expected) / expected
-    setFitMode(drift <= 0.08 ? 'cover' : 'contain')
+    setFitMode('contain')
   }
 
   if (loading) {
