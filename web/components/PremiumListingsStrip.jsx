@@ -4,6 +4,7 @@ import { categoryLabel } from "../lib/category";
 import { useLang } from "../context/LanguageContext";
 import { fetchJsonCached } from "../lib/clientFetchCache";
 import { getListingDetailHref } from "../lib/listingRoutes";
+import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
 
 const FALLBACK_CARDS = {
   es: [
@@ -48,7 +49,8 @@ export default function PremiumListingsStrip() {
     async function load() {
       try {
         const data = await fetchJsonCached("/api/listings?page=1&pageSize=12&sort=recent", { ttlMs: 30000 });
-        if (!cancelled) setItems(Array.isArray(data) ? data : []);
+        const rows = Array.isArray(data) ? data : data?.items || [];
+        if (!cancelled) setItems(rows);
       } catch {
         if (!cancelled) setItems([]);
       } finally {
@@ -66,7 +68,12 @@ export default function PremiumListingsStrip() {
       .sort((a, b) => Number(b?.views || 0) - Number(a?.views || 0))
       .slice(0, 3);
 
-    return premium.length ? premium : (FALLBACK_CARDS[language] || FALLBACK_CARDS.es);
+    const fallback = (FALLBACK_CARDS[language] || FALLBACK_CARDS.es).map((item) => ({
+      ...item,
+      is_example: true,
+      specs_json: { ...(item.specs_json || {}), is_example: true },
+    }));
+    return premium.length ? premium : fallback;
   }, [items, language]);
 
   return (
@@ -85,12 +92,21 @@ export default function PremiumListingsStrip() {
           const image = card?.images?.[0] || card?.image || "https://picsum.photos/seed/casacar-premium/900/600";
           const presentation = getImagePresentation(card);
           const href = getHref(card);
+          const commercialStatus = getCommercialStatus(card);
+          const exampleListing = isExampleListing(card);
           return (
             <a key={String(card.id)} href={href} style={styles.cardLink}>
               <article style={styles.card}>
                 <div style={styles.imageWrap}>
                   <img src={image} alt={card?.title || t('premium_card_alt', 'premium')} style={styles.image(presentation)} />
                   <span style={styles.badge}>{t('premium_badge', 'Destacado premium')}</span>
+                  {exampleListing ? <span style={styles.exampleBadge}>Ejemplo</span> : null}
+                  {commercialStatus ? (
+                    <>
+                      <span style={{ ...styles.statusRibbon, background: commercialStatus.color }}>{commercialStatus.label}</span>
+                      <span style={styles.statusWatermark}>{commercialStatus.label}</span>
+                    </>
+                  ) : null}
                 </div>
                 <div style={styles.body}>
                   <div style={styles.category}>{categoryLabel(card?.category) || card?.category || t('card_general', 'General')}</div>
@@ -121,6 +137,9 @@ const styles = {
   imageWrap:{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.06)",minHeight:240},
   image:(presentation)=>({width:"100%",height:240,objectFit:presentation?.fit || "cover",objectPosition:presentation?.position || "center center",display:"block",background:presentation?.background || "#e5eefb"}),
   badge:{position:"absolute",top:14,left:14,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#f59e0b",color:"#111827",fontWeight:900,fontSize:12},
+  exampleBadge:{position:"absolute",top:14,right:14,zIndex:4,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#fef3c7",color:"#92400e",fontWeight:900,fontSize:12,border:"1px solid rgba(146,64,14,.18)"},
+  statusRibbon:{position:"absolute",top:20,right:-46,zIndex:5,width:170,padding:"9px 0",color:"#fff",textAlign:"center",textTransform:"uppercase",fontWeight:900,fontSize:12,letterSpacing:".08em",transform:"rotate(35deg)",boxShadow:"0 8px 18px rgba(15,23,42,.22)"},
+  statusWatermark:{position:"absolute",inset:0,zIndex:2,display:"grid",placeItems:"center",color:"rgba(255,255,255,.36)",fontSize:44,fontWeight:900,textTransform:"uppercase",letterSpacing:".06em",transform:"rotate(-14deg)",textShadow:"0 3px 16px rgba(15,23,42,.32)",pointerEvents:"none"},
   body:{padding:18,display:"grid",gap:10,alignContent:"space-between"}, category:{color:"rgba(255,255,255,.78)",fontWeight:800,fontSize:13},
   cardTitle:{fontSize:24,lineHeight:1.1,margin:0}, location:{color:"rgba(255,255,255,.78)",fontWeight:700},
   bottomRow:{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,flexWrap:"wrap",marginTop:6}, price:{fontSize:28,fontWeight:900},

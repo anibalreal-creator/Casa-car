@@ -175,6 +175,25 @@ export default function EditarAnuncio() {
 
             <input value={form.price || ""} onChange={(e) => setField("price", e.target.value)} style={styles.input} placeholder="Precio" />
 
+            <section style={styles.box}>
+              <h3 style={styles.boxTitle}>Faja de estado comercial</h3>
+              <select
+                value={form.specs_json?.availability_status || form.specs_json?.deal_status || form.specs_json?.commercial_status || ""}
+                onChange={(e) => {
+                  setSpec("availability_status", e.target.value);
+                  setSpec("deal_status", e.target.value);
+                  setSpec("commercial_status", e.target.value);
+                }}
+                style={styles.input}
+              >
+                <option value="">Disponible - sin faja</option>
+                <option value="vendido">Vendido - mostrar faja</option>
+                <option value="alquilado">Alquilado - mostrar faja</option>
+                <option value="reservado">Reservado - mostrar faja</option>
+              </select>
+              <div style={styles.note}>El anuncio sigue visible, pero aparece con una faja para mostrar que ya se vendio, alquilo o reservo.</div>
+            </section>
+
             <div style={styles.row}>
               <input value={form.country || ""} onChange={(e) => setField("country", e.target.value)} style={styles.input} placeholder="País" />
               <input value={form.state || ""} onChange={(e) => setField("state", e.target.value)} style={styles.input} placeholder="Provincia / Estado" />

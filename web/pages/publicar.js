@@ -159,6 +159,7 @@ function buildRepublishForm(item = {}, fallback = {}, fallbackEmail = '') {
     security24h: Boolean(item.security24h || specs.security24h),
     pet_friendly: Boolean(item.pet_friendly || specs.pet_friendly),
     professional_use: Boolean(item.professional_use || specs.professional_use),
+    availability_status: specs.availability_status || specs.deal_status || specs.commercial_status || '',
     is_premium: false,
     premium_plan: fallback.premium_plan || 'Destacado 7 días',
     specs_json: cleanSpecsForRepublish(specs),
@@ -174,6 +175,7 @@ export default function Publicar() {
     description:"", phone:"", contact_email:"",
     rooms:"", bathrooms:"", surface:"",
     pool:false, garage:false, furnished:false, patio:false,
+    availability_status:"",
     is_premium:false, premium_plan:"Destacado 7 días",
     specs_json:{}
   };
@@ -336,7 +338,8 @@ export default function Publicar() {
             images: uploaded,
             seo_slug: seoSlug,
             client_request_id: clientRequestId,
-            specs_json: { ...(formData.specs_json || {}), client_request_id: clientRequestId },
+            availability_status: formData.availability_status || "",
+            specs_json: { ...(formData.specs_json || {}), client_request_id: clientRequestId, availability_status: formData.availability_status || "", deal_status: formData.availability_status || "", commercial_status: formData.availability_status || "" },
           })
         }));
       } catch (error) {
@@ -471,6 +474,16 @@ export default function Publicar() {
               </select>
             </div>
             <input style={styles.input} placeholder={t("publish_price_placeholder", "Precio")} value={formData.price} onChange={(e)=>setFormData((p)=>({ ...p, price:e.target.value }))} required />
+            <div style={styles.statusBox}>
+              <strong>Faja de estado comercial</strong>
+              <select style={styles.input} value={formData.availability_status || ""} onChange={(e)=>setFormData((p)=>({ ...p, availability_status:e.target.value }))}>
+                <option value="">Disponible - sin faja</option>
+                <option value="vendido">Vendido - mostrar faja</option>
+                <option value="alquilado">Alquilado - mostrar faja</option>
+                <option value="reservado">Reservado - mostrar faja</option>
+              </select>
+              <span style={styles.helperText}>Usalo cuando quieras dejar visible que ya se vendio, alquilo o reservo sin borrar el anuncio.</span>
+            </div>
             <div className="cc-publish-row" style={styles.row}>
               <select style={styles.input} value={formData.country} onChange={(e)=>setFormData((p)=>({ ...p, country:e.target.value }))}>
                 {COUNTRIES.map((c)=><option key={c}>{c}</option>)}
@@ -640,6 +653,8 @@ const styles = {
   input:{width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff'},
   textarea:{width:'100%',maxWidth:'100%',minWidth:0,boxSizing:'border-box',minHeight:140,padding:'13px 14px',border:'1px solid #d1d5db',borderRadius:14,background:'#fff',resize:'vertical'},
   premiumBox:{display:'grid',gap:10,padding:18,border:'1px solid #e5e7eb',borderRadius:18,background:'#f8fafc'},
+  statusBox:{display:'grid',gap:10,padding:16,border:'1px solid #dbeafe',borderRadius:16,background:'#eff6ff'},
+  helperText:{fontSize:13,color:'#475569',lineHeight:1.45},
   ownerHint:{color:'#1d4ed8',fontWeight:800},
   check:{display:'flex',alignItems:'center',gap:8,fontWeight:800,minWidth:0,overflowWrap:'break-word'},
   submit:{background:'linear-gradient(135deg,#0f172a,#1d4ed8)',color:'#fff',border:'none',borderRadius:14,padding:'14px 18px',fontWeight:900,cursor:'pointer'},

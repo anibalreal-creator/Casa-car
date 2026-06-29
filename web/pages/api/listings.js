@@ -6,6 +6,7 @@ import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../li
 import { enforceListingCreationLimit, enforcePremiumActivationLimit } from '../../lib/listingLimits';
 import { findListingByClientRequestId, sanitizeClientRequestId } from '../../lib/listingRequestId';
 import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from '../../lib/publicListings';
+import { normalizeCommercialStatus } from '../../lib/listingBadges';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -176,6 +177,9 @@ export default async function handler(req, res) {
           ...(body.specs_json || {}),
           ...(clientRequestId ? { client_request_id: clientRequestId } : {}),
           contact_email: body.contact_email || body?.specs_json?.contact_email || '',
+          commercial_status: normalizeCommercialStatus(body.commercial_status || body.availability_status || body.deal_status || body?.specs_json?.commercial_status || body?.specs_json?.availability_status || body?.specs_json?.deal_status),
+          availability_status: normalizeCommercialStatus(body.commercial_status || body.availability_status || body.deal_status || body?.specs_json?.commercial_status || body?.specs_json?.availability_status || body?.specs_json?.deal_status),
+          deal_status: normalizeCommercialStatus(body.commercial_status || body.availability_status || body.deal_status || body?.specs_json?.commercial_status || body?.specs_json?.availability_status || body?.specs_json?.deal_status),
         },
         featured: Boolean(body.featured),
         highlighted: Boolean(body.highlighted),

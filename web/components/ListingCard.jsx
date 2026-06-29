@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useLang } from "../context/LanguageContext";
 import { getAmenityLabels, getTourismSpecs, isTourismListing, tourismText } from "../lib/tourism";
 import { getListingDetailHref } from "../lib/listingRoutes";
+import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
 
 function safeJsonArray(value) {
   if (!value) return [];
@@ -103,6 +104,8 @@ export default function ListingCard(props) {
   const tourism = isTourismListing(item);
   const tourismSpecs = getTourismSpecs(item);
   const tourismAmenities = getAmenityLabels(item, language).slice(0, 3);
+  const commercialStatus = getCommercialStatus(item);
+  const exampleListing = isExampleListing(item);
 
   return (
     <div style={styles.card}>
@@ -129,6 +132,13 @@ export default function ListingCard(props) {
           >
             ❤
           </button>
+        ) : null}
+        {exampleListing ? <span style={styles.exampleBadge}>Ejemplo</span> : null}
+        {commercialStatus ? (
+          <>
+            <span style={{ ...styles.statusRibbon, background: commercialStatus.color }}>{commercialStatus.label}</span>
+            <span style={styles.statusWatermark}>{commercialStatus.label}</span>
+          </>
         ) : null}
       </div>
 
@@ -206,6 +216,51 @@ const styles = {
   favoriteBtnActive: {
     background: "#ffe4e6",
     borderColor: "#fb7185",
+  },
+  exampleBadge: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    zIndex: 4,
+    background: "#fef3c7",
+    color: "#92400e",
+    border: "1px solid rgba(146,64,14,.18)",
+    borderRadius: 999,
+    padding: "6px 10px",
+    fontSize: 12,
+    fontWeight: 900,
+    boxShadow: "0 6px 16px rgba(0,0,0,.10)",
+  },
+  statusRibbon: {
+    position: "absolute",
+    top: 18,
+    right: -42,
+    zIndex: 5,
+    width: 160,
+    padding: "8px 0",
+    color: "#fff",
+    textAlign: "center",
+    textTransform: "uppercase",
+    fontWeight: 900,
+    fontSize: 12,
+    letterSpacing: ".08em",
+    transform: "rotate(35deg)",
+    boxShadow: "0 8px 18px rgba(15,23,42,.22)",
+  },
+  statusWatermark: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 2,
+    display: "grid",
+    placeItems: "center",
+    color: "rgba(255,255,255,.42)",
+    fontSize: 44,
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: ".06em",
+    transform: "rotate(-14deg)",
+    textShadow: "0 3px 16px rgba(15,23,42,.32)",
+    pointerEvents: "none",
   },
   content: {
     padding: 16,

@@ -35,6 +35,7 @@ import { fetchJsonCached } from '../../lib/clientFetchCache';
 import { isTourismListing } from '../../lib/tourism';
 import { getListingDetailHref } from '../../lib/listingRoutes';
 import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from '../../lib/publicListings';
+import { getCommercialStatus } from '../../lib/listingBadges';
 
 const SPEC_LABELS = {
   brand: 'Marca', model: 'Modelo', year: 'Año', km: 'Kilómetros', fuel: 'Combustible', transmission: 'Transmisión',
@@ -42,6 +43,8 @@ const SPEC_LABELS = {
   condition: 'Estado general', cc: 'Cilindrada', type: 'Tipo', length: 'Eslora', beam: 'Manga', cabins: 'Cabinas',
   passengers: 'Pasajeros / capacidad', max_speed: 'Velocidad máx.', range: 'Autonomía'
 };
+
+const HIDDEN_SPEC_KEYS = new Set(['commercial_status', 'availability_status', 'deal_status']);
 
 function buildSpecs(item) {
   const specs = item?.specs_json || {};
@@ -55,7 +58,9 @@ function buildSpecs(item) {
     ['Ciudad', item?.city],
     ['Zona / barrio', item?.zone],
   ];
-  const dynamic = Object.entries(specs).map(([key, value]) => [SPEC_LABELS[key] || key, value]);
+  const dynamic = Object.entries(specs)
+    .filter(([key]) => !HIDDEN_SPEC_KEYS.has(key))
+    .map(([key, value]) => [SPEC_LABELS[key] || key, value]);
   return [...base, ...dynamic].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '');
 }
 
@@ -225,6 +230,7 @@ export default function ListingDetail({ initialItem = null }) {
   };
   const detailRows = buildSpecs(item);
   const tourism = isTourismListing(item);
+  const commercialStatus = getCommercialStatus(item);
 
   return (
     <div style={{background:'#f5f7fb',minHeight:'100vh',fontFamily:'Arial, sans-serif'}}>
@@ -244,6 +250,7 @@ export default function ListingDetail({ initialItem = null }) {
             <div style={styles.badges}>
               <FavoriteButton listingId={item.id} />
               <VerifiedBadge verified={item.seller_verified || item.verified} />
+              {commercialStatus ? <span style={{ ...styles.statusPill, background: commercialStatus.color }}>{commercialStatus.label}</span> : null}
               {(item.seller_reviews_count || reviewsState?.summary?.reviews_count) ? <StarRating value={item.seller_rating_avg || reviewsState.summary.rating_avg} count={item.seller_reviews_count || reviewsState.summary.reviews_count} /> : null}
             </div>
             <p style={styles.description}>{item.description}</p>
@@ -345,6 +352,7 @@ export default function ListingDetail({ initialItem = null }) {
 const styles = {
   heroCard:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)',display:'grid',gridTemplateColumns:'1.3fr .9fr',gap:20},
   badges:{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',marginBottom:14},
+  statusPill:{display:'inline-flex',alignItems:'center',justifyContent:'center',color:'#fff',borderRadius:999,padding:'9px 12px',fontSize:12,fontWeight:900,textTransform:'uppercase',letterSpacing:'.08em',boxShadow:'0 8px 18px rgba(15,23,42,.16)'},
   description:{margin:0,color:'#334155',lineHeight:1.7,fontSize:16},
   contactBox:{background:'#f8fafc',border:'1px solid #e5e7eb',borderRadius:16,padding:18,alignSelf:'start'},
   contactLabel:{fontSize:12,fontWeight:900,letterSpacing:.6,color:'#2563eb',textTransform:'uppercase'},

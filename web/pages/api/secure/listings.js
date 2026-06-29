@@ -5,6 +5,7 @@ import { buildListingSlug } from '../../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../../lib/api';
 import { enforceListingCreationLimit, enforcePremiumActivationLimit } from '../../../lib/listingLimits';
 import { findListingByClientRequestId, sanitizeClientRequestId } from '../../../lib/listingRequestId';
+import { normalizeCommercialStatus } from '../../../lib/listingBadges';
 
 function uniqueSlugCandidate(base) {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -38,6 +39,7 @@ function normalizeText(value, fallback = '') {
 function normalizePayload(body = {}, ownerId) {
   const images = normalizeImages(body.images);
   const specs = body.specs_json || {};
+  const commercialStatus = normalizeCommercialStatus(body.commercial_status || body.availability_status || body.deal_status || specs.commercial_status || specs.availability_status || specs.deal_status);
 
   return {
     user_id: ownerId,
@@ -90,6 +92,9 @@ function normalizePayload(body = {}, ownerId) {
       pet_friendly: toBool(body.pet_friendly || specs.pet_friendly),
       professional_use: toBool(body.professional_use || specs.professional_use),
       contact_email: normalizeText(body.contact_email || body?.specs_json?.contact_email),
+      commercial_status: commercialStatus,
+      availability_status: commercialStatus,
+      deal_status: commercialStatus,
     },
     verified: toBool(body.verified),
   };
