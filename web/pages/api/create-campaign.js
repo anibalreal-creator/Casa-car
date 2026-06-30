@@ -59,16 +59,18 @@ export default async function handler(req, res) {
 
     const campaignPayload = {
       user_id: user.id,
-      user_email: user.email || user_email,
       company_name,
       title: title || `Campania ${plan}`,
-      plan,
+      plan_key: plan,
       slot,
+      slot_key: slot,
       banner_url,
-      link,
-      amount,
-      duration_days,
-      status: 'pending',
+      destination_url: link,
+      contact_email: user.email || user_email,
+      status: 'pending_payment',
+      active: false,
+      impressions: 0,
+      clicks: 0,
     };
 
     const { data: inserted, error: insertError } = await supabase
@@ -115,8 +117,7 @@ export default async function handler(req, res) {
     await supabase
       .from('ad_campaigns')
       .update({
-        mp_preference_id: preferenceId,
-        checkout_url: initPoint,
+        mercadopago_status: preferenceId ? 'preference_created' : null,
       })
       .eq('id', campaignId);
 

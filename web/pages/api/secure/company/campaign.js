@@ -34,27 +34,23 @@ export default async function handler(req, res) {
 
     const payload = {
       user_id: user.id,
-      name: body.name || body.title || 'Campania nueva',
       title: body.title || body.name || 'Campania nueva',
       company_name: body.company_name || body.name || '',
-      plan: String(plan.key || 'basico').toUpperCase(),
+      description: body.description || body.notes || '',
       plan_key: plan.key,
-      budget: Number(body.budget || plan.price || 0),
-      start_date: startsAt,
-      end_date: endsAt,
       starts_at: startsAt,
       ends_at: endsAt,
       status: ownerMode ? 'active' : 'pending_payment',
       active: ownerMode,
       slot: normalizedSlot,
       slot_key: normalizedSlot,
-      target_url: body.target_url || body.destination_url || '',
       destination_url: body.destination_url || body.target_url || '',
       banner_url: body.banner_url || '',
-      notes: body.notes || '',
       contact_name: body.contact_name || '',
       contact_email: user.email || body.contact_email || '',
       cta_text: body.cta_text || 'Ver mas',
+      impressions: 0,
+      clicks: 0,
     };
 
     const { data, error } = await supabase.from('ad_campaigns').insert(payload).select('*').single();

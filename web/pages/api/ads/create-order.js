@@ -14,6 +14,22 @@ function getBaseUrl(req) {
   return `${proto}://${host}`;
 }
 
+async function updateCampaign(supabase, campaignId, patch) {
+  const attempts = [
+    patch,
+    Object.fromEntries(Object.entries(patch).filter(([key]) => key !== 'mp_preference_id' && key !== 'approved_at')),
+    Object.fromEntries(Object.entries(patch).filter(([key]) => key !== 'mp_preference_id' && key !== 'approved_at' && key !== 'is_active')),
+  ];
+
+  let lastError = null;
+  for (const attempt of attempts) {
+    const { error } = await supabase.from('ad_campaigns').update(attempt).eq('id', campaignId);
+    if (!error) return null;
+    lastError = error;
+  }
+  return lastError;
+}
+
 export default async function handler(req, res) {
   if (!allowMethods(req, res, ['POST'])) return;
   if (!requireInternalRequest(req, res)) return;
@@ -55,7 +71,8 @@ export default async function handler(req, res) {
 
     if (isOwnerEmail(userEmail) || isOwnerEmail(campaignEmail)) {
       const patch = patchForCampaignAction(campaign, 'activate');
-      await supabase.from('ad_campaigns').update({ ...patch, mercadopago_status: 'owner_free' }).eq('id', campaignId);
+      const updateError = await updateCampaign(supabase, campaignId, { ...patch, mercadopago_status: 'owner_free' });
+      if (updateError) return safeJson(res, 500, { error: 'No se pudo activar la campania' });
       return safeJson(res, 200, { ok: true, ownerFree: true, campaignId, chosen_checkout_url: `${getBaseUrl(req)}/dashboard/company` });
     }
 
@@ -85,7 +102,7 @@ export default async function handler(req, res) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) return safeJson(res, response.status, { error: 'No se pudo crear la orden' });
 
-    await supabase.from('ad_campaigns').update({ mercadopago_status: 'preference_created', mp_preference_id: data.id || null }).eq('id', campaignId);
+    await updateCampaign(supabase, campaignId, { mercadopago_status: 'preference_created', mp_preference_id: data.id || null });
     return safeJson(res, 200, { ok: true, checkout_url: data.init_point, chosen_checkout_url: data.init_point, sandbox_url: data.sandbox_init_point || null });
   } catch (error) {
     return safeJson(res, 500, { error: 'No se pudo crear la orden publicitaria' });

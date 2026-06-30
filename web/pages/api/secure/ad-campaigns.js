@@ -1,6 +1,6 @@
 import { getSupabaseServer } from '../../../lib/supabaseServer';
 import { requireUser } from '../../../lib/auth';
-import { canManageCompany, getCurrentMembership } from '../../../lib/permissions';
+import { canManageCompany } from '../../../lib/permissions';
 import { parseOrThrow, campaignSchema } from '../../../lib/validation';
 import { ok, fail, methodNotAllowed } from '../../../lib/api';
 import { enforceCampaignActivationLimit, enforceCampaignCreationLimit } from '../../../lib/listingLimits';
@@ -31,13 +31,24 @@ export default async function handler(req, res) {
         return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
       }
 
-      const membership = await getCurrentMembership(user.id);
       const payload = parseOrThrow(campaignSchema, req.body || {});
+      const planKey = String(payload.plan_key || payload.plan || 'basico').trim().toLowerCase();
+      const slotKey = String(payload.slot_key || payload.slot || 'home_middle').trim();
       const { data, error } = await supabase.from('ad_campaigns').insert({
-        ...payload,
         user_id: user.id,
-        plan: membership?.plan || payload.plan,
+        title: payload.title || payload.name || 'Campania publicitaria',
+        company_name: payload.company_name || payload.name || '',
+        description: payload.notes || '',
+        plan_key: planKey,
+        slot: slotKey,
+        slot_key: slotKey,
+        banner_url: payload.banner_url || '',
+        destination_url: payload.destination_url || payload.target_url || '',
+        contact_name: payload.contact_name || '',
+        contact_email: payload.contact_email || user.email || '',
+        cta_text: payload.cta_text || 'Ver mas',
         status: 'pending_payment',
+        active: false,
         impressions: 0,
         clicks: 0,
       }).select('*').single();

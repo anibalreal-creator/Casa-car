@@ -123,7 +123,6 @@ export function patchForCampaignAction(campaign = {}, action = '') {
       active: true,
       starts_at: startsAt,
       ends_at: endsAt,
-      approved_at: campaign.approved_at || nowIso,
       mercadopago_status: campaign.mercadopago_status || 'manual_activation',
     };
   }
