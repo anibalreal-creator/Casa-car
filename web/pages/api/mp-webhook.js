@@ -146,7 +146,7 @@ export default async function handler(req, res) {
 
   const { data: campaign, error: campaignError } = await supabase
     .from('ad_campaigns')
-    .select('id,user_id,contact_email,user_email,active,status,plan_key,plan,duration_days,starts_at,ends_at,approved_at,mercadopago_status')
+    .select('*')
     .eq('id', campaignId)
     .maybeSingle();
 
