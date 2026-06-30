@@ -78,14 +78,8 @@ function drawCover(ctx, image, width, height, focusX = 0.5, focusY = 0.5) {
 }
 
 function drawContain(ctx, image, width, height) {
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, width, height);
-
-  ctx.save();
-  ctx.globalAlpha = 0.24;
-  ctx.filter = 'blur(18px) saturate(1.05)';
-  drawCover(ctx, image, width, height);
-  ctx.restore();
 
   const scale = Math.min(width / image.width, height / image.height);
   const drawWidth = Math.round(image.width * scale);
@@ -96,6 +90,10 @@ function drawContain(ctx, image, width, height) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(x, y, drawWidth, drawHeight);
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
+
+  ctx.strokeStyle = 'rgba(148,163,184,.35)';
+  ctx.lineWidth = Math.max(2, Math.round(Math.min(width, height) * 0.015));
+  ctx.strokeRect(x, y, drawWidth, drawHeight);
 }
 
 function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#eff6ff') {
@@ -105,7 +103,7 @@ function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#
   ctx.save();
   roundedPath(ctx, x, y, width, height, radius);
   ctx.clip();
-  ctx.globalAlpha = 0.2;
+  ctx.globalAlpha = 0.08;
   ctx.filter = 'blur(14px) saturate(1.08)';
   const scaleCover = Math.max(width / image.width, height / image.height);
   const coverW = image.width * scaleCover;

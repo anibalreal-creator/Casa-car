@@ -27,7 +27,8 @@ function withHouseAds(items, slot) {
 }
 
 export default async function handler(req, res) {
-  const supabase = getSupabaseServer();
+  try {
+    const supabase = getSupabaseServer();
 
   if (req.method === 'GET') {
     if (!checkRateLimit(req, res, { name: 'ads-public-read', limit: 120, windowMs: 60_000 })) return;
@@ -113,5 +114,8 @@ export default async function handler(req, res) {
     return res.status(200).json(normalizeAdRecord(data));
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message || 'Error interno creando o leyendo campanias' });
+  }
 }

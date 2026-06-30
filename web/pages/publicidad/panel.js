@@ -20,6 +20,21 @@ function slotAspectRatio(value = '') {
   return `${Number(match[1]) || 1200} / ${Number(match[2]) || 220}`;
 }
 
+async function readJsonResponse(response, fallbackMessage) {
+  const raw = await response.text();
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    const clean = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    throw new Error(clean ? `${fallbackMessage}: ${clean.slice(0, 220)}` : fallbackMessage);
+  }
+  if (!response.ok) {
+    throw new Error(data?.error || data?.hint || data?.message || fallbackMessage);
+  }
+  return data;
+}
+
 export default function PublicidadPanelPage() {
   const router = useRouter();
   const initial = useMemo(() => ({
@@ -114,7 +129,7 @@ export default function PublicidadPanelPage() {
         },
         body: JSON.stringify({ user_id: currentUser?.id || '', contact_email: currentUser?.email || '' }),
       });
-      const data = await res.json();
+      const data = await readJsonResponse(res, 'No se pudieron cargar campanias');
       setCampaigns(Array.isArray(data?.campaigns) ? data.campaigns : []);
     } catch {
       setCampaigns([]);
@@ -162,8 +177,7 @@ export default function PublicidadPanelPage() {
           },
           body: JSON.stringify({ ...form, banner_url }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'No se pudo actualizar la campaña');
+        await readJsonResponse(res, 'No se pudo actualizar la campania');
         setNotice('Banner actualizado correctamente.');
         setEditingId('');
         setRepublishingId('');
@@ -182,8 +196,7 @@ export default function PublicidadPanelPage() {
         },
         body: JSON.stringify({ ...form, banner_url, status: 'pending_payment' }),
       });
-      const campaign = await res.json();
-      if (!res.ok) throw new Error(campaign.error || campaign.hint || 'No se pudo crear la campaña');
+      const campaign = await readJsonResponse(res, 'No se pudo crear la campania');
       setCampaigns((prev) => [campaign, ...prev]);
 
       const prefRes = await fetch('/api/ads/create-order', {
@@ -201,15 +214,21 @@ export default function PublicidadPanelPage() {
           companyName: campaign.company_name,
         }),
       });
-      const pref = await prefRes.json();
-      if (!prefRes.ok) throw new Error(pref.error || 'No se pudo iniciar el checkout');
+      const pref = await readJsonResponse(prefRes, 'No se pudo iniciar el checkout');
       if (pref.manual) {
         setNotice('Campaña guardada como pendiente/inactiva. Falta Mercado Pago para abrir checkout automático; no se mostrará como activa hasta confirmar el pago.');
         setSubmitting(false);
         await loadCampaigns(currentUser);
         return;
       }
-      window.location.href = pref.chosen_checkout_url || pref.checkout_url;
+      const checkoutUrl = pref.chosen_checkout_url || pref.checkout_url || pref.init_point || pref.sandbox_init_point;
+      if (!checkoutUrl) {
+        setNotice('Campania guardada como pendiente, pero Mercado Pago no devolvio un link de pago. Revisar credenciales de Mercado Pago o intentar nuevamente.');
+        setSubmitting(false);
+        await loadCampaigns(currentUser);
+        return;
+      }
+      window.location.href = checkoutUrl;
     } catch (error) {
       setNotice(error.message || 'Error creando campaña');
       setSubmitting(false);
@@ -234,8 +253,7 @@ export default function PublicidadPanelPage() {
         },
         body: JSON.stringify({ id }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'No se pudo dar de baja');
+      await readJsonResponse(response, 'No se pudo dar de baja');
       setNotice('Publicidad dada de baja. Ya no se mostrará en los espacios activos.');
       await loadCampaigns();
     } catch (error) {
@@ -257,8 +275,7 @@ export default function PublicidadPanelPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudieron sincronizar campañas');
+      const data = await readJsonResponse(res, 'No se pudieron sincronizar campanias');
       setNotice(`Sync OK · ${data.updated || 0} campañas actualizadas`);
       await loadCampaigns();
     } catch (error) {
