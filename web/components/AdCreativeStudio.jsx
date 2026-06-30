@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 const ADAPT_VARIANT = {
   key: 'complete',
-  label: 'Original lleno',
-  tone: 'sin espacios',
+  label: 'Original completo',
+  tone: 'fondo extendido',
   type: 'adapt',
-  mode: 'cover',
+  mode: 'containOnExtendedBackground',
 };
 
 const WIDE_VARIANTS = [
@@ -96,7 +96,21 @@ function drawContainAt(ctx, image, x, y, width, height, padding = 0) {
 function drawFullBleedOriginal(ctx, image, width, height) {
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.filter = 'blur(18px) saturate(1.12)';
+  ctx.globalAlpha = 0.72;
   drawCover(ctx, image, width, height);
+  ctx.restore();
+
+  const overlay = ctx.createLinearGradient(0, 0, width, height);
+  overlay.addColorStop(0, 'rgba(15,23,42,.16)');
+  overlay.addColorStop(0.5, 'rgba(255,255,255,.16)');
+  overlay.addColorStop(1, 'rgba(15,23,42,.12)');
+  ctx.fillStyle = overlay;
+  ctx.fillRect(0, 0, width, height);
+
+  drawContainAt(ctx, image, 0, 0, width, height, 0);
 }
 
 function rgbToHex(r, g, b) {
