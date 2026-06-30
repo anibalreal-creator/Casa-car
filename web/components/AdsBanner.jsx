@@ -62,7 +62,7 @@ const styles = {
   mediaWide:{ minHeight:170 },
   mediaSidebar:{ minHeight:260 },
   image: { width:'100%', maxHeight:240, objectFit:'cover', objectPosition:'center', display:'block', background:'transparent' },
-  imageContain:{ objectFit:'contain', maxHeight:'none', height:'100%' },
+  imageContain:{ objectFit:'cover', maxHeight:'none', height:'100%' },
   meta: { padding:'12px 14px', display:'grid', gap:6 },
   row: { display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' },
   badge: { display:'inline-block', width:'fit-content', padding:'4px 8px', borderRadius:999, background:'#ede9fe', color:'#6d28d9', fontWeight:800, fontSize:12 },

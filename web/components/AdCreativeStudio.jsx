@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 const ADAPT_VARIANT = {
   key: 'complete',
-  label: 'Original adaptado',
-  tone: 'sin cortar',
+  label: 'Original lleno',
+  tone: 'sin espacios',
   type: 'adapt',
-  mode: 'contain',
+  mode: 'cover',
 };
 
 const WIDE_VARIANTS = [
@@ -69,58 +69,123 @@ function fillRoundRect(ctx, x, y, width, height, radius, fillStyle) {
 }
 
 function drawCover(ctx, image, width, height, focusX = 0.5, focusY = 0.5) {
+  drawCoverAt(ctx, image, 0, 0, width, height, focusX, focusY);
+}
+
+function drawCoverAt(ctx, image, x, y, width, height, focusX = 0.5, focusY = 0.5) {
   const scale = Math.max(width / image.width, height / image.height);
   const cropWidth = width / scale;
   const cropHeight = height / scale;
   const sourceX = clamp((image.width - cropWidth) * focusX, 0, Math.max(0, image.width - cropWidth));
   const sourceY = clamp((image.height - cropHeight) * focusY, 0, Math.max(0, image.height - cropHeight));
-  ctx.drawImage(image, sourceX, sourceY, cropWidth, cropHeight, 0, 0, width, height);
+  ctx.drawImage(image, sourceX, sourceY, cropWidth, cropHeight, x, y, width, height);
 }
 
-function drawContain(ctx, image, width, height) {
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, height);
-
-  const scale = Math.min(width / image.width, height / image.height);
+function drawContainAt(ctx, image, x, y, width, height, padding = 0) {
+  const innerW = Math.max(1, width - padding * 2);
+  const innerH = Math.max(1, height - padding * 2);
+  const scale = Math.min(innerW / image.width, innerH / image.height);
   const drawWidth = Math.round(image.width * scale);
   const drawHeight = Math.round(image.height * scale);
-  const x = Math.round((width - drawWidth) / 2);
-  const y = Math.round((height - drawHeight) / 2);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(x, y, drawWidth, drawHeight);
-  ctx.drawImage(image, x, y, drawWidth, drawHeight);
-
-  ctx.strokeStyle = 'rgba(148,163,184,.35)';
-  ctx.lineWidth = Math.max(2, Math.round(Math.min(width, height) * 0.015));
-  ctx.strokeRect(x, y, drawWidth, drawHeight);
+  const drawX = Math.round(x + (width - drawWidth) / 2);
+  const drawY = Math.round(y + (height - drawHeight) / 2);
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  return { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
 }
 
-function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#eff6ff') {
+function drawFullBleedOriginal(ctx, image, width, height) {
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, width, height);
+  drawCover(ctx, image, width, height);
+}
+
+function rgbToHex(r, g, b) {
+  return `#${[r, g, b].map((value) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function mixColor(hex, targetHex, amount = 0.5) {
+  const parse = (value) => {
+    const clean = String(value || '').replace('#', '');
+    return [
+      parseInt(clean.slice(0, 2), 16) || 0,
+      parseInt(clean.slice(2, 4), 16) || 0,
+      parseInt(clean.slice(4, 6), 16) || 0,
+    ];
+  };
+  const a = parse(hex);
+  const b = parse(targetHex);
+  return rgbToHex(
+    a[0] * (1 - amount) + b[0] * amount,
+    a[1] * (1 - amount) + b[1] * amount,
+    a[2] * (1 - amount) + b[2] * amount
+  );
+}
+
+function getImagePalette(image) {
+  const fallback = {
+    primary: '#2563eb',
+    secondary: '#0f172a',
+    light: '#eff6ff',
+    soft: '#dbeafe',
+    dark: '#061226',
+  };
+  try {
+    const sample = document.createElement('canvas');
+    sample.width = 24;
+    sample.height = 24;
+    const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
+    sampleCtx.drawImage(image, 0, 0, sample.width, sample.height);
+    const { data } = sampleCtx.getImageData(0, 0, sample.width, sample.height);
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 40) continue;
+      const max = Math.max(data[i], data[i + 1], data[i + 2]);
+      const min = Math.min(data[i], data[i + 1], data[i + 2]);
+      if (max > 246 && min > 232) continue;
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count += 1;
+    }
+    if (!count) return fallback;
+    const primary = rgbToHex(r / count, g / count, b / count);
+    return {
+      primary,
+      secondary: mixColor(primary, '#0f172a', 0.72),
+      light: mixColor(primary, '#ffffff', 0.84),
+      soft: mixColor(primary, '#dbeafe', 0.62),
+      dark: mixColor(primary, '#020617', 0.82),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#eff6ff', palette = null) {
   fillRoundRect(ctx, x, y, width, height, radius, background);
   if (!image) return;
 
   ctx.save();
   roundedPath(ctx, x, y, width, height, radius);
   ctx.clip();
-  ctx.globalAlpha = 0.08;
-  ctx.filter = 'blur(14px) saturate(1.08)';
-  const scaleCover = Math.max(width / image.width, height / image.height);
-  const coverW = image.width * scaleCover;
-  const coverH = image.height * scaleCover;
-  ctx.drawImage(image, x + (width - coverW) / 2, y + (height - coverH) / 2, coverW, coverH);
+  ctx.globalAlpha = 0.36;
+  ctx.filter = 'blur(12px) saturate(1.08)';
+  drawCoverAt(ctx, image, x, y, width, height);
   ctx.restore();
 
   ctx.save();
-  roundedPath(ctx, x + 8, y + 8, width - 16, height - 16, Math.max(8, radius - 6));
+  roundedPath(ctx, x, y, width, height, radius);
   ctx.clip();
-  const pad = Math.max(10, Math.min(width, height) * 0.08);
-  const innerW = width - pad * 2;
-  const innerH = height - pad * 2;
-  const scale = Math.min(innerW / image.width, innerH / image.height);
-  const drawW = image.width * scale;
-  const drawH = image.height * scale;
-  ctx.drawImage(image, x + (width - drawW) / 2, y + (height - drawH) / 2, drawW, drawH);
+  const overlay = ctx.createLinearGradient(x, y, x + width, y + height);
+  overlay.addColorStop(0, 'rgba(255,255,255,.14)');
+  overlay.addColorStop(1, palette?.soft ? `${palette.soft}66` : 'rgba(255,255,255,.22)');
+  ctx.fillStyle = overlay;
+  ctx.fillRect(x, y, width, height);
+  const pad = Math.max(8, Math.min(width, height) * 0.07);
+  drawContainAt(ctx, image, x, y, width, height, pad);
   ctx.restore();
 }
 
@@ -191,6 +256,64 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   return y + visible.length * lineHeight;
 }
 
+function buildWrappedLines(ctx, text, maxWidth, maxLines) {
+  const words = normalizeText(text, '').split(' ').filter(Boolean);
+  const lines = [];
+  let line = '';
+
+  words.forEach((word) => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth || !line) {
+      line = test;
+      return;
+    }
+    lines.push(line);
+    line = word;
+  });
+  if (line) lines.push(line);
+
+  const visible = lines.slice(0, maxLines);
+  if (lines.length > maxLines && visible.length) {
+    let last = visible[visible.length - 1];
+    while (last.length > 4 && ctx.measureText(`${last}...`).width > maxWidth) {
+      last = last.slice(0, -1).trim();
+    }
+    visible[visible.length - 1] = `${last}...`;
+  }
+  return visible;
+}
+
+function drawFittedTextBlock(ctx, text, x, y, maxWidth, maxHeight, options = {}) {
+  const {
+    maxLines = 2,
+    initialSize = 36,
+    minSize = 18,
+    weight = 900,
+    color = '#0f172a',
+    lineRatio = 1.08,
+  } = options;
+
+  let size = initialSize;
+  let lines = [];
+  let lineHeight = initialSize * lineRatio;
+
+  while (size >= minSize) {
+    ctx.font = `${weight} ${size}px Arial, sans-serif`;
+    lineHeight = size * lineRatio;
+    lines = buildWrappedLines(ctx, text, maxWidth, maxLines);
+    if (lines.length * lineHeight <= maxHeight) break;
+    size -= 2;
+  }
+
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'top';
+  ctx.font = `${weight} ${Math.max(size, minSize)}px Arial, sans-serif`;
+  lineHeight = Math.max(size, minSize) * lineRatio;
+  lines = buildWrappedLines(ctx, text, maxWidth, Math.max(1, Math.min(maxLines, Math.floor(maxHeight / lineHeight))));
+  lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
+  return y + lines.length * lineHeight;
+}
+
 function maxLinesForBox(startY, endY, lineHeight, desiredLines) {
   const available = Math.max(lineHeight, endY - startY);
   return Math.max(1, Math.min(desiredLines, Math.floor(available / lineHeight)));
@@ -204,7 +327,8 @@ function drawPill(ctx, text, x, y, width, height, fill, color, fontSize) {
   ctx.fillText(text, x + height * 0.55, y + height / 2 + 1);
 }
 
-function drawWideCreative(ctx, image, width, height, variant, copy) {
+function drawWideCreative(ctx, image, width, height, variant, copy, palette) {
+  const colors = palette || getImagePalette(image);
   const pad = Math.max(22, Math.round(height * 0.16));
   const isShort = height <= 150;
   const isCompact = height <= 260;
@@ -214,25 +338,29 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
 
   if (variant.layout === 'splitLight') {
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, '#ffffff');
-    bg.addColorStop(0.58, '#f8fbff');
-    bg.addColorStop(1, '#dbeafe');
+    bg.addColorStop(0, colors.light);
+    bg.addColorStop(0.58, '#ffffff');
+    bg.addColorStop(1, colors.soft);
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
     const imageW = Math.min(width * 0.34, height * 2.3);
-    drawImagePanel(ctx, image, pad, pad, imageW, height - pad * 2, 22, '#eaf2ff');
+    drawImagePanel(ctx, image, pad, pad, imageW, height - pad * 2, 22, colors.light, colors);
 
     const textX = pad + imageW + pad;
     const textW = width - textX - pad - 160;
-    drawPill(ctx, copy.company.toUpperCase(), textX, pad, Math.min(270, Math.max(150, ctx.measureText(copy.company).width + 76)), isShort ? 32 : 38, '#dbeafe', '#1d4ed8', isShort ? 14 : 16);
+    drawPill(ctx, copy.company.toUpperCase(), textX, pad, Math.min(270, Math.max(150, ctx.measureText(copy.company).width + 76)), isShort ? 32 : 38, colors.soft, colors.secondary, isShort ? 14 : 16);
     ctx.fillStyle = '#0f172a';
-    ctx.font = `900 ${titleSize}px Arial, sans-serif`;
     ctx.textBaseline = 'top';
     const titleY = pad + (isShort ? 42 : 54);
     const descY = height - pad - bodySize - 4;
     const titleLines = maxLinesForBox(titleY, descY - bodySize * 1.25, titleSize * 1.04, isCompact ? 1 : 2);
-    drawWrappedText(ctx, copy.title, textX, titleY, Math.max(220, textW), titleSize * 1.04, titleLines);
+    drawFittedTextBlock(ctx, copy.title, textX, titleY, Math.max(220, textW), Math.max(30, descY - titleY - 8), {
+      initialSize: titleSize,
+      minSize: isShort ? 22 : 28,
+      maxLines: titleLines,
+      color: '#0f172a',
+    });
     ctx.fillStyle = '#475569';
     ctx.font = `700 ${bodySize}px Arial, sans-serif`;
     drawWrappedText(ctx, copy.description, textX, descY, Math.max(220, textW), bodySize * 1.2, 1);
@@ -241,9 +369,9 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
   }
 
   const bg = ctx.createLinearGradient(0, 0, width, height);
-  bg.addColorStop(0, variant.layout === 'editorialDark' ? '#080f1f' : '#061226');
-  bg.addColorStop(0.55, '#183a8a');
-  bg.addColorStop(1, '#2563eb');
+  bg.addColorStop(0, variant.layout === 'editorialDark' ? '#080f1f' : colors.dark);
+  bg.addColorStop(0.55, colors.secondary);
+  bg.addColorStop(1, colors.primary);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
@@ -261,30 +389,35 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
 
   const imageW = Math.min(width * 0.28, height * 2.1);
   const imageX = width - pad - imageW;
-  drawImagePanel(ctx, image, imageX, pad, imageW, height - pad * 2, 24, 'rgba(255,255,255,.14)');
+  drawImagePanel(ctx, image, imageX, pad, imageW, height - pad * 2, 24, 'rgba(255,255,255,.14)', colors);
 
   const textW = imageX - pad * 2;
   drawPill(ctx, copy.company.toUpperCase(), pad, pad, Math.min(290, Math.max(160, copy.company.length * 12 + 70)), isShort ? 32 : 38, 'rgba(255,255,255,.92)', '#0f172a', isShort ? 14 : 16);
   ctx.fillStyle = '#ffffff';
-  ctx.font = `900 ${titleSize}px Arial, sans-serif`;
   ctx.textBaseline = 'top';
   const titleY = pad + (isShort ? 42 : 56);
   const bodyY = height - pad - bodySize - 5;
   const titleLines = maxLinesForBox(titleY, bodyY - bodySize * 1.25, titleSize * 1.04, isCompact ? 1 : 2);
-  drawWrappedText(ctx, copy.title, pad, titleY, textW, titleSize * 1.04, titleLines);
+  drawFittedTextBlock(ctx, copy.title, pad, titleY, textW, Math.max(30, bodyY - titleY - 8), {
+    initialSize: titleSize,
+    minSize: isShort ? 22 : 28,
+    maxLines: titleLines,
+    color: '#ffffff',
+  });
   ctx.fillStyle = '#dbeafe';
   ctx.font = `700 ${bodySize}px Arial, sans-serif`;
   drawWrappedText(ctx, copy.contact || copy.description, pad, bodyY, Math.max(180, textW - 150), bodySize * 1.2, 1);
   drawPill(ctx, copy.cta, imageX - 150, height - pad - ctaH, 132, ctaH, '#ffffff', '#0f172a', isShort ? 17 : 18);
 }
 
-function drawVerticalCreative(ctx, image, width, height, variant, copy) {
-  const pad = 24;
+function drawVerticalCreative(ctx, image, width, height, variant, copy, palette) {
+  const colors = palette || getImagePalette(image);
+  const pad = Math.max(18, Math.round(width * 0.07));
   const dark = variant.layout === 'verticalImpact';
   const bg = ctx.createLinearGradient(0, 0, width, height);
-  bg.addColorStop(0, dark ? '#061226' : '#ffffff');
-  bg.addColorStop(0.58, dark ? '#183a8a' : '#f8fbff');
-  bg.addColorStop(1, dark ? '#2563eb' : '#dbeafe');
+  bg.addColorStop(0, dark ? colors.dark : colors.light);
+  bg.addColorStop(0.58, dark ? colors.secondary : '#ffffff');
+  bg.addColorStop(1, dark ? colors.primary : colors.soft);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
@@ -298,30 +431,39 @@ function drawVerticalCreative(ctx, image, width, height, variant, copy) {
     ctx.restore();
   }
 
-  drawImagePanel(ctx, image, pad, pad, width - pad * 2, 116, 22, dark ? 'rgba(255,255,255,.14)' : '#eef6ff');
+  const imageH = Math.max(112, Math.min(Math.round(height * 0.34), height - 292));
+  const imageY = pad;
+  drawImagePanel(ctx, image, pad, imageY, width - pad * 2, imageH, 22, dark ? 'rgba(255,255,255,.14)' : colors.light, colors);
 
-  drawPill(ctx, copy.company.toUpperCase(), pad, 158, width - pad * 2, 36, dark ? 'rgba(255,255,255,.92)' : '#dbeafe', dark ? '#0f172a' : '#1d4ed8', 14);
+  const pillY = imageY + imageH + 14;
+  drawPill(ctx, copy.company.toUpperCase(), pad, pillY, width - pad * 2, 36, dark ? 'rgba(255,255,255,.92)' : colors.soft, dark ? '#0f172a' : colors.secondary, 14);
 
-  ctx.fillStyle = dark ? '#ffffff' : '#0f172a';
-  ctx.font = '900 31px Arial, sans-serif';
-  ctx.textBaseline = 'top';
-  drawWrappedText(ctx, copy.title, pad, 214, width - pad * 2, 34, 3);
+  const ctaY = height - pad - 42;
+  const descY = Math.max(pillY + 86, ctaY - 58);
+  const titleY = pillY + 52;
+  drawFittedTextBlock(ctx, copy.title, pad, titleY, width - pad * 2, Math.max(48, descY - titleY - 8), {
+    initialSize: 31,
+    minSize: 22,
+    maxLines: 3,
+    color: dark ? '#ffffff' : '#0f172a',
+  });
 
   ctx.fillStyle = dark ? '#dbeafe' : '#475569';
   ctx.font = '700 16px Arial, sans-serif';
-  drawWrappedText(ctx, copy.description, pad, 322, width - pad * 2, 20, 2);
+  drawWrappedText(ctx, copy.description, pad, descY, width - pad * 2, 20, Math.max(1, Math.min(2, Math.floor((ctaY - descY - 8) / 20))));
 
-  drawPill(ctx, copy.cta, pad, height - 58, width - pad * 2, 42, dark ? '#ffffff' : '#0f172a', dark ? '#0f172a' : '#ffffff', 18);
+  drawPill(ctx, copy.cta, pad, ctaY, width - pad * 2, 42, dark ? '#ffffff' : '#0f172a', dark ? '#0f172a' : '#ffffff', 18);
 }
 
 function drawGenerated(ctx, image, width, height, variant, form) {
   const copy = getCopy(form);
+  const palette = getImagePalette(image);
   const ratio = width / height;
   if (ratio < 1.15) {
-    drawVerticalCreative(ctx, image, width, height, variant, copy);
+    drawVerticalCreative(ctx, image, width, height, variant, copy, palette);
     return;
   }
-  drawWideCreative(ctx, image, width, height, variant, copy);
+  drawWideCreative(ctx, image, width, height, variant, copy, palette);
 }
 
 function getVariantsForDimensions(dimensions) {
@@ -369,7 +511,7 @@ async function renderCreative({ selectedSlot, sourceImage, variant, form }) {
   ctx.imageSmoothingQuality = 'high';
 
   if (variant.type === 'adapt') {
-    drawContain(ctx, image, width, height);
+    drawFullBleedOriginal(ctx, image, width, height);
   } else {
     drawGenerated(ctx, image, width, height, variant, form);
   }
@@ -463,7 +605,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, form = {},
       </div>
 
       <div style={styles.intro}>
-        La IA usa la imagen subida como marca/base y los datos de la campania para crear opciones listas para el slot.
+        La IA llena el espacio con la imagen subida y tambien crea piezas nuevas con logo, colores y datos de la campania.
       </div>
 
       <div style={styles.variantGrid}>
@@ -493,7 +635,7 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, form = {},
         <button type="button" onClick={useVariant} disabled={generating || loading || !sourceImage} style={styles.useButton}>
           {generating ? 'Generando...' : 'Usar diseno elegido'}
         </button>
-        {error ? <span style={styles.error}>{error}</span> : <span style={styles.hint}>Genera PNG final completo, sin cortar texto ni logos.</span>}
+        {error ? <span style={styles.error}>{error}</span> : <span style={styles.hint}>Genera PNG final completo, sin espacios blancos y con textos protegidos.</span>}
       </div>
     </section>
   );
@@ -510,7 +652,7 @@ const styles = {
   variantButton: { border: '1px solid #dbeafe', background: '#fff', borderRadius: 14, padding: 8, cursor: 'pointer', display: 'grid', gap: 8, textAlign: 'left', minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   variantButtonActive: { borderColor: '#1d4ed8', boxShadow: '0 0 0 3px rgba(29,78,216,.12)' },
   variantPreview: { borderRadius: 10, overflow: 'hidden', display: 'grid', placeItems: 'center', minHeight: 0, boxSizing: 'border-box', background: '#eff6ff' },
-  previewImage: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
+  previewImage: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
   placeholder: { color: '#64748b', fontWeight: 900, fontSize: 12 },
   variantMeta: { color: '#334155', fontSize: 12, fontWeight: 800 },
   footer: { display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', minWidth: 0 },

@@ -100,7 +100,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
   const { t } = useLang();
   const [ads, setAds] = useState([]);
   const [index, setIndex] = useState(0);
-  const [fitMode, setFitMode] = useState('contain');
+  const [fitMode, setFitMode] = useState('cover');
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -192,7 +192,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
     ...(isSidebar ? styles.cardSidebar : null),
   };
   const handleImageLoad = (event) => {
-    setFitMode('contain');
+    setFitMode('cover');
   };
 
   return (
@@ -319,14 +319,14 @@ const styles = {
     height: '100%',
     maxWidth: '100%',
     maxHeight: '100%',
-    objectFit: 'contain',
+    objectFit: 'cover',
     objectPosition: 'center',
     display: 'block',
     boxSizing: 'border-box',
     background: 'transparent',
   },
-  imageSmartWide: { objectFit: 'contain' },
-  imageSmartSidebar: { objectFit: 'contain' },
+  imageSmartWide: { objectFit: 'cover' },
+  imageSmartSidebar: { objectFit: 'cover' },
   overlay: { position: 'relative', zIndex: 2, minHeight: '100%', height: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
   overlayWide: { alignItems: 'stretch', background: 'linear-gradient(90deg,rgba(6,18,38,.55),rgba(6,18,38,.18) 48%, rgba(6,18,38,.08) 72%, rgba(6,18,38,.08))' },
   overlaySidebar: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(180deg,rgba(6,18,38,.35),rgba(6,18,38,.50))' },

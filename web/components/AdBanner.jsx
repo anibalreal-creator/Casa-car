@@ -11,7 +11,7 @@ export default function AdBanner({
 }) {
   const [ad, setAd] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [fitMode, setFitMode] = useState('contain')
+  const [fitMode, setFitMode] = useState('cover')
 
   useEffect(() => {
     let mounted = true
@@ -64,7 +64,7 @@ export default function AdBanner({
   }
 
   const handleImageLoad = (event) => {
-    setFitMode('contain')
+    setFitMode('cover')
   }
 
   if (loading) {
