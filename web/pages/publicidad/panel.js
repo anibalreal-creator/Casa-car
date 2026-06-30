@@ -55,6 +55,7 @@ export default function PublicidadPanelPage() {
   const [bannerPreview, setBannerPreview] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
+  const [authChecked, setAuthChecked] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState('');
   const [editingId, setEditingId] = useState('');
@@ -62,24 +63,44 @@ export default function PublicidadPanelPage() {
   const [cancellingId, setCancellingId] = useState('');
 
   useEffect(() => {
+    if (!router.isReady) return;
     let mounted = true;
+    const redirectToLogin = () => {
+      const next = router.asPath || '/publicidad/panel';
+      router.replace(`/login?next=${encodeURIComponent(next)}`);
+    };
+
     supabaseBrowser.auth.getSession().then(({ data }) => {
       const nextUser = data?.session?.user || null;
       if (!mounted) return;
       setUser(nextUser);
+      setAuthChecked(true);
+      if (!nextUser) {
+        setCampaigns([]);
+        redirectToLogin();
+        return;
+      }
       setForm((prev) => ({ ...prev, contact_email: prev.contact_email || nextUser?.email || '' }));
-      if (nextUser) loadCampaigns(nextUser);
+      loadCampaigns(nextUser);
     });
     const { data: sub } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
       const nextUser = session?.user || null;
       if (!mounted) return;
       setUser(nextUser);
+      setAuthChecked(true);
+      if (!nextUser) {
+        setCampaigns([]);
+        redirectToLogin();
+        return;
+      }
+      setForm((prev) => ({ ...prev, contact_email: prev.contact_email || nextUser?.email || '' }));
+      loadCampaigns(nextUser);
     });
     return () => {
       mounted = false;
       sub?.subscription?.unsubscribe();
     };
-  }, []);
+  }, [router.isReady, router.asPath]);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -328,6 +349,23 @@ export default function PublicidadPanelPage() {
     ];
   }, [campaigns]);
 
+  if (!authChecked || !user) {
+    return (
+      <div className="cc-panel-page" style={styles.page}>
+        <GlobalHeader />
+        <main className="cc-panel-wrap" style={styles.wrap}>
+          <section style={styles.authCard}>
+            <div style={styles.kicker}>PANEL DE EMPRESAS</div>
+            <h1 style={styles.authTitle}>Inicia sesion para crear campanas</h1>
+            <p style={styles.authText}>Te estamos llevando al login. Despues de ingresar volves automaticamente al panel de publicidad.</p>
+            <a href={`/login?next=${encodeURIComponent(router.asPath || '/publicidad/panel')}`} style={styles.primaryLogin}>Ir al login</a>
+          </section>
+        </main>
+        <FooterBlueBar />
+      </div>
+    );
+  }
+
   return (
     <div className="cc-panel-page" style={styles.page}>
       <GlobalHeader />
@@ -561,6 +599,10 @@ export default function PublicidadPanelPage() {
 const styles = {
   page: { minHeight: '100vh', background: '#f5f7fb', fontFamily: 'Arial, sans-serif', overflowX: 'hidden' },
   wrap: { width: '100%', maxWidth: 1400, margin: '0 auto', padding: '28px 16px 50px', display: 'grid', gap: 24, boxSizing: 'border-box' },
+  authCard: { background: '#fff', border: '1px solid #dbeafe', borderRadius: 24, padding: 26, maxWidth: 720, boxShadow: '0 16px 40px rgba(15,23,42,.07)' },
+  authTitle: { margin: '0 0 12px 0', color: '#0f172a', fontSize: 34, lineHeight: 1.08 },
+  authText: { margin: '0 0 18px 0', color: '#475569', fontSize: 18, lineHeight: 1.5 },
+  primaryLogin: { display: 'inline-flex', justifyContent: 'center', textDecoration: 'none', background: '#0f172a', color: '#fff', borderRadius: 14, padding: '13px 18px', fontWeight: 900 },
   hero: { display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,.8fr)', gap: 20, background: '#fff', border: '1px solid #dbeafe', borderRadius: 26, padding: 24, minWidth: 0, overflow: 'hidden' },
   kicker: { display: 'inline-block', background: '#dbeafe', color: '#1d4ed8', borderRadius: 999, padding: '6px 10px', fontWeight: 900, fontSize: 12, letterSpacing: '.08em', marginBottom: 12 },
   title: { margin: '0 0 12px 0', fontSize: 46, lineHeight: 1, overflowWrap: 'break-word' },
