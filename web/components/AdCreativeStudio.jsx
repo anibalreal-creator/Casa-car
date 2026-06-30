@@ -176,9 +176,24 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   }
 
   visible.forEach((item, index) => {
-    ctx.fillText(item, x, y + index * lineHeight);
+    let fitted = item;
+    while (fitted.length > 4 && ctx.measureText(fitted).width > maxWidth) {
+      fitted = fitted.slice(0, -1).trim();
+    }
+    if (fitted !== item && fitted.length > 4) {
+      while (fitted.length > 4 && ctx.measureText(`${fitted}...`).width > maxWidth) {
+        fitted = fitted.slice(0, -1).trim();
+      }
+      fitted = `${fitted}...`;
+    }
+    ctx.fillText(fitted, x, y + index * lineHeight);
   });
   return y + visible.length * lineHeight;
+}
+
+function maxLinesForBox(startY, endY, lineHeight, desiredLines) {
+  const available = Math.max(lineHeight, endY - startY);
+  return Math.max(1, Math.min(desiredLines, Math.floor(available / lineHeight)));
 }
 
 function drawPill(ctx, text, x, y, width, height, fill, color, fontSize) {
@@ -192,6 +207,7 @@ function drawPill(ctx, text, x, y, width, height, fill, color, fontSize) {
 function drawWideCreative(ctx, image, width, height, variant, copy) {
   const pad = Math.max(22, Math.round(height * 0.16));
   const isShort = height <= 150;
+  const isCompact = height <= 260;
   const titleSize = isShort ? Math.max(30, Math.round(height * 0.27)) : Math.max(42, Math.round(height * 0.22));
   const bodySize = isShort ? Math.max(16, Math.round(height * 0.13)) : Math.max(19, Math.round(height * 0.1));
   const ctaH = isShort ? 38 : 46;
@@ -213,10 +229,13 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
     ctx.fillStyle = '#0f172a';
     ctx.font = `900 ${titleSize}px Arial, sans-serif`;
     ctx.textBaseline = 'top';
-    drawWrappedText(ctx, copy.title, textX, pad + (isShort ? 42 : 54), Math.max(220, textW), titleSize * 1.04, isShort ? 1 : 2);
+    const titleY = pad + (isShort ? 42 : 54);
+    const descY = height - pad - bodySize - 4;
+    const titleLines = maxLinesForBox(titleY, descY - bodySize * 1.25, titleSize * 1.04, isCompact ? 1 : 2);
+    drawWrappedText(ctx, copy.title, textX, titleY, Math.max(220, textW), titleSize * 1.04, titleLines);
     ctx.fillStyle = '#475569';
     ctx.font = `700 ${bodySize}px Arial, sans-serif`;
-    drawWrappedText(ctx, copy.description, textX, height - pad - bodySize - 4, Math.max(220, textW), bodySize * 1.2, 1);
+    drawWrappedText(ctx, copy.description, textX, descY, Math.max(220, textW), bodySize * 1.2, 1);
     drawPill(ctx, copy.cta, width - pad - 136, height - pad - ctaH, 136, ctaH, '#0f172a', '#ffffff', isShort ? 17 : 18);
     return;
   }
@@ -229,10 +248,15 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.globalAlpha = 0.16;
+  ctx.globalAlpha = 0.13;
   ctx.fillStyle = '#ffffff';
-  ctx.font = `900 ${Math.round(height * 0.78)}px Arial, sans-serif`;
-  ctx.fillText('CASA-CAR', pad, Math.round(height * 0.72));
+  ctx.beginPath();
+  ctx.arc(width * 0.42, height * 0.45, height * 0.62, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.1;
+  ctx.beginPath();
+  ctx.arc(width * 0.72, height * 0.75, height * 0.95, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 
   const imageW = Math.min(width * 0.28, height * 2.1);
@@ -244,11 +268,13 @@ function drawWideCreative(ctx, image, width, height, variant, copy) {
   ctx.fillStyle = '#ffffff';
   ctx.font = `900 ${titleSize}px Arial, sans-serif`;
   ctx.textBaseline = 'top';
-  drawWrappedText(ctx, copy.title, pad, pad + (isShort ? 42 : 56), textW, titleSize * 1.04, isShort ? 1 : 2);
+  const titleY = pad + (isShort ? 42 : 56);
+  const bodyY = height - pad - bodySize - 5;
+  const titleLines = maxLinesForBox(titleY, bodyY - bodySize * 1.25, titleSize * 1.04, isCompact ? 1 : 2);
+  drawWrappedText(ctx, copy.title, pad, titleY, textW, titleSize * 1.04, titleLines);
   ctx.fillStyle = '#dbeafe';
   ctx.font = `700 ${bodySize}px Arial, sans-serif`;
-  const bodyY = height - pad - bodySize - 5;
-  drawWrappedText(ctx, copy.contact || copy.description, pad, bodyY, textW - 150, bodySize * 1.2, 1);
+  drawWrappedText(ctx, copy.contact || copy.description, pad, bodyY, Math.max(180, textW - 150), bodySize * 1.2, 1);
   drawPill(ctx, copy.cta, imageX - 150, height - pad - ctaH, 132, ctaH, '#ffffff', '#0f172a', isShort ? 17 : 18);
 }
 
@@ -266,8 +292,9 @@ function drawVerticalCreative(ctx, image, width, height, variant, copy) {
     ctx.save();
     ctx.globalAlpha = 0.12;
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 86px Arial, sans-serif';
-    ctx.fillText('CASA', 20, 92);
+    ctx.beginPath();
+    ctx.arc(width * 0.68, 92, 78, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 

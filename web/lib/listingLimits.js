@@ -58,7 +58,7 @@ async function countPremiumListings(supabase, userId, excludeListingId) {
 async function countActiveCampaigns(supabase, userId) {
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('id,status,active,is_active,plan,plan_key,starts_at,start_date,approved_at,created_at,ends_at,end_date')
+    .select('id,status,active,plan,plan_key,starts_at,start_date,approved_at,created_at,ends_at,end_date')
     .eq('user_id', userId);
 
   if (error) throw error;
@@ -68,7 +68,7 @@ async function countActiveCampaigns(supabase, userId) {
 async function countPlanCampaigns(supabase, userId) {
   const { data, error } = await supabase
     .from('ad_campaigns')
-    .select('id,status,active,is_active,plan,plan_key,starts_at,start_date,approved_at,created_at,ends_at,end_date')
+    .select('id,status,active,plan,plan_key,starts_at,start_date,approved_at,created_at,ends_at,end_date')
     .eq('user_id', userId);
 
   if (error) throw error;
