@@ -1,9 +1,8 @@
-import { getSupabaseServer, getSupabaseUserClient } from '../../lib/supabaseServer';
+import { getSupabaseServer } from '../../lib/supabaseServer';
 import { getHouseAds, normalizeAdRecord, sortAds, getAdPlan, toPublicAdRecord } from '../../lib/adHelpers';
 import { isCampaignLive, syncCampaignStatuses } from '../../lib/adCampaigns';
 import { normalizeSlotKey } from '../../lib/adSlots';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
-import { readBearer } from '../../lib/auth';
 import { isOwnerEmail, normalizeEmail } from '../../lib/owner';
 import { enforceCampaignCreationLimit } from '../../lib/listingLimits';
 import { checkRateLimit } from '../../lib/server/rateLimit';
@@ -54,9 +53,8 @@ export default async function handler(req, res) {
     if (!checkRateLimit(req, res, { name: 'ads-write', limit: 30, windowMs: 60_000 })) return;
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
-    const userSupabase = getSupabaseUserClient(readBearer(req));
 
-    const campaignQuota = await enforceCampaignCreationLimit(userSupabase, user);
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
     if (!campaignQuota.canCreateCampaign) {
       return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
     }
@@ -83,7 +81,7 @@ export default async function handler(req, res) {
       mercadopago_payment_id: body.mercadopago_payment_id || null,
     };
 
-    const { data, error } = await userSupabase.from('ad_campaigns').insert(payload).select('*').single();
+    const { data, error } = await supabase.from('ad_campaigns').insert(payload).select('*').single();
     if (error) return res.status(500).json({ error: 'No se pudo crear la campania' });
     return res.status(200).json(normalizeAdRecord(data));
   }
@@ -92,13 +90,12 @@ export default async function handler(req, res) {
     if (!checkRateLimit(req, res, { name: 'ads-write', limit: 30, windowMs: 60_000 })) return;
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
-    const userSupabase = getSupabaseUserClient(readBearer(req));
 
     const campaignId = String(req.query?.id || '').trim();
     if (!campaignId || !UUID_RE.test(campaignId)) return res.status(400).json({ error: 'id invalido' });
     const body = req.body || {};
 
-    const { data: existing, error: existingError } = await userSupabase
+    const { data: existing, error: existingError } = await supabase
       .from('ad_campaigns')
       .select('*')
       .eq('id', campaignId)
@@ -112,7 +109,7 @@ export default async function handler(req, res) {
     ['company_name', 'title', 'description', 'plan_key', 'slot_key', 'banner_url', 'destination_url', 'cta_text', 'contact_name', 'contact_email', 'starts_at', 'ends_at'].forEach((key) => {
       if (body[key] !== undefined) payload[key] = body[key];
     });
-    const { data, error } = await userSupabase.from('ad_campaigns').update(payload).eq('id', campaignId).select('*').single();
+    const { data, error } = await supabase.from('ad_campaigns').update(payload).eq('id', campaignId).select('*').single();
     if (error) return res.status(500).json({ error: 'No se pudo actualizar la campania' });
     return res.status(200).json(normalizeAdRecord(data));
   }

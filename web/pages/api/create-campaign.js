@@ -3,8 +3,7 @@ import { getSiteUrl } from '../../lib/siteUrl';
 import { mercadoPagoRequest } from '../../lib/mercadopago';
 import { enforceCampaignCreationLimit } from '../../lib/listingLimits';
 import { checkRateLimit } from '../../lib/server/rateLimit';
-import { getSupabaseServer, getSupabaseUserClient } from '../../lib/supabaseServer';
-import { readBearer } from '../../lib/auth';
+import { getSupabaseServer } from '../../lib/supabaseServer';
 
 const PLAN_PRICES = {
   basico: 500,
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
     const user = await requireAuthenticatedRoute(req, res);
     if (!user) return;
     const supabase = getSupabaseServer();
-    const userSupabase = getSupabaseUserClient(readBearer(req));
 
     const body = normalizeBody(req);
     const {
@@ -50,7 +48,7 @@ export default async function handler(req, res) {
     const duration_days = PLAN_DAYS[plan];
     if (!amount || !duration_days) return res.status(400).json({ error: 'Plan invalido' });
 
-    const campaignQuota = await enforceCampaignCreationLimit(userSupabase, user);
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
     if (!campaignQuota.canCreateCampaign) {
       return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
     }
@@ -71,7 +69,7 @@ export default async function handler(req, res) {
       clicks: 0,
     };
 
-    const { data: inserted, error: insertError } = await userSupabase
+    const { data: inserted, error: insertError } = await supabase
       .from('ad_campaigns')
       .insert(campaignPayload)
       .select('id,title')
@@ -112,7 +110,7 @@ export default async function handler(req, res) {
     const preferenceId = response?.id || null;
     const initPoint = response?.init_point || '';
 
-    await userSupabase
+    await supabase
       .from('ad_campaigns')
       .update({
         mercadopago_status: preferenceId ? 'preference_created' : null,

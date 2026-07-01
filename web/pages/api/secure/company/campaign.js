@@ -1,6 +1,6 @@
-import { requireUser, readBearer } from '../../../../lib/auth';
+import { requireUser } from '../../../../lib/auth';
 import { canManageCompany } from '../../../../lib/permissions';
-import { getSupabaseServer, getSupabaseUserClient } from '../../../../lib/supabaseServer';
+import { getSupabaseServer } from '../../../../lib/supabaseServer';
 import { isOwnerEmail } from '../../../../lib/owner';
 import { getAdPlan } from '../../../../data/adPlans';
 import { normalizeSlotKey } from '../../../../lib/adSlots';
@@ -18,10 +18,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const supabase = getSupabaseServer();
-  const userSupabase = getSupabaseUserClient(readBearer(req));
 
   try {
-    const campaignQuota = await enforceCampaignCreationLimit(userSupabase, user);
+    const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
     if (!campaignQuota.canCreateCampaign) {
       return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
     }
@@ -54,12 +53,12 @@ export default async function handler(req, res) {
       clicks: 0,
     };
 
-    const { data, error } = await userSupabase.from('ad_campaigns').insert(payload).select('*').single();
+    const { data, error } = await supabase.from('ad_campaigns').insert(payload).select('*').single();
     if (error) return res.status(500).json({ error: 'No se pudo crear la campania' });
 
     if (ownerMode) {
       const patch = patchForCampaignAction(data, 'activate');
-      await userSupabase.from('ad_campaigns').update({ ...patch, mercadopago_status: 'owner_free' }).eq('id', data.id);
+      await supabase.from('ad_campaigns').update({ ...patch, mercadopago_status: 'owner_free' }).eq('id', data.id).eq('user_id', user.id);
       return res.status(200).json({ ...data, ...patch, mercadopago_status: 'owner_free' });
     }
 

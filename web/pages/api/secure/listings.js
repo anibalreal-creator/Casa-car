@@ -1,5 +1,5 @@
-import { getSupabaseServer, getSupabaseUserClient } from '../../../lib/supabaseServer';
-import { getServerUser, readBearer } from '../../../lib/auth';
+import { getSupabaseServer } from '../../../lib/supabaseServer';
+import { getServerUser } from '../../../lib/auth';
 import { normalizeCategory } from '../../../lib/category';
 import { buildListingSlug } from '../../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../../lib/api';
@@ -156,8 +156,6 @@ export default async function handler(req, res) {
 
     const currentUser = await getServerUser(req);
     if (!currentUser) return res.status(401).json({ error: 'No autorizado' });
-    const userToken = readBearer(req);
-    const userSupabase = getSupabaseUserClient(userToken);
 
     if (req.method === 'POST') {
       const payload = normalizePayload(req.body || {}, currentUser.id);
@@ -173,22 +171,22 @@ export default async function handler(req, res) {
         if (existing) return ok(res, { ...existing, images: normalizeImages(existing.images), duplicateRequest: true });
       }
 
-      const quota = await enforceListingCreationLimit(userSupabase, currentUser);
+      const quota = await enforceListingCreationLimit(supabase, currentUser);
       if (!quota.canCreateListing) {
         return res.status(402).json(quota.blockedResponse);
       }
 
       if (payload.is_premium || payload.highlighted) {
-        const premiumQuota = await enforcePremiumActivationLimit(userSupabase, currentUser);
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, currentUser);
         if (!premiumQuota.canActivatePremium) {
           return res.status(402).json(premiumQuota.blockedResponse);
         }
       }
 
-      let insertResult = await userSupabase.from('listings').insert(payload).select('*').single();
+      let insertResult = await supabase.from('listings').insert(payload).select('*').single();
       if (insertResult.error && String(insertResult.error.message || '').includes('listings_seo_slug_key')) {
         payload.seo_slug = uniqueSlugCandidate(payload.seo_slug || buildListingSlug(payload));
-        insertResult = await userSupabase.from('listings').insert(payload).select('*').single();
+        insertResult = await supabase.from('listings').insert(payload).select('*').single();
       }
       if (insertResult.error) throw insertResult.error;
       return ok(res, { ...insertResult.data, images: normalizeImages(insertResult.data.images) }, 201);
@@ -200,13 +198,13 @@ export default async function handler(req, res) {
 
       const payload = normalizePayload(req.body || {}, currentUser.id);
       if (payload.is_premium || payload.highlighted) {
-        const premiumQuota = await enforcePremiumActivationLimit(userSupabase, currentUser, { excludeListingId: id });
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, currentUser, { excludeListingId: id });
         if (!premiumQuota.canActivatePremium) {
           return res.status(402).json(premiumQuota.blockedResponse);
         }
       }
 
-      const { data, error } = await userSupabase
+      const { data, error } = await supabase
         .from('listings')
         .update(payload)
         .eq('id', id)
@@ -223,7 +221,7 @@ export default async function handler(req, res) {
       const id = String(req.body?.id || '').trim();
       if (!id) return res.status(400).json({ error: 'Falta id' });
 
-      const { error } = await userSupabase
+      const { error } = await supabase
         .from('listings')
         .delete()
         .eq('id', id)

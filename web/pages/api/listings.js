@@ -1,6 +1,5 @@
-import { getSupabaseServer, getSupabaseUserClient } from '../../lib/supabaseServer';
+import { getSupabaseServer } from '../../lib/supabaseServer';
 import { requireAuthenticatedRoute } from '../../lib/apiRouteGuards';
-import { readBearer } from '../../lib/auth';
 import { normalizeCategory } from '../../lib/category';
 import { buildListingSlug } from '../../lib/slugify';
 import { parsePagination, parseSort, ok, fail, methodNotAllowed } from '../../lib/api';
@@ -139,19 +138,18 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const user = await requireAuthenticatedRoute(req, res);
       if (!user) return;
-      const userSupabase = getSupabaseUserClient(readBearer(req));
       const body = req.body || {};
       const clientRequestId = sanitizeClientRequestId(body?.specs_json?.client_request_id || body?.client_request_id);
       if (clientRequestId) {
         const existing = await findListingByClientRequestId(supabase, user.id, clientRequestId);
         if (existing) return ok(res, { ...existing, images: normalizeImages(existing.images), duplicateRequest: true });
       }
-      const quota = await enforceListingCreationLimit(userSupabase, user);
+      const quota = await enforceListingCreationLimit(supabase, user);
       if (!quota.canCreateListing) {
         return res.status(402).json(quota.blockedResponse);
       }
       if (body.is_premium || body.highlighted || body.featured) {
-        const premiumQuota = await enforcePremiumActivationLimit(userSupabase, user);
+        const premiumQuota = await enforcePremiumActivationLimit(supabase, user);
         if (!premiumQuota.canActivatePremium) {
           return res.status(402).json(premiumQuota.blockedResponse);
         }
@@ -194,10 +192,10 @@ export default async function handler(req, res) {
         chat_messages: Number(body.chat_messages || 0),
         slug: buildListingSlug({ title: body.title, city: body.city, category: body.category }),
       };
-      let insertResult = await userSupabase.from('listings').insert(payload).select('*').single();
+      let insertResult = await supabase.from('listings').insert(payload).select('*').single();
       if (insertResult.error && String(insertResult.error.message || '').includes('listings_seo_slug_key')) {
         payload.seo_slug = uniqueSlugCandidate(payload.seo_slug || buildListingSlug(payload));
-        insertResult = await userSupabase.from('listings').insert(payload).select('*').single();
+        insertResult = await supabase.from('listings').insert(payload).select('*').single();
       }
       if (insertResult.error) throw insertResult.error;
       return ok(res, { ...insertResult.data, images: normalizeImages(insertResult.data.images) }, 201);
