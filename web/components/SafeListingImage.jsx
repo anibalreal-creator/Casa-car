@@ -11,6 +11,7 @@ export default function SafeListingImage({
   alt = "Anuncio",
   style = {},
   imageStyle = {},
+  className = "",
   children = null,
 }) {
   const [currentSrc, setCurrentSrc] = useState(src || FALLBACK_IMAGE);
@@ -20,7 +21,7 @@ export default function SafeListingImage({
   }, [src]);
 
   return (
-    <div style={{ ...styles.frame, ...style }}>
+    <div className={className} style={{ ...styles.frame, ...style }}>
       <div
         aria-hidden="true"
         style={{
@@ -44,6 +45,10 @@ const styles = {
   frame: {
     position: "relative",
     overflow: "hidden",
+    width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
     background: "#e8eef7",
     isolation: "isolate",
   },
@@ -70,6 +75,8 @@ const styles = {
     zIndex: 1,
     width: "100%",
     height: "100%",
+    maxWidth: "100%",
+    maxHeight: "100%",
     objectFit: "contain",
     objectPosition: "center center",
     display: "block",

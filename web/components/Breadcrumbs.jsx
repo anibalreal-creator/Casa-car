@@ -13,9 +13,9 @@ export default function Breadcrumbs({ items = [] }) {
 }
 
 const styles = {
-  wrap: { display:'flex', flexWrap:'wrap', gap:8, color:'#64748b', fontSize:13, margin:'0 0 10px 0' },
-  item: { display:'inline-flex', gap:8, alignItems:'center' },
-  link: { color:'#2563eb', textDecoration:'none', fontWeight:700 },
-  current: { color:'#0f172a', fontWeight:800 },
+  wrap: { display:'flex', flexWrap:'wrap', gap:8, color:'#64748b', fontSize:13, margin:'0 0 10px 0', maxWidth:'100%', minWidth:0, overflow:'hidden' },
+  item: { display:'inline-flex', gap:8, alignItems:'center', minWidth:0, maxWidth:'100%' },
+  link: { color:'#2563eb', textDecoration:'none', fontWeight:700, maxWidth:'100%', overflowWrap:'anywhere', wordBreak:'break-word' },
+  current: { color:'#0f172a', fontWeight:800, maxWidth:'100%', overflowWrap:'anywhere', wordBreak:'break-word' },
   sep: { color:'#94a3b8' }
 };

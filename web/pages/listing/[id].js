@@ -233,20 +233,20 @@ export default function ListingDetail({ initialItem = null }) {
   const commercialStatus = getCommercialStatus(item);
 
   return (
-    <div style={{background:'#f5f7fb',minHeight:'100vh',fontFamily:'Arial, sans-serif'}}>
+    <div style={{background:'#f5f7fb',minHeight:'100vh',fontFamily:'Arial, sans-serif',overflowX:'hidden'}}>
       <SeoHead title={seoTitle} description={seoDescription} image={seoImage} url={seoUrl} type="product" />
       <SeoJsonLd data={buildOrganizationJsonLd()} />
       <SeoJsonLd data={buildBreadcrumbJsonLd(breadcrumbs)} />
       <SeoJsonLd data={buildListingJsonLd(item)} />
       <GlobalHeader />
 
-      <div style={{maxWidth:1200,margin:'0 auto',padding:20,display:'grid',gap:24}}>
+      <div style={{maxWidth:1200,width:'100%',margin:'0 auto',padding:20,display:'grid',gap:24,boxSizing:'border-box',minWidth:0,overflow:'hidden'}}>
         <Breadcrumbs items={breadcrumbs} />
         <ImageGallery images={item.images || []} item={item} />
 
         <section className="cc-detail-hero" style={styles.heroCard}>
           <div>
-            <h1 style={{margin:'0 0 10px'}}>{item.title}</h1>
+            <h1 style={{margin:'0 0 10px',lineHeight:1.12,overflowWrap:'anywhere',wordBreak:'break-word'}}>{item.title}</h1>
             <div style={styles.badges}>
               <FavoriteButton listingId={item.id} />
               <VerifiedBadge verified={item.seller_verified || item.verified} />
@@ -350,18 +350,18 @@ export default function ListingDetail({ initialItem = null }) {
 }
 
 const styles = {
-  heroCard:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)',display:'grid',gridTemplateColumns:'1.3fr .9fr',gap:20},
+  heroCard:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)',display:'grid',gridTemplateColumns:'1.3fr .9fr',gap:20,minWidth:0,maxWidth:'100%',boxSizing:'border-box',overflow:'hidden'},
   badges:{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',marginBottom:14},
   statusPill:{display:'inline-flex',alignItems:'center',justifyContent:'center',color:'#fff',borderRadius:999,padding:'9px 12px',fontSize:12,fontWeight:900,textTransform:'uppercase',letterSpacing:'.08em',boxShadow:'0 8px 18px rgba(15,23,42,.16)'},
-  description:{margin:0,color:'#334155',lineHeight:1.7,fontSize:16},
-  contactBox:{background:'#f8fafc',border:'1px solid #e5e7eb',borderRadius:16,padding:18,alignSelf:'start'},
+  description:{margin:0,color:'#334155',lineHeight:1.7,fontSize:16,overflowWrap:'anywhere',wordBreak:'break-word'},
+  contactBox:{background:'#f8fafc',border:'1px solid #e5e7eb',borderRadius:16,padding:18,alignSelf:'start',minWidth:0,maxWidth:'100%',boxSizing:'border-box'},
   contactLabel:{fontSize:12,fontWeight:900,letterSpacing:.6,color:'#2563eb',textTransform:'uppercase'},
   contactStats:{display:'block',marginTop:8,fontSize:20,color:'#111827'},
   reportInput:{width:'100%',marginTop:10,border:'1px solid #cbd5e1',borderRadius:10,padding:'10px 12px',minHeight:90,resize:'vertical'},
   reportBtn:{marginTop:10,background:'#0f172a',color:'#fff',border:'none',padding:'10px 14px',borderRadius:10,fontWeight:800,cursor:'pointer'},
   reportMessage:{marginTop:8,color:'#2563eb',fontWeight:700},
-  twoCols:{display:'grid',gridTemplateColumns:'1.1fr .9fr',gap:18},
-  card:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)'},
+  twoCols:{display:'grid',gridTemplateColumns:'1.1fr .9fr',gap:18,minWidth:0,maxWidth:'100%'},
+  card:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)',minWidth:0,maxWidth:'100%',boxSizing:'border-box',overflow:'hidden'},
   cardTitle:{margin:'0 0 14px',fontSize:24,color:'#111827'},
   specGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12},
   specItem:{padding:'12px 14px',border:'1px solid #e5e7eb',borderRadius:14,background:'#f8fafc',display:'grid',gap:4},

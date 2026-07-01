@@ -16,12 +16,13 @@ export default function ImageGallery({ images = [], initialIndex = 0, item = nul
 
   return (
     <div style={styles.wrap}>
-      <div style={styles.heroBox}>
+      <div className="cc-gallery-hero" style={styles.heroBox}>
         {safe.length > 1 ? <button type="button" onClick={prev} style={{ ...styles.nav, left: 10 }}>{"<"}</button> : null}
         <SafeListingImage
           src={current}
           alt="principal"
           style={styles.heroFrame}
+          className="cc-gallery-frame"
           imageStyle={{ objectFit: imagePresentation?.fit || "contain", objectPosition: imagePresentation?.position || "center center" }}
         />
         {exampleListing ? <span style={styles.exampleBadge}>Publicacion ejemplo</span> : null}
@@ -47,14 +48,27 @@ export default function ImageGallery({ images = [], initialIndex = 0, item = nul
           ))}
         </div>
       ) : null}
+      <style jsx>{`
+        @media (max-width: 720px) {
+          .cc-gallery-hero {
+            border-radius: 14px !important;
+            min-height: 0 !important;
+            aspect-ratio: 1 / 1 !important;
+          }
+          .cc-gallery-frame {
+            height: 100% !important;
+            min-height: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
 const styles = {
-  wrap: { display: "grid", gap: 10 },
-  heroBox: { position: "relative", overflow: "hidden", borderRadius: 18, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 540 },
-  heroFrame: { width: "100%", height: 540, background: "#f8fafc" },
+  wrap: { display: "grid", gap: 10, width: "100%", maxWidth: "100%", minWidth: 0, overflow: "hidden" },
+  heroBox: { position: "relative", overflow: "hidden", borderRadius: 18, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", minWidth: 0, minHeight: 0 },
+  heroFrame: { width: "100%", height: "clamp(280px, 52vw, 540px)", background: "#f8fafc" },
   nav: { position: "absolute", top: "50%", zIndex: 6, transform: "translateY(-50%)", width: 42, height: 42, borderRadius: "50%", border: "none", background: "#111827cc", color: "#fff", fontSize: 24, cursor: "pointer" },
   exampleBadge: { position: "absolute", top: 16, left: 16, zIndex: 4, background: "#fef3c7", color: "#92400e", border: "1px solid rgba(146,64,14,.18)", borderRadius: 999, padding: "8px 12px", fontSize: 13, fontWeight: 900, boxShadow: "0 8px 18px rgba(0,0,0,.12)" },
   statusRibbon: { position: "absolute", top: 28, right: -58, zIndex: 5, width: 220, padding: "12px 0", color: "#fff", textAlign: "center", textTransform: "uppercase", fontWeight: 900, fontSize: 15, letterSpacing: ".1em", transform: "rotate(35deg)", boxShadow: "0 10px 24px rgba(15,23,42,.25)" },
