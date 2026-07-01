@@ -2,18 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 
 const SMART_VARIANT = {
   key: 'smart-full',
-  label: 'Publicidad IA',
-  tone: 'diseno completo',
+  label: 'Publicidad IA full',
+  tone: 'todo el espacio',
   type: 'generated',
   layout: 'smartFull',
 };
 
 const ADAPT_VARIANT = {
   key: 'complete',
-  label: 'Original completo',
-  tone: 'sin recortar',
+  label: 'Original lleno',
+  tone: 'sin espacios blancos',
   type: 'adapt',
-  mode: 'containOnExtendedBackground',
+  mode: 'coverFull',
 };
 
 const WIDE_VARIANTS = [
@@ -104,31 +104,18 @@ function drawContainAt(ctx, image, x, y, width, height, padding = 0) {
 }
 
 function drawFullBleedOriginal(ctx, image, width, height, form = {}) {
-  const ratio = width / height;
-  if (ratio < 1.15) {
-    drawVerticalCreative(ctx, image, width, height, { layout: 'verticalImpact' }, getCopy(form), getImagePalette(image), {
-      originalMode: true,
-    });
-    return;
-  }
-
-  ctx.fillStyle = '#0f172a';
+  const palette = getImagePalette(image);
+  ctx.fillStyle = palette.dark || '#0f172a';
   ctx.fillRect(0, 0, width, height);
 
-  ctx.save();
-  ctx.filter = 'blur(18px) saturate(1.12)';
-  ctx.globalAlpha = 0.72;
-  drawCover(ctx, image, width, height);
-  ctx.restore();
+  drawCover(ctx, image, width, height, 0.5, 0.5);
 
   const overlay = ctx.createLinearGradient(0, 0, width, height);
-  overlay.addColorStop(0, 'rgba(15,23,42,.16)');
-  overlay.addColorStop(0.5, 'rgba(255,255,255,.16)');
-  overlay.addColorStop(1, 'rgba(15,23,42,.12)');
+  overlay.addColorStop(0, 'rgba(2,6,23,.08)');
+  overlay.addColorStop(0.55, 'rgba(255,255,255,.02)');
+  overlay.addColorStop(1, 'rgba(2,6,23,.16)');
   ctx.fillStyle = overlay;
   ctx.fillRect(0, 0, width, height);
-
-  drawContainAt(ctx, image, 0, 0, width, height, 0);
 }
 
 function rgbToHex(r, g, b) {
@@ -196,28 +183,31 @@ function getImagePalette(image) {
   }
 }
 
-function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#eff6ff', palette = null) {
-  fillRoundRect(ctx, x, y, width, height, radius, background);
+function drawImagePanel(ctx, image, x, y, width, height, radius, background = '#eff6ff', palette = null, options = {}) {
+  const { focusX = 0.5, focusY = 0.5, overlayAlpha = 0.16, shadow = false } = options;
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(15,23,42,.22)';
+    ctx.shadowBlur = Math.max(8, Math.min(width, height) * 0.08);
+    ctx.shadowOffsetY = Math.max(4, Math.min(width, height) * 0.03);
+    fillRoundRect(ctx, x, y, width, height, radius, background);
+    ctx.restore();
+  } else {
+    fillRoundRect(ctx, x, y, width, height, radius, background);
+  }
   if (!image) return;
 
   ctx.save();
   roundedPath(ctx, x, y, width, height, radius);
   ctx.clip();
-  ctx.globalAlpha = 0.36;
-  ctx.filter = 'blur(12px) saturate(1.08)';
-  drawCoverAt(ctx, image, x, y, width, height);
-  ctx.restore();
-
-  ctx.save();
-  roundedPath(ctx, x, y, width, height, radius);
-  ctx.clip();
-  const overlay = ctx.createLinearGradient(x, y, x + width, y + height);
-  overlay.addColorStop(0, 'rgba(255,255,255,.14)');
-  overlay.addColorStop(1, palette?.soft ? `${palette.soft}66` : 'rgba(255,255,255,.22)');
-  ctx.fillStyle = overlay;
-  ctx.fillRect(x, y, width, height);
-  const pad = Math.max(8, Math.min(width, height) * 0.07);
-  drawContainAt(ctx, image, x, y, width, height, pad);
+  drawCoverAt(ctx, image, x, y, width, height, focusX, focusY);
+  if (overlayAlpha > 0) {
+    const overlay = ctx.createLinearGradient(x, y, x + width, y + height);
+    overlay.addColorStop(0, `rgba(255,255,255,${overlayAlpha})`);
+    overlay.addColorStop(1, palette?.soft ? `${palette.soft}55` : `rgba(255,255,255,${overlayAlpha * 0.65})`);
+    ctx.fillStyle = overlay;
+    ctx.fillRect(x, y, width, height);
+  }
   ctx.restore();
 }
 
@@ -368,16 +358,66 @@ function drawWideCreative(ctx, image, width, height, variant, copy, palette) {
   const bodySize = isShort ? Math.max(16, Math.round(height * 0.13)) : Math.max(19, Math.round(height * 0.1));
   const ctaH = isShort ? 38 : 46;
 
+  if (variant.layout === 'smartFull') {
+    ctx.fillStyle = colors.dark;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.filter = 'saturate(1.12) contrast(1.04)';
+    ctx.globalAlpha = 0.9;
+    drawCover(ctx, image, width, height, 0.5, 0.5);
+    ctx.restore();
+
+    const shade = ctx.createLinearGradient(0, 0, width, 0);
+    shade.addColorStop(0, 'rgba(2,6,23,.82)');
+    shade.addColorStop(0.42, 'rgba(15,23,42,.58)');
+    shade.addColorStop(0.7, 'rgba(15,23,42,.18)');
+    shade.addColorStop(1, 'rgba(255,255,255,.08)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, width, height);
+
+    const bottomShade = ctx.createLinearGradient(0, 0, 0, height);
+    bottomShade.addColorStop(0, 'rgba(255,255,255,.04)');
+    bottomShade.addColorStop(1, 'rgba(2,6,23,.48)');
+    ctx.fillStyle = bottomShade;
+    ctx.fillRect(0, 0, width, height);
+
+    const textW = Math.max(width * 0.46, width - pad * 3 - 220);
+    drawPill(ctx, copy.company.toUpperCase(), pad, pad, Math.min(310, Math.max(160, copy.company.length * 11 + 76)), isShort ? 30 : 38, 'rgba(255,255,255,.92)', colors.secondary, isShort ? 13 : 16);
+    const titleY = pad + (isShort ? 39 : 54);
+    const descY = height - pad - bodySize - 4;
+    drawFittedTextBlock(ctx, copy.title, pad, titleY, textW, Math.max(28, descY - titleY - 8), {
+      initialSize: titleSize,
+      minSize: isShort ? 22 : 30,
+      maxLines: isCompact ? 1 : 2,
+      color: '#ffffff',
+    });
+    ctx.fillStyle = '#e0f2fe';
+    ctx.font = `800 ${bodySize}px Arial, sans-serif`;
+    drawWrappedText(ctx, copy.description, pad, descY, Math.max(220, textW - 40), bodySize * 1.16, 1);
+    drawPill(ctx, copy.cta, width - pad - 144, height - pad - ctaH, 144, ctaH, '#ffffff', '#0f172a', isShort ? 17 : 18);
+    return;
+  }
+
   if (variant.layout === 'splitLight') {
+    ctx.save();
+    ctx.filter = 'blur(18px) saturate(1.08)';
+    ctx.globalAlpha = 0.24;
+    drawCover(ctx, image, width, height, 0.5, 0.5);
+    ctx.restore();
+
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, colors.light);
-    bg.addColorStop(0.58, '#ffffff');
-    bg.addColorStop(1, colors.soft);
+    bg.addColorStop(0, `${colors.light}f4`);
+    bg.addColorStop(0.58, 'rgba(255,255,255,.94)');
+    bg.addColorStop(1, `${colors.soft}f0`);
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    const imageW = Math.min(width * 0.34, height * 2.3);
-    drawImagePanel(ctx, image, pad, pad, imageW, height - pad * 2, 22, colors.light, colors);
+    const imageW = Math.min(width * 0.44, Math.max(height * 2.7, width * 0.28));
+    drawImagePanel(ctx, image, pad, pad, imageW, height - pad * 2, 22, colors.light, colors, {
+      overlayAlpha: 0.08,
+      shadow: true,
+    });
 
     const textX = pad + imageW + pad;
     const textW = width - textX - pad - 160;
@@ -408,20 +448,17 @@ function drawWideCreative(ctx, image, width, height, variant, copy, palette) {
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.globalAlpha = 0.13;
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(width * 0.42, height * 0.45, height * 0.62, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 0.1;
-  ctx.beginPath();
-  ctx.arc(width * 0.72, height * 0.75, height * 0.95, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.filter = 'blur(16px) saturate(1.2)';
+  ctx.globalAlpha = 0.22;
+  drawCover(ctx, image, width, height, 0.5, 0.5);
   ctx.restore();
 
-  const imageW = Math.min(width * 0.28, height * 2.1);
+  const imageW = Math.min(width * 0.36, Math.max(height * 2.55, width * 0.24));
   const imageX = width - pad - imageW;
-  drawImagePanel(ctx, image, imageX, pad, imageW, height - pad * 2, 24, 'rgba(255,255,255,.14)', colors);
+  drawImagePanel(ctx, image, imageX, pad, imageW, height - pad * 2, 24, 'rgba(255,255,255,.14)', colors, {
+    overlayAlpha: variant.layout === 'editorialDark' ? 0.04 : 0.1,
+    shadow: true,
+  });
 
   const textW = imageX - pad * 2;
   drawPill(ctx, copy.company.toUpperCase(), pad, pad, Math.min(290, Math.max(160, copy.company.length * 12 + 70)), isShort ? 32 : 38, 'rgba(255,255,255,.92)', '#0f172a', isShort ? 14 : 16);
@@ -448,36 +485,42 @@ function drawVerticalCreative(ctx, image, width, height, variant, copy, palette,
   const dark = variant.layout === 'verticalImpact' || variant.layout === 'smartFull';
   const originalMode = Boolean(options.originalMode);
 
-  if (image) {
-    ctx.save();
-    ctx.filter = 'blur(16px) saturate(1.18)';
-    ctx.globalAlpha = dark ? 0.52 : 0.28;
-    drawCover(ctx, image, width, height);
-    ctx.restore();
-  }
+  ctx.fillStyle = dark ? colors.dark : colors.light;
+  ctx.fillRect(0, 0, width, height);
 
-  const bg = ctx.createLinearGradient(0, 0, width, height);
-  bg.addColorStop(0, dark ? `${colors.dark}f2` : 'rgba(255,255,255,.94)');
-  bg.addColorStop(0.58, dark ? `${colors.secondary}ee` : `${colors.light}f2`);
-  bg.addColorStop(1, dark ? `${colors.primary}f0` : `${colors.soft}f4`);
+  ctx.save();
+  ctx.filter = dark ? 'blur(18px) saturate(1.22)' : 'blur(16px) saturate(1.1)';
+  ctx.globalAlpha = dark ? 0.58 : 0.34;
+  drawCover(ctx, image, width, height, 0.5, 0.5);
+  ctx.restore();
+
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, dark ? 'rgba(2,6,23,.66)' : 'rgba(255,255,255,.82)');
+  bg.addColorStop(0.42, dark ? `${colors.secondary}dd` : `${colors.light}e6`);
+  bg.addColorStop(1, dark ? `${colors.primary}f0` : `${colors.soft}f0`);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  if (dark) {
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(width * 0.68, 92, 78, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+  if (originalMode) {
+    drawCover(ctx, image, width, height, 0.5, 0.5);
+    return;
   }
 
-  const imageH = originalMode
-    ? Math.max(102, Math.min(Math.round(height * 0.28), height - 310))
-    : Math.max(100, Math.min(Math.round(height * 0.24), height - 315));
+  if (dark) {
+    const shade = ctx.createLinearGradient(0, 0, 0, height);
+    shade.addColorStop(0, 'rgba(2,6,23,.12)');
+    shade.addColorStop(0.7, 'rgba(2,6,23,.16)');
+    shade.addColorStop(1, 'rgba(2,6,23,.42)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  const imageH = Math.max(122, Math.min(Math.round(height * 0.42), height - 250));
   const imageY = pad;
-  drawImagePanel(ctx, image, pad, imageY, width - pad * 2, imageH, 22, dark ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.72)', colors);
+  drawImagePanel(ctx, image, pad, imageY, width - pad * 2, imageH, 22, dark ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.82)', colors, {
+    overlayAlpha: dark ? 0.04 : 0.12,
+    shadow: true,
+  });
 
   const pillY = imageY + imageH + 14;
   drawPill(ctx, copy.company.toUpperCase(), pad, pillY, width - pad * 2, 36, dark ? 'rgba(255,255,255,.92)' : colors.soft, dark ? '#0f172a' : colors.secondary, 14);
