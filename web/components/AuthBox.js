@@ -44,7 +44,7 @@ export default function AuthBox() {
 
       <input
         type="password"
-        placeholder="Contrasena"
+        placeholder="Contraseña"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={{ width: "100%", marginBottom: 12 }}

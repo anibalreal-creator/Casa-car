@@ -37,7 +37,7 @@ export function getAuthErrorMessage(error) {
   const message = String(error?.message || "").trim();
   if (!message) return "No se pudo completar la autenticacion.";
   if (message.toLowerCase().includes("invalid login credentials")) {
-    return "Email o contrasena incorrectos.";
+    return "Email o contraseña incorrectos.";
   }
   return "No se pudo completar la autenticacion. Revisa los datos o intenta nuevamente en unos minutos.";
 }
@@ -61,7 +61,7 @@ export function rememberEmailSend(action, email) {
 export async function signUpWithEmail(supabaseClient, { email, password }) {
   const normalizedEmail = cleanEmail(email);
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
-  if (!normalizedEmail || !password) throw new Error("Completa email y contrasena.");
+  if (!normalizedEmail || !password) throw new Error("Completa email y contraseña.");
 
   assertEmailSendCooldown("signup", normalizedEmail);
 
@@ -106,7 +106,7 @@ export async function verifyPasswordRecoveryCode(supabaseClient, { email, code }
   const normalizedEmail = cleanEmail(email);
   const token = String(code || "").trim().replace(/\s+/g, "");
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
-  if (!normalizedEmail || !token) throw new Error("Completa email y codigo de verificacion.");
+  if (!normalizedEmail || !token) throw new Error("Completa email y código de verificación.");
 
   const { data, error } = await supabaseClient.auth.verifyOtp({
     email: normalizedEmail,
@@ -121,7 +121,7 @@ export async function verifyPasswordRecoveryCode(supabaseClient, { email, code }
 export async function updateRecoveredPassword(supabaseClient, password) {
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
   if (!password || String(password).length < 6) {
-    throw new Error("La contrasena debe tener al menos 6 caracteres.");
+    throw new Error("La contraseña debe tener al menos 6 caracteres.");
   }
 
   const { data, error } = await supabaseClient.auth.updateUser({ password });
@@ -132,7 +132,7 @@ export async function updateRecoveredPassword(supabaseClient, password) {
 export async function signInWithEmail(supabaseClient, { email, password }) {
   const normalizedEmail = cleanEmail(email);
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
-  if (!normalizedEmail || !password) throw new Error("Completa email y contrasena.");
+  if (!normalizedEmail || !password) throw new Error("Completa email y contraseña.");
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: normalizedEmail,

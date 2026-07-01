@@ -24,9 +24,9 @@ function getAuthQueryMessage(value) {
   const message = String(raw || "").trim().toLowerCase();
   if (!message) return "";
   if (message.includes("provider") || message.includes("google") || message.includes("unsupported")) {
-    return "Google todavia no esta habilitado para crear cuentas. Ingresa con email y contrasena.";
+    return "Google todavía no está habilitado para crear cuentas. Ingresá con email y contraseña.";
   }
-  return "No se pudo completar el ingreso. Intenta nuevamente o usa email y contrasena.";
+  return "No se pudo completar el ingreso. Intentá nuevamente o usá email y contraseña.";
 }
 
 export default function LoginPage() {
@@ -52,7 +52,7 @@ export default function LoginPage() {
         setModo("reset");
         if (data.session) {
           setRecoveryVerified(true);
-          setNotice("Correo verificado. Escribi tu nueva contrasena para terminar la recuperacion.");
+          setNotice("Correo verificado. Escribí tu nueva contraseña para terminar la recuperación.");
         }
         return;
       }
@@ -72,10 +72,10 @@ export default function LoginPage() {
 
   function validateRepeatedPassword() {
     if (password.length < 6) {
-      throw new Error("La contrasena debe tener al menos 6 caracteres.");
+      throw new Error("La contraseña debe tener al menos 6 caracteres.");
     }
     if (password !== repeatPassword) {
-      throw new Error("Las contrasenas no coinciden.");
+      throw new Error("Las contraseñas no coinciden.");
     }
   }
 
@@ -95,7 +95,7 @@ export default function LoginPage() {
       } else if (modo === "recuperar") {
         await sendPasswordRecoveryEmail(supabase, email);
         setModo("reset");
-        setNotice("Te enviamos un correo con codigo de verificacion y enlace de recuperacion. Revisa tambien Spam/Correo no deseado.");
+        setNotice("Te enviamos un correo con código de verificación y enlace de recuperación. Revisá también Spam/Correo no deseado.");
       } else if (modo === "reset") {
         validateRepeatedPassword();
         if (!recoveryVerified) {
@@ -103,7 +103,7 @@ export default function LoginPage() {
           setRecoveryVerified(true);
         }
         await updateRecoveredPassword(supabase, password);
-        setNotice("Contrasena actualizada correctamente. Ya podes ingresar.");
+        setNotice("Contraseña actualizada correctamente. Ya podés ingresar.");
         setModo("login");
         setPassword("");
         setRepeatPassword("");
@@ -142,7 +142,7 @@ export default function LoginPage() {
       const check = await fetch(`/api/auth/oauth-check?url=${encodeURIComponent(data.url)}`);
       const checkData = await check.json().catch(() => ({}));
       if (!check.ok || !checkData.ok) {
-        throw new Error(checkData.error || "Google todavia no esta habilitado en Supabase.");
+        throw new Error(checkData.error || "Google todavía no está habilitado en Supabase.");
       }
 
       window.location.assign(checkData.redirectUrl || data.url);
@@ -155,16 +155,16 @@ export default function LoginPage() {
 
   function getTitle() {
     if (modo === "registro") return t("signup_title", "Crear cuenta");
-    if (modo === "recuperar") return "Recuperar contrasena";
-    if (modo === "reset") return "Cambiar contrasena";
+    if (modo === "recuperar") return "Recuperar contraseña";
+    if (modo === "reset") return "Cambiar contraseña";
     return t("login_title", "Iniciar sesion");
   }
 
   function getSubmitLabel() {
     if (loading) return t("login_processing", "Procesando...");
     if (modo === "registro") return t("signup_submit", "Crear cuenta");
-    if (modo === "recuperar") return "Enviar codigo";
-    if (modo === "reset") return "Guardar nueva contrasena";
+    if (modo === "recuperar") return "Enviar código";
+    if (modo === "reset") return "Guardar nueva contraseña";
     return t("login_submit", "Entrar");
   }
 
@@ -196,7 +196,7 @@ export default function LoginPage() {
           {modo !== "recuperar" ? (
             <input
               type="password"
-              placeholder={modo === "reset" ? "Nueva contrasena" : t("login_password_placeholder", "Contrasena")}
+              placeholder={modo === "reset" ? "Nueva contraseña" : t("login_password_placeholder", "Contraseña")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
@@ -207,7 +207,7 @@ export default function LoginPage() {
           {modo === "registro" || modo === "reset" ? (
             <input
               type="password"
-              placeholder="Repetir contrasena"
+              placeholder="Repetir contraseña"
               value={repeatPassword}
               onChange={(e) => setRepeatPassword(e.target.value)}
               style={styles.input}
@@ -220,7 +220,7 @@ export default function LoginPage() {
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="Codigo de verificacion"
+              placeholder="Código de verificación"
               value={recoveryCode}
               onChange={(e) => setRecoveryCode(e.target.value)}
               style={styles.input}
@@ -240,12 +240,12 @@ export default function LoginPage() {
         ) : null}
         {modo === "recuperar" ? (
           <p style={styles.help}>
-            Te enviaremos un codigo de verificacion y un enlace seguro. No reenvies muchas veces seguidas para evitar el limite de Supabase.
+            Te enviaremos un código de verificación y un enlace seguro. No reenvíes muchas veces seguidas para evitar el límite de Supabase.
           </p>
         ) : null}
         {modo === "reset" ? (
           <p style={styles.help}>
-            Ingresa el codigo recibido por email. Si abriste el enlace del correo, el codigo puede no ser necesario.
+            Ingresá el código recibido por email. Si abriste el enlace del correo, el código puede no ser necesario.
           </p>
         ) : null}
 
@@ -267,7 +267,7 @@ export default function LoginPage() {
             onClick={() => changeMode("recuperar")}
             style={styles.secondaryBtn}
           >
-            Recuperar contrasena
+            Recuperar contraseña
           </button>
         ) : null}
 
@@ -277,7 +277,7 @@ export default function LoginPage() {
             onClick={() => changeMode("reset")}
             style={styles.secondaryBtn}
           >
-            Ya tengo codigo
+            Ya tengo código
           </button>
         ) : null}
 

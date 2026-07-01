@@ -437,7 +437,7 @@ export default {
   login_title: "Iniciar sesion",
   signup_title: "Crear cuenta",
   login_email_placeholder: "Email",
-  login_password_placeholder: "Contrasena",
+  login_password_placeholder: "Contraseña",
   login_submit: "Entrar",
   signup_submit: "Crear cuenta",
   login_processing: "Procesando...",

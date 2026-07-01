@@ -1,7 +1,7 @@
 function cleanOAuthError(message) {
   const text = String(message || "").trim().toLowerCase();
   if (text.includes("provider") || text.includes("google") || text.includes("unsupported")) {
-    return "Google todavia no esta habilitado en Supabase. Hay que activar el proveedor Google con Client ID y Client Secret.";
+    return "Google todavía no está habilitado en Supabase. Hay que activar el proveedor Google con Client ID y Client Secret.";
   }
   return "No se pudo iniciar Google. Revisa la configuracion OAuth en Supabase.";
 }
