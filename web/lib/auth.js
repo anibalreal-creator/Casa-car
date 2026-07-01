@@ -1,6 +1,6 @@
 import { getSupabaseServer } from "./supabaseServer";
 
-function readBearer(req) {
+export function readBearer(req) {
   const header = req?.headers?.authorization || req?.headers?.Authorization || "";
   if (!header || !header.toLowerCase().startsWith("bearer ")) return null;
   return header.slice(7).trim() || null;

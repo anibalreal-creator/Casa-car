@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
-import { requireUser } from '../../../lib/auth';
-import { getSupabaseServer } from '../../../lib/supabaseServer';
+import { requireUser, readBearer } from '../../../lib/auth';
+import { getSupabaseServer, getSupabaseUserClient } from '../../../lib/supabaseServer';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -14,6 +14,22 @@ function extensionFor(contentType, fileName = '') {
   if (contentType === 'image/webp') return 'webp';
   if (contentType === 'image/gif') return 'gif';
   return 'jpeg';
+}
+
+function isPolicyError(error) {
+  return /row-level|security policy|violates|rls/i.test(String(error?.message || error || ''));
+}
+
+function isServerClientConfigError(error) {
+  return /SUPABASE_SERVICE_ROLE_KEY|Falta configurar|service_role|service role/i.test(String(error?.message || error || ''));
+}
+
+async function uploadToListingsBucket(client, path, buffer, contentType) {
+  return client.storage.from('listings').upload(path, buffer, {
+    contentType,
+    cacheControl: '3600',
+    upsert: false,
+  });
 }
 
 export default async function handler(req, res) {
@@ -41,20 +57,36 @@ export default async function handler(req, res) {
       return res.status(413).json({ error: 'La imagen es demasiado pesada' });
     }
 
-    const supabase = getSupabaseServer();
     const ext = extensionFor(contentType, req.body?.fileName);
-    const path = `publicar/${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from('listings').upload(path, buffer, {
-      contentType,
-      cacheControl: '3600',
-      upsert: false,
-    });
+    const rawFolder = String(req.body?.folder || req.body?.purpose || 'publicar').toLowerCase();
+    const folder = ['ads', 'publicar', 'listings'].includes(rawFolder) ? rawFolder : 'publicar';
+    const path = `${folder}/${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
+    let error = null;
+
+    try {
+      const supabase = getSupabaseServer();
+      ({ error } = await uploadToListingsBucket(supabase, path, buffer, contentType));
+    } catch (serverError) {
+      error = serverError;
+    }
+
+    if (error && (isPolicyError(error) || isServerClientConfigError(error))) {
+      const token = readBearer(req);
+      if (token) {
+        const userSupabase = getSupabaseUserClient(token);
+        ({ error } = await uploadToListingsBucket(userSupabase, path, buffer, contentType));
+      }
+    }
 
     if (error) throw error;
 
-    const { data } = supabase.storage.from('listings').getPublicUrl(path);
+    const publicClient = getSupabaseUserClient(readBearer(req));
+    const { data } = publicClient.storage.from('listings').getPublicUrl(path);
     return res.status(201).json({ path, publicUrl: data?.publicUrl || '' });
   } catch (error) {
+    if (isPolicyError(error)) {
+      return res.status(403).json({ error: 'No se pudo subir la imagen por permisos de seguridad. Inicia sesion de nuevo y reintenta.' });
+    }
     return res.status(500).json({ error: error.message || 'No se pudo subir la imagen' });
   }
 }

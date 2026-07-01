@@ -84,6 +84,20 @@ async function fetchJsonWithRetry(url, options = {}, attempts = 3) {
   }, attempts);
 }
 
+function getFriendlyPublishError(error) {
+  const message = String(error?.message || '');
+  if (/row-level|security policy|violates|rls/i.test(message)) {
+    return 'No se pudo guardar por permisos de seguridad. Cerra sesion, volve a ingresar e intentalo de nuevo.';
+  }
+  if (/No autorizado|iniciar sesi/i.test(message)) {
+    return 'Tenes que iniciar sesion para publicar.';
+  }
+  if (/Failed to fetch|NetworkError|Load failed/i.test(message)) {
+    return 'No se pudo conectar con el servidor. Revisa la conexion e intentalo otra vez.';
+  }
+  return message || 'Error publicando';
+}
+
 function createClientRequestId(userId) {
   const random = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
   return `${userId || 'user'}:${Date.now()}:${random}`;
@@ -376,7 +390,7 @@ export default function Publicar() {
       alert(publishSuccessMessage);
       window.location.replace("/mis-anuncios");
     } catch (err) {
-      alert(err.message || "Error publicando");
+      alert(getFriendlyPublishError(err));
     } finally {
       setSubmitting(false);
     }

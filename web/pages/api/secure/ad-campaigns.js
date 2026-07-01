@@ -1,5 +1,5 @@
-import { getSupabaseServer } from '../../../lib/supabaseServer';
-import { requireUser } from '../../../lib/auth';
+import { getSupabaseServer, getSupabaseUserClient } from '../../../lib/supabaseServer';
+import { requireUser, readBearer } from '../../../lib/auth';
 import { canManageCompany } from '../../../lib/permissions';
 import { parseOrThrow, campaignSchema } from '../../../lib/validation';
 import { ok, fail, methodNotAllowed } from '../../../lib/api';
@@ -13,6 +13,7 @@ export default async function handler(req, res) {
     if (!user) return;
     if (!(await canManageCompany(user.id, user.email))) return res.status(403).json({ error: 'Tu plan no permite administrar campañas' });
     const supabase = getSupabaseServer();
+    const userSupabase = getSupabaseUserClient(readBearer(req));
 
     if (req.method === 'GET') {
       const { data, error } = await supabase.from('ad_campaigns').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const campaignQuota = await enforceCampaignCreationLimit(supabase, user);
+      const campaignQuota = await enforceCampaignCreationLimit(userSupabase, user);
       if (!campaignQuota.canCreateCampaign) {
         return res.status(campaignQuota.canUseCompanyPanel ? 402 : 403).json(campaignQuota.blockedResponse);
       }
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
       const payload = parseOrThrow(campaignSchema, req.body || {});
       const planKey = String(payload.plan_key || payload.plan || 'basico').trim().toLowerCase();
       const slotKey = String(payload.slot_key || payload.slot || 'home_middle').trim();
-      const { data, error } = await supabase.from('ad_campaigns').insert({
+      const { data, error } = await userSupabase.from('ad_campaigns').insert({
         user_id: user.id,
         title: payload.title || payload.name || 'Campania publicitaria',
         company_name: payload.company_name || payload.name || '',
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
       const patch = {};
       let existing = null;
       if (action === 'activate' || action === 'renew') {
-        const { data, error: existingError } = await supabase
+        const { data, error: existingError } = await userSupabase
           .from('ad_campaigns')
           .select('*')
           .eq('id', id)
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
         if (!data) return res.status(404).json({ error: 'Campana no encontrada' });
         existing = data;
 
-        const activationQuota = await enforceCampaignActivationLimit(supabase, user, {
+        const activationQuota = await enforceCampaignActivationLimit(userSupabase, user, {
           campaignId: id,
           alreadyActive: isCampaignLive(data),
         });
@@ -83,7 +84,7 @@ export default async function handler(req, res) {
       if (action === 'activate') Object.assign(patch, patchForCampaignAction(existing, 'activate'));
       if (action === 'pause') Object.assign(patch, patchForCampaignAction(existing || {}, 'pause'));
       if (action === 'renew') Object.assign(patch, patchForCampaignAction(existing, 'activate'));
-      const { data, error } = await supabase.from('ad_campaigns').update(patch).eq('id', id).eq('user_id', user.id).select('*').single();
+      const { data, error } = await userSupabase.from('ad_campaigns').update(patch).eq('id', id).eq('user_id', user.id).select('*').single();
       if (error) throw error;
       return ok(res, data);
     }

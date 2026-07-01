@@ -2,6 +2,18 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "../../lib/supabaseBrowser";
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",").pop() : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("No se pudo leer el archivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function EditarAnuncio() {
   const router = useRouter();
   const { id } = router.query;
@@ -85,20 +97,27 @@ export default function EditarAnuncio() {
     setNewFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function uploadNewFiles(userId) {
+  async function uploadNewFiles(token) {
     const urls = [];
     for (const item of newFiles) {
       const file = item.file;
       if (!file) continue;
-      const ext = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const path = `editar/${userId}/${fileName}`;
-      const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const res = await fetch("/api/secure/listing-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          folder: "listings",
+          fileName: file.name,
+          contentType: file.type || "image/jpeg",
+          dataBase64,
+        }),
       });
-      if (error) throw error;
-      const { data } = supabaseBrowser.storage.from("listings").getPublicUrl(path);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo subir la imagen");
       urls.push(data.publicUrl);
     }
     return urls;
@@ -115,7 +134,7 @@ export default function EditarAnuncio() {
 
       let finalImages = [...(form.images || [])];
       if (newFiles.length) {
-        const uploaded = await uploadNewFiles(currentUserId);
+        const uploaded = await uploadNewFiles(token);
         finalImages = [...finalImages, ...uploaded];
       }
 

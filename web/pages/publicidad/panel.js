@@ -35,6 +35,29 @@ async function readJsonResponse(response, fallbackMessage) {
   return data;
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      resolve(result.includes(',') ? result.split(',').pop() : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function friendlyPanelError(error, fallback = 'No se pudo completar la operacion') {
+  const message = String(error?.message || '');
+  if (/row-level|security policy|violates|rls/i.test(message)) {
+    return 'No se pudo guardar por permisos de seguridad. Cerra sesion, volve a ingresar e intentalo de nuevo.';
+  }
+  if (/column .* does not exist|schema cache|JSON\.parse/i.test(message)) {
+    return 'No se pudo guardar porque falta sincronizar la base de datos con la ultima version del sistema.';
+  }
+  return message || fallback;
+}
+
 export default function PublicidadPanelPage() {
   const router = useRouter();
   const initial = useMemo(() => ({
@@ -171,12 +194,26 @@ export default function PublicidadPanelPage() {
 
   async function uploadBanner(userId) {
     if (!bannerFile) return bannerPreview || '';
-    const ext = bannerFile.name.split('.').pop();
-    const path = `ads/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabaseBrowser.storage.from('listings').upload(path, bannerFile, { cacheControl: '3600', upsert: false });
-    if (error) throw error;
-    const { data } = supabaseBrowser.storage.from('listings').getPublicUrl(path);
-    return data.publicUrl;
+    const auth = await supabaseBrowser.auth.getSession();
+    const token = auth?.data?.session?.access_token || '';
+    if (!token) throw new Error('Tenes que iniciar sesion para subir un banner.');
+
+    const dataBase64 = await fileToBase64(bannerFile);
+    const response = await fetch('/api/secure/listing-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        folder: 'ads',
+        fileName: bannerFile.name,
+        contentType: bannerFile.type || 'image/jpeg',
+        dataBase64,
+      }),
+    });
+    const data = await readJsonResponse(response, 'No se pudo subir el banner');
+    return data.publicUrl || '';
   }
 
   async function submit(e) {
@@ -251,7 +288,7 @@ export default function PublicidadPanelPage() {
       }
       window.location.href = checkoutUrl;
     } catch (error) {
-      setNotice(error.message || 'Error creando campaña');
+      setNotice(friendlyPanelError(error, 'Error creando campaña'));
       setSubmitting(false);
     }
   }

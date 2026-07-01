@@ -1,14 +1,37 @@
 
 import { createClient } from "@supabase/supabase-js";
+import { assertSupabaseServerEnv, getSupabasePublicEnv } from "./runtimeConfig";
+
+const SERVER_AUTH_OPTIONS = {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+};
 
 export function getSupabaseServer() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL is required");
-  if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is required");
+  const { url, serviceRoleKey } = assertSupabaseServerEnv();
 
   return createClient(
-    supabaseUrl,
-    serviceRoleKey
+    url,
+    serviceRoleKey,
+    SERVER_AUTH_OPTIONS
   );
+}
+
+export function getSupabaseUserClient(accessToken) {
+  const { url, anonKey } = getSupabasePublicEnv();
+  if (!url || !anonKey || !accessToken) {
+    throw new Error("Falta sesion de usuario para operar con seguridad");
+  }
+
+  return createClient(url, anonKey, {
+    ...SERVER_AUTH_OPTIONS,
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
 }
