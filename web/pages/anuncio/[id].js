@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { getListingEditHref } from "../../lib/listingRoutes"
+import SafeListingImage from "../../components/SafeListingImage"
 
 export default function Anuncio() {
   const router = useRouter()
@@ -101,7 +102,7 @@ export default function Anuncio() {
 
           {fotoPrincipal ? (
             <div>
-              <img src={fotoPrincipal} alt={item?.titulo || item?.title || "Anuncio"} style={styles.mainImage} />
+              <SafeListingImage src={fotoPrincipal} alt={item?.titulo || item?.title || "Anuncio"} style={styles.mainImage} />
               {fotos.length > 1 && (
                 <div style={styles.gallery}>
                   {fotos.map((foto, i) => {
@@ -160,7 +161,7 @@ const styles = {
   price: { marginTop: 10, fontSize: 30, fontWeight: "bold", color: "#111827" },
   destacado: { background: "#fde68a", color: "#92400e", padding: "4px 10px", borderRadius: 20, fontWeight: 700, fontSize: 12, display: "inline-block", marginTop: 8 },
   favsBox: { background: "#fff1f2", color: "#be123c", padding: "10px 14px", borderRadius: 999, fontWeight: 800, border: "1px solid #fecdd3" },
-  mainImage: { width: "100%", height: 430, objectFit: "contain", background: "#f8fafc", borderRadius: 12, marginTop: 10 },
+  mainImage: { width: "100%", height: 430, background: "#f8fafc", borderRadius: 12, marginTop: 10 },
   noImage: { width: "100%", height: 320, background: "#eef2f7", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", fontSize: 22, marginTop: 10 },
   gallery: { display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" },
   thumb: { width: 120, height: 80, objectFit: "contain", background: "#f8fafc", cursor: "pointer", borderRadius: 8 },

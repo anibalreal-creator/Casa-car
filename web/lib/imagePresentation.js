@@ -7,12 +7,12 @@ const CONTAIN_CATEGORIES = new Set([
   'Náutica',
   'Maquinaria',
   'Carros de golf / seguridad',
+  'Servicio',
 ]);
 
 const COVER_CATEGORIES = new Set([
   'Propiedad',
   'Turismo',
-  'Servicio',
 ]);
 
 export function getImagePresentation(item = {}) {

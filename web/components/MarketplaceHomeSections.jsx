@@ -4,6 +4,7 @@ import { useLang } from '../context/LanguageContext';
 import { fetchJsonCached } from '../lib/clientFetchCache';
 import { getListingDetailHref } from '../lib/listingRoutes';
 import { getCommercialStatus, isExampleListing } from '../lib/listingBadges';
+import SafeListingImage from './SafeListingImage';
 
 function safeJsonArray(value) {
   if (!value) return [];
@@ -147,8 +148,7 @@ function Card({ item }) {
   const { t } = useLang();
   const [hovered, setHovered] = useState(false);
   const fallback = '/placeholder-property.jpg';
-  const initialImage = getImage(item) || fallback;
-  const [image, setImage] = useState(initialImage);
+  const image = getImage(item) || fallback;
   const price = formatPrice(item, t);
   const title = item.title || t('card_no_title', 'Anuncio');
   const detailId = isUuid(item?.id) ? String(item.id) : '';
@@ -159,8 +159,7 @@ function Card({ item }) {
 
   return (
     <article onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 20, overflow: 'hidden', boxShadow: hovered ? '0 20px 40px rgba(15,23,42,.12)' : '0 12px 28px rgba(15,23,42,.05)', transform: hovered ? 'translateY(-4px)' : 'translateY(0)', transition: 'all .2s ease', cursor: 'pointer' }}>
-      <div style={{ position: 'relative', background: '#f3f4f6', overflow: 'hidden' }}>
-        <img src={image} alt={title} title={title} onError={() => setImage(fallback)} style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center center', display: 'block', background: '#f3f4f6' }} />
+      <SafeListingImage src={image} alt={title} style={styles.cardImageFrame}>
         <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>{!exampleListing && detailId ? <FavoriteButton listingId={detailId} compact /> : null}</div>
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 8, zIndex: 4, flexWrap: 'wrap' }}>
           {exampleListing ? <span style={pill('#fef3c7', '#92400e')}>Ejemplo</span> : null}
@@ -173,7 +172,7 @@ function Card({ item }) {
             <span style={styles.statusWatermark}>{commercialStatus.label}</span>
           </>
         ) : null}
-      </div>
+      </SafeListingImage>
       <div style={{ padding: 16 }}>
         <div style={{ fontSize: 28, fontWeight: 900, color: '#111827', lineHeight: 1.1, marginBottom: 10 }}>{price}</div>
         <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 6, lineHeight: 1.2 }}>{title}</div>
@@ -201,6 +200,7 @@ function btn(bg) {
 
 const styles = {
   notice: { background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8', borderRadius: 14, padding: '14px 16px', fontWeight: 700, marginBottom: 18 },
+  cardImageFrame: { width: '100%', height: 220, background: '#f3f4f6' },
   statusRibbon: { position: 'absolute', top: 18, right: -42, zIndex: 5, width: 160, padding: '8px 0', color: '#fff', textAlign: 'center', textTransform: 'uppercase', fontWeight: 900, fontSize: 12, letterSpacing: '.08em', transform: 'rotate(35deg)', boxShadow: '0 8px 18px rgba(15,23,42,.22)' },
   statusWatermark: { position: 'absolute', inset: 0, zIndex: 2, display: 'grid', placeItems: 'center', color: 'rgba(255,255,255,.38)', fontSize: 42, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.06em', transform: 'rotate(-14deg)', textShadow: '0 3px 16px rgba(15,23,42,.32)', pointerEvents: 'none' },
 };

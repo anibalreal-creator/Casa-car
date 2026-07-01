@@ -4,6 +4,7 @@ import { useLang } from "../context/LanguageContext";
 import { getAmenityLabels, getTourismSpecs, isTourismListing, tourismText } from "../lib/tourism";
 import { getListingDetailHref } from "../lib/listingRoutes";
 import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
+import SafeListingImage from "./SafeListingImage";
 
 function safeJsonArray(value) {
   if (!value) return [];
@@ -109,17 +110,7 @@ export default function ListingCard(props) {
 
   return (
     <div style={styles.card}>
-      <div style={styles.imageContainer}>
-        <img
-          src={image}
-          alt={title}
-          style={styles.image}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/placeholder-property.jpg";
-          }}
-        />
-
+      <SafeListingImage src={image} alt={title} style={styles.imageContainer}>
         {typeof onToggleFavorite === "function" ? (
           <button
             type="button"
@@ -140,7 +131,7 @@ export default function ListingCard(props) {
             <span style={styles.statusWatermark}>{commercialStatus.label}</span>
           </>
         ) : null}
-      </div>
+      </SafeListingImage>
 
       <div style={styles.content}>
         <div style={styles.price}>{price}</div>
@@ -192,16 +183,11 @@ const styles = {
     background: "#f3f4f6",
     overflow: "hidden",
   },
-  image: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
   favoriteBtn: {
     position: "absolute",
     top: 12,
     right: 12,
+    zIndex: 6,
     width: 38,
     height: 38,
     borderRadius: "999px",

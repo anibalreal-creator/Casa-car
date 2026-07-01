@@ -5,6 +5,7 @@ import { useLang } from "../context/LanguageContext";
 import { fetchJsonCached } from "../lib/clientFetchCache";
 import { getListingDetailHref } from "../lib/listingRoutes";
 import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
+import SafeListingImage from "./SafeListingImage";
 
 const FALLBACK_CARDS = {
   es: [
@@ -97,8 +98,12 @@ export default function PremiumListingsStrip() {
           return (
             <a key={String(card.id)} href={href} style={styles.cardLink}>
               <article style={styles.card}>
-                <div style={styles.imageWrap}>
-                  <img src={image} alt={card?.title || t('premium_card_alt', 'premium')} style={styles.image(presentation)} />
+                <SafeListingImage
+                  src={image}
+                  alt={card?.title || t('premium_card_alt', 'premium')}
+                  style={styles.imageWrap}
+                  imageStyle={{ objectFit: presentation?.fit || 'contain', objectPosition: presentation?.position || 'center center' }}
+                >
                   <span style={styles.badge}>{t('premium_badge', 'Destacado premium')}</span>
                   {exampleListing ? <span style={styles.exampleBadge}>Ejemplo</span> : null}
                   {commercialStatus ? (
@@ -107,7 +112,7 @@ export default function PremiumListingsStrip() {
                       <span style={styles.statusWatermark}>{commercialStatus.label}</span>
                     </>
                   ) : null}
-                </div>
+                </SafeListingImage>
                 <div style={styles.body}>
                   <div style={styles.category}>{categoryLabel(card?.category) || card?.category || t('card_general', 'General')}</div>
                   <h3 style={styles.cardTitle}>{card?.title || t('premium_card_title', 'Publicación premium')}</h3>
@@ -134,8 +139,7 @@ const styles = {
   secondaryCta:{textDecoration:"none",background:"rgba(255,255,255,.12)",color:"#fff",padding:"12px 16px",borderRadius:14,fontWeight:900,border:"1px solid rgba(255,255,255,.18)"},
   grid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:16}, cardLink:{textDecoration:"none",color:"inherit",display:"block"},
   card:{background:"rgba(255,255,255,.10)",border:"1px solid rgba(255,255,255,.18)",borderRadius:24,overflow:"hidden",display:"grid",height:"100%",transition:"transform .18s ease, box-shadow .18s ease",boxShadow:"0 10px 26px rgba(15,23,42,.12)"},
-  imageWrap:{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.06)",minHeight:240},
-  image:(presentation)=>({width:"100%",height:240,objectFit:presentation?.fit || "cover",objectPosition:presentation?.position || "center center",display:"block",background:presentation?.background || "#e5eefb"}),
+  imageWrap:{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.06)",height:240},
   badge:{position:"absolute",top:14,left:14,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#f59e0b",color:"#111827",fontWeight:900,fontSize:12},
   exampleBadge:{position:"absolute",top:14,right:14,zIndex:4,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#fef3c7",color:"#92400e",fontWeight:900,fontSize:12,border:"1px solid rgba(146,64,14,.18)"},
   statusRibbon:{position:"absolute",top:20,right:-46,zIndex:5,width:170,padding:"9px 0",color:"#fff",textAlign:"center",textTransform:"uppercase",fontWeight:900,fontSize:12,letterSpacing:".08em",transform:"rotate(35deg)",boxShadow:"0 8px 18px rgba(15,23,42,.22)"},
