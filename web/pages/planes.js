@@ -8,8 +8,8 @@ import { useLang } from "../context/LanguageContext";
 
 const fallbackPlans = {
   FREE: { price: 0, publications: 3, premiumSlots: 0, maxCampaigns: 0, analytics: false, companyPanel: false },
-  PRO: { price: 1, publications: 25, premiumSlots: 3, maxCampaigns: 0, analytics: true, companyPanel: false },
-  BUSINESS: { price: 2, publications: 200, premiumSlots: 30, maxCampaigns: 30, analytics: true, companyPanel: true },
+  PRO: { price: 29, publications: 25, premiumSlots: 3, maxCampaigns: 0, analytics: true, companyPanel: false },
+  BUSINESS: { price: 99, publications: 200, premiumSlots: 30, maxCampaigns: 30, analytics: true, companyPanel: true },
 };
 
 function PlansInner() {
