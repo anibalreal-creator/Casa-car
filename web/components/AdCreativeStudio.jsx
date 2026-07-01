@@ -1,24 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
 
+const SMART_VARIANT = {
+  key: 'smart-full',
+  label: 'Publicidad IA',
+  tone: 'diseno completo',
+  type: 'generated',
+  layout: 'smartFull',
+};
+
 const ADAPT_VARIANT = {
   key: 'complete',
   label: 'Original completo',
-  tone: 'fondo extendido',
+  tone: 'sin recortar',
   type: 'adapt',
   mode: 'containOnExtendedBackground',
 };
 
 const WIDE_VARIANTS = [
-  ADAPT_VARIANT,
+  SMART_VARIANT,
   { key: 'brand-clean', label: 'Marca clara', tone: 'logo + mensaje', type: 'generated', layout: 'splitLight' },
   { key: 'impact-blue', label: 'Impacto azul', tone: 'fuerte y comercial', type: 'generated', layout: 'impactBlue' },
   { key: 'editorial-dark', label: 'Premium oscuro', tone: 'sobrio y elegante', type: 'generated', layout: 'editorialDark' },
+  ADAPT_VARIANT,
 ];
 
 const VERTICAL_VARIANTS = [
-  ADAPT_VARIANT,
+  SMART_VARIANT,
   { key: 'vertical-impact', label: 'Vertical impacto', tone: 'marca protagonista', type: 'generated', layout: 'verticalImpact' },
   { key: 'vertical-clean', label: 'Vertical claro', tone: 'datos legibles', type: 'generated', layout: 'verticalClean' },
+  ADAPT_VARIANT,
 ];
 
 function parseDimensions(value = '') {
@@ -93,7 +103,15 @@ function drawContainAt(ctx, image, x, y, width, height, padding = 0) {
   return { x: drawX, y: drawY, width: drawWidth, height: drawHeight };
 }
 
-function drawFullBleedOriginal(ctx, image, width, height) {
+function drawFullBleedOriginal(ctx, image, width, height, form = {}) {
+  const ratio = width / height;
+  if (ratio < 1.15) {
+    drawVerticalCreative(ctx, image, width, height, { layout: 'verticalImpact' }, getCopy(form), getImagePalette(image), {
+      originalMode: true,
+    });
+    return;
+  }
+
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, width, height);
 
@@ -424,14 +442,24 @@ function drawWideCreative(ctx, image, width, height, variant, copy, palette) {
   drawPill(ctx, copy.cta, imageX - 150, height - pad - ctaH, 132, ctaH, '#ffffff', '#0f172a', isShort ? 17 : 18);
 }
 
-function drawVerticalCreative(ctx, image, width, height, variant, copy, palette) {
+function drawVerticalCreative(ctx, image, width, height, variant, copy, palette, options = {}) {
   const colors = palette || getImagePalette(image);
   const pad = Math.max(18, Math.round(width * 0.07));
-  const dark = variant.layout === 'verticalImpact';
+  const dark = variant.layout === 'verticalImpact' || variant.layout === 'smartFull';
+  const originalMode = Boolean(options.originalMode);
+
+  if (image) {
+    ctx.save();
+    ctx.filter = 'blur(16px) saturate(1.18)';
+    ctx.globalAlpha = dark ? 0.52 : 0.28;
+    drawCover(ctx, image, width, height);
+    ctx.restore();
+  }
+
   const bg = ctx.createLinearGradient(0, 0, width, height);
-  bg.addColorStop(0, dark ? colors.dark : colors.light);
-  bg.addColorStop(0.58, dark ? colors.secondary : '#ffffff');
-  bg.addColorStop(1, dark ? colors.primary : colors.soft);
+  bg.addColorStop(0, dark ? `${colors.dark}f2` : 'rgba(255,255,255,.94)');
+  bg.addColorStop(0.58, dark ? `${colors.secondary}ee` : `${colors.light}f2`);
+  bg.addColorStop(1, dark ? `${colors.primary}f0` : `${colors.soft}f4`);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
@@ -445,9 +473,11 @@ function drawVerticalCreative(ctx, image, width, height, variant, copy, palette)
     ctx.restore();
   }
 
-  const imageH = Math.max(112, Math.min(Math.round(height * 0.34), height - 292));
+  const imageH = originalMode
+    ? Math.max(102, Math.min(Math.round(height * 0.28), height - 310))
+    : Math.max(100, Math.min(Math.round(height * 0.24), height - 315));
   const imageY = pad;
-  drawImagePanel(ctx, image, pad, imageY, width - pad * 2, imageH, 22, dark ? 'rgba(255,255,255,.14)' : colors.light, colors);
+  drawImagePanel(ctx, image, pad, imageY, width - pad * 2, imageH, 22, dark ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.72)', colors);
 
   const pillY = imageY + imageH + 14;
   drawPill(ctx, copy.company.toUpperCase(), pad, pillY, width - pad * 2, 36, dark ? 'rgba(255,255,255,.92)' : colors.soft, dark ? '#0f172a' : colors.secondary, 14);
@@ -525,7 +555,7 @@ async function renderCreative({ selectedSlot, sourceImage, variant, form }) {
   ctx.imageSmoothingQuality = 'high';
 
   if (variant.type === 'adapt') {
-    drawFullBleedOriginal(ctx, image, width, height);
+    drawFullBleedOriginal(ctx, image, width, height, form);
   } else {
     drawGenerated(ctx, image, width, height, variant, form);
   }
@@ -534,7 +564,7 @@ async function renderCreative({ selectedSlot, sourceImage, variant, form }) {
 }
 
 export default function AdCreativeStudio({ selectedSlot, sourceImage, form = {}, onUseBanner }) {
-  const [selected, setSelected] = useState('brand-clean');
+  const [selected, setSelected] = useState('smart-full');
   const [previews, setPreviews] = useState({});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -613,13 +643,13 @@ export default function AdCreativeStudio({ selectedSlot, sourceImage, form = {},
       <div style={styles.header}>
         <div>
           <div style={styles.kicker}>IA CREATIVA</div>
-          <h3 style={styles.title}>Generar banners para elegir</h3>
+          <h3 style={styles.title}>Generar publicidades para elegir</h3>
         </div>
         <div style={styles.size}>{dimensions.width}x{dimensions.height}</div>
       </div>
 
       <div style={styles.intro}>
-        La IA llena el espacio con la imagen subida y tambien crea piezas nuevas con logo, colores y datos de la campania.
+        La IA arma una pieza completa para el formato elegido: banner, sidebar, home o ficha, usando imagen, colores y datos de la campania.
       </div>
 
       <div style={styles.variantGrid}>

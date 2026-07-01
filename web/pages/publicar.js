@@ -89,6 +89,18 @@ function createClientRequestId(userId) {
   return `${userId || 'user'}:${Date.now()}:${random}`;
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || '');
+      resolve(value.includes(',') ? value.split(',').pop() : value);
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function normalizeListingImages(images) {
   if (Array.isArray(images)) return images.filter(Boolean).map(String);
   if (typeof images === 'string') {
@@ -276,7 +288,7 @@ export default function Publicar() {
     };
   }, [router.isReady, router.query.republicar, user?.id, user?.email]);
 
-  async function uploadImages(userId) {
+  async function uploadImages(userId, token) {
     const urls = [];
     for (const item of images) {
       const file = item.file;
@@ -284,14 +296,20 @@ export default function Publicar() {
         if (item.url) urls.push(item.url);
         continue;
       }
-      const ext = file.name.split(".").pop();
-      const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const path = `publicar/${userId}/${safeName}`;
-      await withTransientRetry(async () => {
-        const { error } = await supabaseBrowser.storage.from("listings").upload(path, file, { cacheControl: "3600", upsert: true });
-        if (error) throw error;
-      });
-      const { data } = supabaseBrowser.storage.from("listings").getPublicUrl(path);
+      const dataBase64 = await fileToBase64(file);
+      const { data } = await fetchJsonWithRetry("/api/secure/listing-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "image/jpeg",
+          dataBase64,
+        }),
+      }, 3);
+      if (!data?.publicUrl) throw new Error('No se pudo subir la imagen');
       urls.push(data.publicUrl);
     }
     return urls;
@@ -325,7 +343,7 @@ export default function Publicar() {
         // El backend vuelve a validar el cupo al guardar. Si esta consulta falla transitoriamente, seguimos.
       }
 
-      const uploaded = await uploadImages(nextUser.id);
+      const uploaded = await uploadImages(nextUser.id, token);
       const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
       const clientRequestId = createClientRequestId(nextUser.id);
       let data;
