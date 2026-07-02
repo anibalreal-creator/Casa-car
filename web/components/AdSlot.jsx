@@ -100,7 +100,6 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
   const { t } = useLang();
   const [ads, setAds] = useState([]);
   const [index, setIndex] = useState(0);
-  const [fitMode, setFitMode] = useState('cover');
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -191,9 +190,6 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
     ...(slotAspectRatios[slot] ? { aspectRatio: slotAspectRatios[slot], height: 'auto' } : { height: cardHeight }),
     ...(isSidebar ? styles.cardSidebar : null),
   };
-  const handleImageLoad = (event) => {
-    setFitMode('cover');
-  };
 
   return (
     <section ref={rootRef} className={`adslot ${compact ? 'compact' : ''} ${isSidebar ? 'sidebar' : ''} ${isWide ? 'wide' : ''}`} style={{ ...styles.wrap, ...slotStyles[slot], ...(compact ? styles.compact : null) }}>
@@ -219,8 +215,7 @@ export default function AdSlot({ slot = 'home_middle', page = '', title = 'Publi
           <img
             src={imageSrc}
             alt={ad.title || ad.company_name || t('ads_title_short', 'Publicidad')}
-            style={{ ...styles.imageSmart, ...(isWide ? styles.imageSmartWide : null), ...(isSidebar ? styles.imageSmartSidebar : null), objectFit: fitMode }}
-            onLoad={handleImageLoad}
+            style={{ ...styles.imageSmart, ...(isWide ? styles.imageSmartWide : null), ...(isSidebar ? styles.imageSmartSidebar : null) }}
           />
         </div>
         {showOverlay ? (
@@ -309,7 +304,7 @@ const styles = {
     display: 'block',
     filter: 'blur(18px)',
     transform: 'scale(1.14)',
-    opacity: 0.45,
+    opacity: 0.5,
   },
   imageSmart: {
     position: 'absolute',
@@ -319,14 +314,14 @@ const styles = {
     height: '100%',
     maxWidth: '100%',
     maxHeight: '100%',
-    objectFit: 'cover',
+    objectFit: 'contain',
     objectPosition: 'center',
     display: 'block',
     boxSizing: 'border-box',
     background: 'transparent',
   },
-  imageSmartWide: { objectFit: 'cover' },
-  imageSmartSidebar: { objectFit: 'cover' },
+  imageSmartWide: { objectFit: 'contain' },
+  imageSmartSidebar: { objectFit: 'contain' },
   overlay: { position: 'relative', zIndex: 2, minHeight: '100%', height: '100%', boxSizing: 'border-box', display: 'flex', justifyContent: 'space-between', gap: 12, padding: 18, alignItems: 'flex-end', background: 'linear-gradient(180deg,rgba(15,23,42,.10),rgba(15,23,42,.60))' },
   overlayWide: { alignItems: 'stretch', background: 'linear-gradient(90deg,rgba(6,18,38,.55),rgba(6,18,38,.18) 48%, rgba(6,18,38,.08) 72%, rgba(6,18,38,.08))' },
   overlaySidebar: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(180deg,rgba(6,18,38,.35),rgba(6,18,38,.50))' },

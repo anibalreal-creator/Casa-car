@@ -739,7 +739,7 @@ const styles = {
   variantButton: { border: '1px solid #dbeafe', background: '#fff', borderRadius: 14, padding: 8, cursor: 'pointer', display: 'grid', gap: 8, textAlign: 'left', minWidth: 0, maxWidth: '100%', overflow: 'hidden' },
   variantButtonActive: { borderColor: '#1d4ed8', boxShadow: '0 0 0 3px rgba(29,78,216,.12)' },
   variantPreview: { borderRadius: 10, overflow: 'hidden', display: 'grid', placeItems: 'center', minHeight: 0, boxSizing: 'border-box', background: '#eff6ff' },
-  previewImage: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  previewImage: { width: '100%', height: '100%', objectFit: 'contain', display: 'block' },
   placeholder: { color: '#64748b', fontWeight: 900, fontSize: 12 },
   variantMeta: { color: '#334155', fontSize: 12, fontWeight: 800 },
   footer: { display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', minWidth: 0 },

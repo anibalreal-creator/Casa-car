@@ -42,6 +42,7 @@ export default function AdsBanner({ slot = 'home_middle', title = '' }) {
   return (
     <a href={ad.destination_url || '/publicidad'} onClick={handleClick} style={styles.wrap} target="_blank" rel="noreferrer">
       <div style={{ ...styles.media, ...(isSidebar ? styles.mediaSidebar : null), ...(isWide ? styles.mediaWide : null) }}>
+        <img src={ad.image} alt="" aria-hidden="true" style={styles.imageBlur} />
         <img src={ad.image} alt={ad.title || title || t('ads_title_short', 'Publicidad Casa-Car')} style={{ ...styles.image, ...(isWide ? styles.imageContain : null), ...(isSidebar ? styles.imageContain : null) }} />
       </div>
       <div style={styles.meta}>
@@ -58,11 +59,12 @@ export default function AdsBanner({ slot = 'home_middle', title = '' }) {
 
 const styles = {
   wrap: { display:'grid', gridTemplateColumns:'1fr', gap:10, margin:'20px 0', textAlign:'left', textDecoration:'none', background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, overflow:'hidden', boxShadow:'0 12px 24px rgba(15,23,42,.06)' },
-  media: { background:'linear-gradient(135deg,#0f172a,#1d4ed8)', display:'flex', alignItems:'center', justifyContent:'center', padding:0, borderBottom:'1px solid rgba(255,255,255,.05)' },
+  media: { position:'relative', background:'linear-gradient(135deg,#0f172a,#1d4ed8)', display:'flex', alignItems:'center', justifyContent:'center', padding:0, borderBottom:'1px solid rgba(255,255,255,.05)', overflow:'hidden' },
   mediaWide:{ minHeight:170 },
   mediaSidebar:{ minHeight:260 },
-  image: { width:'100%', maxHeight:240, objectFit:'cover', objectPosition:'center', display:'block', background:'transparent' },
-  imageContain:{ objectFit:'cover', maxHeight:'none', height:'100%' },
+  imageBlur: { position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', display:'block', filter:'blur(18px)', transform:'scale(1.14)', opacity:.42 },
+  image: { position:'relative', zIndex:1, width:'100%', height:'100%', maxHeight:240, objectFit:'contain', objectPosition:'center', display:'block', background:'transparent' },
+  imageContain:{ objectFit:'contain', maxHeight:'none', height:'100%' },
   meta: { padding:'12px 14px', display:'grid', gap:6 },
   row: { display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' },
   badge: { display:'inline-block', width:'fit-content', padding:'4px 8px', borderRadius:999, background:'#ede9fe', color:'#6d28d9', fontWeight:800, fontSize:12 },

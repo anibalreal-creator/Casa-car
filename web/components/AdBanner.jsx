@@ -11,7 +11,6 @@ export default function AdBanner({
 }) {
   const [ad, setAd] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [fitMode, setFitMode] = useState('cover')
 
   useEffect(() => {
     let mounted = true
@@ -61,10 +60,6 @@ export default function AdBanner({
         page,
       }),
     }).catch(() => {})
-  }
-
-  const handleImageLoad = (event) => {
-    setFitMode('cover')
   }
 
   if (loading) {
@@ -144,8 +139,7 @@ export default function AdBanner({
           <img
             src={image}
             alt={ad.title || 'Publicidad'}
-            style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: fitMode, objectPosition: 'center', display: 'block' }}
-            onLoad={handleImageLoad}
+            style={{ position: 'absolute', inset: 0, zIndex: 1, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', display: 'block' }}
           />
         </div>
       ) : (
