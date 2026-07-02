@@ -233,20 +233,20 @@ export default function ListingDetail({ initialItem = null }) {
   const commercialStatus = getCommercialStatus(item);
 
   return (
-    <div style={{background:'#f5f7fb',minHeight:'100vh',fontFamily:'Arial, sans-serif',overflowX:'hidden'}}>
+    <div className="cc-listing-detail-page" style={{background:'#f5f7fb',minHeight:'100vh',fontFamily:'Arial, sans-serif',overflowX:'hidden'}}>
       <SeoHead title={seoTitle} description={seoDescription} image={seoImage} url={seoUrl} type="product" />
       <SeoJsonLd data={buildOrganizationJsonLd()} />
       <SeoJsonLd data={buildBreadcrumbJsonLd(breadcrumbs)} />
       <SeoJsonLd data={buildListingJsonLd(item)} />
       <GlobalHeader />
 
-      <div style={{maxWidth:1200,width:'100%',margin:'0 auto',padding:20,display:'grid',gap:24,boxSizing:'border-box',minWidth:0,overflow:'hidden'}}>
+      <div className="cc-listing-detail-shell" style={{maxWidth:1200,width:'100%',margin:'0 auto',padding:20,display:'grid',gap:24,boxSizing:'border-box',minWidth:0,overflow:'hidden'}}>
         <Breadcrumbs items={breadcrumbs} />
         <ImageGallery images={item.images || []} item={item} />
 
         <section className="cc-detail-hero" style={styles.heroCard}>
           <div>
-            <h1 style={{margin:'0 0 10px',lineHeight:1.12,overflowWrap:'anywhere',wordBreak:'break-word'}}>{item.title}</h1>
+            <h1 className="cc-detail-title" style={{margin:'0 0 10px',lineHeight:1.12,overflowWrap:'anywhere',wordBreak:'break-word'}}>{item.title}</h1>
             <div style={styles.badges}>
               <FavoriteButton listingId={item.id} />
               <VerifiedBadge verified={item.seller_verified || item.verified} />
@@ -337,11 +337,65 @@ export default function ListingDetail({ initialItem = null }) {
 
       <FooterBlueBar />
 
-      <style jsx>{`
+      <style jsx global>{`
+        .cc-listing-detail-page,
+        .cc-listing-detail-shell {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        .cc-listing-detail-page *,
+        .cc-listing-detail-shell * {
+          min-width: 0;
+        }
+
+        .cc-detail-title {
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }
+
+        @supports (overflow: clip) {
+          .cc-listing-detail-page,
+          .cc-listing-detail-shell {
+            overflow-x: clip;
+          }
+        }
+
         @media (max-width: 980px) {
           .cc-detail-hero,
           .cc-detail-cols {
             grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .cc-listing-detail-shell {
+            padding: 14px !important;
+            gap: 16px !important;
+          }
+
+          .cc-detail-hero,
+          .cc-detail-cols {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          .cc-detail-hero {
+            padding: 16px !important;
+            border-radius: 16px !important;
+          }
+
+          .cc-detail-title {
+            font-size: 30px !important;
+            line-height: 1.08 !important;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .cc-listing-detail-shell {
+            padding: 12px !important;
           }
         }
       `}</style>

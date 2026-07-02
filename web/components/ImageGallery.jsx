@@ -15,7 +15,7 @@ export default function ImageGallery({ images = [], initialIndex = 0, item = nul
   function next() { setIndex((i) => (i === safe.length - 1 ? 0 : i + 1)); }
 
   return (
-    <div style={styles.wrap}>
+    <div className="cc-gallery-root" style={styles.wrap}>
       <div className="cc-gallery-hero" style={styles.heroBox}>
         {safe.length > 1 ? <button type="button" onClick={prev} style={{ ...styles.nav, left: 10 }}>{"<"}</button> : null}
         <SafeListingImage
@@ -48,16 +48,43 @@ export default function ImageGallery({ images = [], initialIndex = 0, item = nul
           ))}
         </div>
       ) : null}
-      <style jsx>{`
+      <style jsx global>{`
+        .cc-gallery-root,
+        .cc-gallery-root * {
+          box-sizing: border-box;
+          min-width: 0;
+        }
+
+        .cc-gallery-frame {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          height: 100% !important;
+        }
+
         @media (max-width: 720px) {
           .cc-gallery-hero {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: min(78vh, 430px) !important;
+            min-height: 260px !important;
             border-radius: 14px !important;
-            min-height: 0 !important;
-            aspect-ratio: 1 / 1 !important;
+            aspect-ratio: auto !important;
           }
           .cc-gallery-frame {
             height: 100% !important;
             min-height: 0 !important;
+          }
+          .cc-gallery-frame img {
+            object-fit: contain !important;
+            object-position: center center !important;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .cc-gallery-hero {
+            height: min(74vh, 390px) !important;
+            min-height: 240px !important;
           }
         }
       `}</style>
@@ -67,8 +94,8 @@ export default function ImageGallery({ images = [], initialIndex = 0, item = nul
 
 const styles = {
   wrap: { display: "grid", gap: 10, width: "100%", maxWidth: "100%", minWidth: 0, overflow: "hidden" },
-  heroBox: { position: "relative", overflow: "hidden", borderRadius: 18, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", minWidth: 0, minHeight: 0 },
-  heroFrame: { width: "100%", height: "clamp(280px, 52vw, 540px)", background: "#f8fafc" },
+  heroBox: { position: "relative", overflow: "hidden", borderRadius: 18, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", maxWidth: "100%", minWidth: 0, minHeight: 0, height: "clamp(280px, 52vw, 540px)", maxHeight: "min(72vh, 540px)", boxSizing: "border-box", isolation: "isolate" },
+  heroFrame: { width: "100%", height: "100%", background: "#f8fafc" },
   nav: { position: "absolute", top: "50%", zIndex: 6, transform: "translateY(-50%)", width: 42, height: 42, borderRadius: "50%", border: "none", background: "#111827cc", color: "#fff", fontSize: 24, cursor: "pointer" },
   exampleBadge: { position: "absolute", top: 16, left: 16, zIndex: 4, background: "#fef3c7", color: "#92400e", border: "1px solid rgba(146,64,14,.18)", borderRadius: 999, padding: "8px 12px", fontSize: 13, fontWeight: 900, boxShadow: "0 8px 18px rgba(0,0,0,.12)" },
   statusRibbon: { position: "absolute", top: 28, right: -58, zIndex: 5, width: 220, padding: "12px 0", color: "#fff", textAlign: "center", textTransform: "uppercase", fontWeight: 900, fontSize: 15, letterSpacing: ".1em", transform: "rotate(35deg)", boxShadow: "0 10px 24px rgba(15,23,42,.25)" },
