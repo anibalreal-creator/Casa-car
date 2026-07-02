@@ -65,7 +65,12 @@ async function fetchOwnerAnalytics(req) {
   try {
     const host = req.headers.host;
     const protocol = host && host.includes('localhost') ? 'http' : 'https';
-    const response = await fetch(`${protocol}://${host}/api/secure/owner/analytics`, { headers: { cookie: req.headers.cookie || '' } });
+    const response = await fetch(`${protocol}://${host}/api/secure/owner/analytics`, {
+      headers: {
+        cookie: req.headers.cookie || '',
+        authorization: req.headers.authorization || '',
+      },
+    });
     if (!response.ok) return null;
     return await response.json();
   } catch {

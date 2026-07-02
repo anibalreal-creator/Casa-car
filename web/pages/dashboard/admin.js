@@ -82,6 +82,10 @@ export default function AdminDashboard() {
   const authNow = analyticsStats.authenticated_online_now ?? analytics?.authenticated_online_now ?? 0;
   const visitorsToday = analyticsStats.unique_visitors_today ?? analytics?.unique_visitors_today ?? 0;
   const usersToday = analyticsStats.unique_users_today ?? analytics?.unique_users_today ?? 0;
+  const registrations = analytics?.registrations || {};
+  const recentRegistrations = Array.isArray(registrations.recent) ? registrations.recent : [];
+  const dailyRegistrations = Array.isArray(registrations.dailyLast30) ? registrations.dailyLast30 : [];
+  const monthlyRegistrations = Array.isArray(registrations.monthlyLast12) ? registrations.monthlyLast12 : [];
 
 
   async function syncCampaignsNow() {
@@ -102,6 +106,10 @@ export default function AdminDashboard() {
   }
 
   const cards = useMemo(() => ([
+    { label: "Clientes nuevos hoy", value: registrations.today ?? 0, hint: "cuentas creadas hoy" },
+    { label: "Clientes nuevos mes", value: registrations.thisMonth ?? 0, hint: "altas del mes actual" },
+    { label: "Clientes ultimos 30 dias", value: registrations.last30Days ?? 0, hint: "emails registrados recientes" },
+    { label: "Cuentas registradas", value: registrations.total ?? 0, hint: "total real en Supabase Auth" },
     { label: "Usuarios online", value: onlineNow, hint: "actividad viva en los últimos minutos" },
     { label: "Usuarios logueados online", value: authNow, hint: "sesiones autenticadas activas" },
     { label: "Visitantes únicos hoy", value: visitorsToday, hint: "incluye anónimos y logueados" },
@@ -112,7 +120,7 @@ export default function AdminDashboard() {
     { label: "Campañas", value: counts.campaigns ?? 0, hint: "publicidad activa / histórica" },
     { label: "Favoritos", value: counts.favorites ?? 0, hint: "guardados privados por usuario" },
     { label: "Pagos", value: counts.payments ?? 0, hint: "tabla payments" },
-  ]), [onlineNow, authNow, visitorsToday, usersToday, counts]);
+  ]), [onlineNow, authNow, visitorsToday, usersToday, counts, registrations]);
 
   return (
     <div style={styles.page}>
@@ -149,6 +157,56 @@ export default function AdminDashboard() {
               {cards.map((card) => (
                 <StatCard key={card.label} label={card.label} value={card.value} hint={card.hint} />
               ))}
+            </div>
+
+            <div style={styles.panel}>
+              <h2 style={styles.panelTitle}>Altas de clientes</h2>
+              <p style={styles.panelText}>
+                Conteo privado solo para la cuenta dueña. Toma los usuarios reales de Supabase Auth y agrupa las fechas en horario argentino.
+              </p>
+              <div style={styles.adminGrid}>
+                <div style={styles.miniStat}><span>Hoy</span><strong>{registrations.today ?? 0}</strong></div>
+                <div style={styles.miniStat}><span>Ultimos 7 dias</span><strong>{registrations.last7Days ?? 0}</strong></div>
+                <div style={styles.miniStat}><span>Ultimos 30 dias</span><strong>{registrations.last30Days ?? 0}</strong></div>
+                <div style={styles.miniStat}><span>Este mes</span><strong>{registrations.thisMonth ?? 0}</strong></div>
+                <div style={styles.miniStat}><span>Total cuentas</span><strong>{registrations.total ?? 0}</strong></div>
+                <div style={styles.miniStat}><span>Confirmadas</span><strong>{registrations.confirmed ?? 0}</strong></div>
+              </div>
+              <div style={styles.registrationGrid}>
+                <div style={styles.registrationBox}>
+                  <h3 style={styles.smallTitle}>Por dia, ultimos 14 dias</h3>
+                  <div style={styles.dataRows}>
+                    {dailyRegistrations.slice(-14).map((item) => (
+                      <div key={item.day} style={styles.dataRow}>
+                        <span>{item.day}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={styles.registrationBox}>
+                  <h3 style={styles.smallTitle}>Por mes</h3>
+                  <div style={styles.dataRows}>
+                    {monthlyRegistrations.map((item) => (
+                      <div key={item.month} style={styles.dataRow}>
+                        <span>{item.month}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={styles.registrationBox}>
+                  <h3 style={styles.smallTitle}>Ultimas cuentas</h3>
+                  <div style={styles.dataRows}>
+                    {recentRegistrations.map((item) => (
+                      <div key={item.id} style={styles.dataRow}>
+                        <span>{item.email || "sin email"}</span>
+                        <strong>{item.confirmed ? "OK" : "Pend."}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div style={styles.sectionGrid}>
@@ -227,10 +285,16 @@ const styles = {
   sectionGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))",gap:16,marginBottom:22},
   panel:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:22,padding:22,boxShadow:"0 8px 22px rgba(15,23,42,.05)"},
   panelTitle:{fontSize:24,margin:"0 0 14px",fontWeight:900,color:"#111827"},
+  panelText:{margin:"-4px 0 16px",color:"#64748b",lineHeight:1.5},
   list:{margin:0,paddingLeft:20,color:"#374151",lineHeight:1.8},
   links:{display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:12},
   linkCard:{textDecoration:"none",padding:"14px 16px",border:"1px solid #dbeafe",background:"#eff6ff",borderRadius:14,color:"#1d4ed8",fontWeight:800},
   adminGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12},
   miniStat:{background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:14,padding:"14px 16px",display:"grid",gap:6,color:"#475569"},
+  registrationGrid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:14,marginTop:16},
+  registrationBox:{background:"#f8fafc",border:"1px solid #e5e7eb",borderRadius:16,padding:16,minWidth:0},
+  smallTitle:{fontSize:16,margin:"0 0 12px",color:"#111827",fontWeight:900},
+  dataRows:{display:"grid",gap:8},
+  dataRow:{display:"flex",justifyContent:"space-between",gap:10,borderBottom:"1px solid #e5e7eb",paddingBottom:8,color:"#475569",fontSize:14},
   metaBox:{background:"#fff",border:"1px solid #e5e7eb",borderRadius:18,padding:18,color:"#374151",boxShadow:"0 8px 22px rgba(15,23,42,.05)"},
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import GlobalHeader from "../../components/GlobalHeader";
 import FooterBlueBar from "../../components/FooterBlueBar";
+import { supabaseBrowser } from "../../lib/supabaseBrowser";
 
 export default function SaasDashboard() {
   const [data, setData] = useState(null);
@@ -10,7 +11,11 @@ export default function SaasDashboard() {
     let mounted = true;
     async function load() {
       try {
-        const res = await fetch('/api/secure/saas-overview');
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData?.session?.access_token || '';
+        const res = await fetch('/api/secure/saas-overview', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         const json = await res.json();
         if (!mounted) return;
         if (!res.ok) throw new Error(json?.error || 'No se pudo cargar el dashboard SaaS');
@@ -24,7 +29,12 @@ export default function SaasDashboard() {
     return () => { mounted = false; };
   }, []);
 
+  const registrations = data?.ownerAnalytics?.registrations || {};
   const cards = [
+    { label: 'Clientes nuevos hoy', value: registrations.today ?? '-' },
+    { label: 'Clientes nuevos mes', value: registrations.thisMonth ?? '-' },
+    { label: 'Clientes ultimos 30 dias', value: registrations.last30Days ?? '-' },
+    { label: 'Cuentas registradas', value: registrations.total ?? '-' },
     { label: 'Usuarios online', value: data?.ownerAnalytics?.onlineNow ?? '-' },
     { label: 'Usuarios únicos hoy', value: data?.ownerAnalytics?.dailyUniqueUsers ?? '-' },
     { label: 'Suscripciones activas', value: data?.subscriptions?.active ?? 0 },
