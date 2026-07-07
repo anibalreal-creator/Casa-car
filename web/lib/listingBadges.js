@@ -28,7 +28,9 @@ export function getCommercialStatus(item = {}) {
     specs.status_badge ||
     "";
 
-  return COMMERCIAL_STATUS[normalize(raw)] || null;
+  const explicitStatus = COMMERCIAL_STATUS[normalize(raw)];
+  if (explicitStatus) return explicitStatus;
+  return isExampleListing(item) ? COMMERCIAL_STATUS.vendido : null;
 }
 
 export function isExampleListing(item = {}) {

@@ -124,7 +124,6 @@ export default function ListingCard(props) {
             ❤
           </button>
         ) : null}
-        {exampleListing ? <span style={styles.exampleBadge}>Ejemplo</span> : null}
         {commercialStatus ? (
           <>
             <span style={{ ...styles.statusRibbon, background: commercialStatus.color }}>{commercialStatus.label}</span>
@@ -202,20 +201,6 @@ const styles = {
   favoriteBtnActive: {
     background: "#ffe4e6",
     borderColor: "#fb7185",
-  },
-  exampleBadge: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    zIndex: 4,
-    background: "#fef3c7",
-    color: "#92400e",
-    border: "1px solid rgba(146,64,14,.18)",
-    borderRadius: 999,
-    padding: "6px 10px",
-    fontSize: 12,
-    fontWeight: 900,
-    boxShadow: "0 6px 16px rgba(0,0,0,.10)",
   },
   statusRibbon: {
     position: "absolute",

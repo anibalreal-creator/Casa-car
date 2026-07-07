@@ -93,27 +93,27 @@ export default function MarketplaceHomeSections({ items = EMPTY_ITEMS }) {
     return baseDemoItems.map((item, idx) => ({
       ...item,
       title: titles[idx] || item.title,
+      commercial_status: 'vendido',
+      availability_status: 'vendido',
       is_demo: true,
       is_example: true,
-      specs_json: { ...(item.specs_json || {}), is_example: true },
+      specs_json: { ...(item.specs_json || {}), is_example: true, commercial_status: 'vendido' },
     }));
   }, [items, remoteItems, language]);
 
   const top = normalized.slice(0, 8);
   const fresh = normalized.slice(8, 16);
-  const showingExamples = normalized.length > 0 && normalized.every((item) => isExampleListing(item));
-
   return (
     <div>
       <Section
-        kicker={showingExamples ? 'PUBLICACIONES EJEMPLO' : t('featured_kicker', 'HOY')}
-        title={showingExamples ? 'Ejemplos de anuncios para mostrar como se vera la portada' : t('featured_title', 'Anuncios con mas potencial visual para la portada')}
+        kicker={t('featured_kicker', 'HOY')}
+        title={t('featured_title', 'Anuncios con mas potencial visual para la portada')}
         items={top}
         loading={loadingRemote && !top.length}
       />
       <Section
-        kicker={showingExamples ? 'EJEMPLOS DE ACTIVIDAD' : t('latest_kicker', 'HOY')}
-        title={showingExamples ? 'Estos avisos son de muestra hasta que cargues publicaciones reales' : t('latest_title', 'El marketplace se ve vivo cuando la home muestra actividad real')}
+        kicker={t('latest_kicker', 'HOY')}
+        title={t('latest_title', 'El marketplace se ve vivo cuando la home muestra actividad real')}
         items={fresh.length ? fresh : top}
         loading={loadingRemote && !fresh.length && !top.length}
       />
@@ -162,7 +162,6 @@ function Card({ item }) {
       <SafeListingImage src={image} alt={title} style={styles.cardImageFrame}>
         <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>{!exampleListing && detailId ? <FavoriteButton listingId={detailId} compact /> : null}</div>
         <div style={{ position: 'absolute', top: 10, left: 10, display: 'flex', gap: 8, zIndex: 4, flexWrap: 'wrap' }}>
-          {exampleListing ? <span style={pill('#fef3c7', '#92400e')}>Ejemplo</span> : null}
           {item.is_premium ? <span style={pill('#fbbf24')}>{t('card_premium', 'Premium')}</span> : null}
           <span style={pill('#22c55e')}>{String(item.listing_type || t('card_sale', 'Venta')).replace(/^./, (s) => s.toUpperCase())}</span>
         </div>

@@ -4,7 +4,7 @@ import { categoryLabel } from "../lib/category";
 import { useLang } from "../context/LanguageContext";
 import { fetchJsonCached } from "../lib/clientFetchCache";
 import { getListingDetailHref } from "../lib/listingRoutes";
-import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
+import { getCommercialStatus } from "../lib/listingBadges";
 import SafeListingImage from "./SafeListingImage";
 
 const FALLBACK_CARDS = {
@@ -71,8 +71,10 @@ export default function PremiumListingsStrip() {
 
     const fallback = (FALLBACK_CARDS[language] || FALLBACK_CARDS.es).map((item) => ({
       ...item,
+      commercial_status: "vendido",
+      availability_status: "vendido",
       is_example: true,
-      specs_json: { ...(item.specs_json || {}), is_example: true },
+      specs_json: { ...(item.specs_json || {}), is_example: true, commercial_status: "vendido" },
     }));
     return premium.length ? premium : fallback;
   }, [items, language]);
@@ -94,7 +96,6 @@ export default function PremiumListingsStrip() {
           const presentation = getImagePresentation(card);
           const href = getHref(card);
           const commercialStatus = getCommercialStatus(card);
-          const exampleListing = isExampleListing(card);
           return (
             <a key={String(card.id)} href={href} style={styles.cardLink}>
               <article style={styles.card}>
@@ -105,7 +106,6 @@ export default function PremiumListingsStrip() {
                   imageStyle={{ objectFit: presentation?.fit || 'contain', objectPosition: presentation?.position || 'center center' }}
                 >
                   <span style={styles.badge}>{t('premium_badge', 'Destacado premium')}</span>
-                  {exampleListing ? <span style={styles.exampleBadge}>Ejemplo</span> : null}
                   {commercialStatus ? (
                     <>
                       <span style={{ ...styles.statusRibbon, background: commercialStatus.color }}>{commercialStatus.label}</span>
@@ -141,7 +141,6 @@ const styles = {
   card:{background:"rgba(255,255,255,.10)",border:"1px solid rgba(255,255,255,.18)",borderRadius:24,overflow:"hidden",display:"grid",height:"100%",transition:"transform .18s ease, box-shadow .18s ease",boxShadow:"0 10px 26px rgba(15,23,42,.12)"},
   imageWrap:{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.06)",height:240},
   badge:{position:"absolute",top:14,left:14,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#f59e0b",color:"#111827",fontWeight:900,fontSize:12},
-  exampleBadge:{position:"absolute",top:14,right:14,zIndex:4,display:"inline-block",padding:"7px 11px",borderRadius:999,background:"#fef3c7",color:"#92400e",fontWeight:900,fontSize:12,border:"1px solid rgba(146,64,14,.18)"},
   statusRibbon:{position:"absolute",top:20,right:-46,zIndex:5,width:170,padding:"9px 0",color:"#fff",textAlign:"center",textTransform:"uppercase",fontWeight:900,fontSize:12,letterSpacing:".08em",transform:"rotate(35deg)",boxShadow:"0 8px 18px rgba(15,23,42,.22)"},
   statusWatermark:{position:"absolute",inset:0,zIndex:2,display:"grid",placeItems:"center",color:"rgba(255,255,255,.36)",fontSize:44,fontWeight:900,textTransform:"uppercase",letterSpacing:".06em",transform:"rotate(-14deg)",textShadow:"0 3px 16px rgba(15,23,42,.32)",pointerEvents:"none"},
   body:{padding:18,display:"grid",gap:10,alignContent:"space-between"}, category:{color:"rgba(255,255,255,.78)",fontWeight:800,fontSize:13},
