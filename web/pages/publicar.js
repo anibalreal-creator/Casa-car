@@ -192,6 +192,29 @@ function buildRepublishForm(item = {}, fallback = {}, fallbackEmail = '') {
   };
 }
 
+function hasCoordinates(data) {
+  return String(data?.lat ?? "").trim() && String(data?.lng ?? "").trim();
+}
+
+async function completeCoordinates(data) {
+  if (hasCoordinates(data)) return data;
+  const query = [data.address, data.zone, data.city, data.state, data.country].filter(Boolean).join(", ");
+  if (!query.trim()) return data;
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { "Accept-Language": data.language || "es" } });
+    if (!res.ok) return data;
+    const results = await res.json();
+    const first = Array.isArray(results) ? results[0] : null;
+    if (first?.lat && first?.lon) {
+      return { ...data, lat: first.lat, lng: first.lon };
+    }
+  } catch {}
+
+  return data;
+}
+
 export default function Publicar() {
   const router = useRouter();
   const initial = {
@@ -344,6 +367,10 @@ export default function Publicar() {
       const nextUser = auth.user;
       if (!nextUser) throw new Error(t("publish_error_login", "Tenés que iniciar sesión para publicar."));
       if (requiredMissing.length) throw new Error(`${t("publish_missing_fields", "Completa los campos pendientes")}: ${requiredMissing.join(", ")}`);
+      const payload = await completeCoordinates(formData);
+      if (payload.lat !== formData.lat || payload.lng !== formData.lng) {
+        setFormData((prev) => ({ ...prev, lat: payload.lat, lng: payload.lng }));
+      }
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData?.session?.access_token;
       const headers = { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
@@ -358,7 +385,7 @@ export default function Publicar() {
       }
 
       const uploaded = await uploadImages(nextUser.id, token);
-      const seoSlug = createSeoSlug(`${formData.category}-${formData.title}-${formData.city}-${formData.country}`);
+      const seoSlug = createSeoSlug(`${payload.category}-${payload.title}-${payload.city}-${payload.country}`);
       const clientRequestId = createClientRequestId(nextUser.id);
       let data;
       try {
@@ -366,12 +393,12 @@ export default function Publicar() {
           method: "POST",
           headers,
           body: JSON.stringify({
-            ...formData,
+            ...payload,
             images: uploaded,
             seo_slug: seoSlug,
             client_request_id: clientRequestId,
-            availability_status: formData.availability_status || "",
-            specs_json: { ...(formData.specs_json || {}), client_request_id: clientRequestId, availability_status: formData.availability_status || "", deal_status: formData.availability_status || "", commercial_status: formData.availability_status || "" },
+            availability_status: payload.availability_status || "",
+            specs_json: { ...(payload.specs_json || {}), client_request_id: clientRequestId, availability_status: payload.availability_status || "", deal_status: payload.availability_status || "", commercial_status: payload.availability_status || "" },
           })
         }));
       } catch (error) {
@@ -599,7 +626,16 @@ export default function Publicar() {
           box-sizing: border-box;
           overflow-wrap: break-word;
         }
-        @media (max-width: 1780px) {
+        @media (max-width: 1540px) {
+          .cc-publish-wrap {
+            grid-template-columns: 230px minmax(0, 1fr) !important;
+            gap: 16px !important;
+          }
+          .cc-publish-right {
+            display: none !important;
+          }
+        }
+        @media (max-width: 1180px) {
           .cc-publish-wrap {
             max-width: 980px !important;
             grid-template-columns: minmax(0, 1fr) !important;

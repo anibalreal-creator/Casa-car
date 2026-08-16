@@ -298,7 +298,13 @@ export default function ListingDetail({ initialItem = null }) {
         <section className="cc-detail-cols" style={styles.twoCols}>
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Ubicación</h2>
-            <LocationMap city={item.city} country={item.country} />
+            <LocationMap
+              city={item.city}
+              country={item.country}
+              address={item.address || item.zone}
+              lat={item.lat}
+              lng={item.lng}
+            />
           </div>
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Compartir</h2>

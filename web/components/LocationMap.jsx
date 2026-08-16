@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 function parseNumber(v) {
-  const n = Number(v);
+  if (v === null || v === undefined) return null;
+  const raw = String(v).trim();
+  if (!raw) return null;
+  const n = Number(raw.replace(",", "."));
   return Number.isFinite(n) ? n : null;
 }
 
