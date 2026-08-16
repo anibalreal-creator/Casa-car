@@ -62,6 +62,22 @@ const SENSITIVE_SPEC_KEYS = new Set([
   'mercadopago_id',
   'admin_notes',
   'internal_notes',
+  'source_url',
+  'sourceurl',
+  'source',
+  'origin_url',
+  'originurl',
+  'original_url',
+  'originalurl',
+  'external_url',
+  'externalurl',
+  'import_url',
+  'importurl',
+  'url_origen',
+  'urlorigen',
+  'fuente',
+  'link_fuente',
+  'linkfuente',
 ]);
 
 function isSensitiveSpecKey(key) {
@@ -77,6 +93,13 @@ function isSensitiveSpecKey(key) {
     compact.includes('authorization') ||
     compact.includes('clientrequestid') ||
     compact.includes('mercadopago') ||
+    compact.includes('sourceurl') ||
+    compact.includes('originurl') ||
+    compact.includes('originalurl') ||
+    compact.includes('externalurl') ||
+    compact.includes('importurl') ||
+    compact.includes('urlorigen') ||
+    compact.includes('fuente') ||
     compact === 'email' ||
     compact === 'contactemail'
   );

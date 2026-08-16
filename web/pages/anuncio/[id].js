@@ -166,9 +166,9 @@ const styles = {
   gallery: { display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" },
   thumb: { width: 120, height: 80, objectFit: "contain", background: "#f8fafc", cursor: "pointer", borderRadius: 8 },
   infoGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16, marginTop: 24 },
-  infoItem: { background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, minHeight: 72 },
+  infoItem: { background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: 14, minHeight: 72, minWidth: 0, maxWidth: "100%", overflow: "hidden", overflowWrap: "anywhere", wordBreak: "break-word" },
   sectionTitle: { marginTop: 0, marginBottom: 14, fontSize: 24, color: "#111827" },
   descriptionBox: { marginTop: 30 },
-  description: { lineHeight: 1.7, color: "#374151", fontSize: 16 },
+  description: { lineHeight: 1.7, color: "#374151", fontSize: 16, overflowWrap: "anywhere", wordBreak: "break-word" },
   whatsapp: { display: "inline-block", marginTop: 30, background: "#25D366", color: "#fff", padding: "14px 18px", borderRadius: 10, textDecoration: "none", fontWeight: 700 }
 }

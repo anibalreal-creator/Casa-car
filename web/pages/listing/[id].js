@@ -44,7 +44,38 @@ const SPEC_LABELS = {
   passengers: 'Pasajeros / capacidad', max_speed: 'Velocidad máx.', range: 'Autonomía'
 };
 
-const HIDDEN_SPEC_KEYS = new Set(['commercial_status', 'availability_status', 'deal_status']);
+const HIDDEN_SPEC_KEYS = new Set([
+  'commercial_status',
+  'availability_status',
+  'deal_status',
+  'source_url',
+  'sourceUrl',
+  'source',
+  'origin_url',
+  'originUrl',
+  'original_url',
+  'external_url',
+  'import_url',
+  'url_origen',
+  'fuente',
+  'link_fuente',
+]);
+
+function isHiddenSpecKey(key) {
+  const raw = String(key || '');
+  const compact = raw.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return (
+    HIDDEN_SPEC_KEYS.has(raw) ||
+    HIDDEN_SPEC_KEYS.has(raw.toLowerCase()) ||
+    compact.includes('sourceurl') ||
+    compact.includes('originurl') ||
+    compact.includes('originalurl') ||
+    compact.includes('externalurl') ||
+    compact.includes('importurl') ||
+    compact.includes('urlorigen') ||
+    compact.includes('fuente')
+  );
+}
 
 function buildSpecs(item) {
   const specs = item?.specs_json || {};
@@ -59,7 +90,7 @@ function buildSpecs(item) {
     ['Zona / barrio', item?.zone],
   ];
   const dynamic = Object.entries(specs)
-    .filter(([key]) => !HIDDEN_SPEC_KEYS.has(key))
+    .filter(([key]) => !isHiddenSpecKey(key))
     .map(([key, value]) => [SPEC_LABELS[key] || key, value]);
   return [...base, ...dynamic].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '');
 }
@@ -424,9 +455,9 @@ const styles = {
   card:{background:'#fff',border:'1px solid #e5e7eb',borderRadius:18,padding:20,boxShadow:'0 12px 28px rgba(15,23,42,.06)',minWidth:0,maxWidth:'100%',boxSizing:'border-box',overflow:'hidden'},
   cardTitle:{margin:'0 0 14px',fontSize:24,color:'#111827'},
   specGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12},
-  specItem:{padding:'12px 14px',border:'1px solid #e5e7eb',borderRadius:14,background:'#f8fafc',display:'grid',gap:4},
-  specLabel:{fontSize:12,fontWeight:900,color:'#64748b',textTransform:'uppercase',letterSpacing:'.04em'},
-  specValue:{fontSize:15,color:'#111827'},
+  specItem:{padding:'12px 14px',border:'1px solid #e5e7eb',borderRadius:14,background:'#f8fafc',display:'grid',gap:4,minWidth:0,maxWidth:'100%',overflow:'hidden'},
+  specLabel:{fontSize:12,fontWeight:900,color:'#64748b',textTransform:'uppercase',letterSpacing:'.04em',overflowWrap:'anywhere',wordBreak:'break-word'},
+  specValue:{fontSize:15,color:'#111827',overflowWrap:'anywhere',wordBreak:'break-word',minWidth:0,maxWidth:'100%'},
   form:{display:'grid',gap:10},
   input:{width:'100%',border:'1px solid #cbd5e1',borderRadius:12,padding:'12px 14px',fontSize:14,outline:'none'},
   submit:{background:'#2563eb',color:'#fff',border:'none',borderRadius:12,padding:'12px 14px',fontWeight:900,cursor:'pointer'},
