@@ -420,7 +420,7 @@ export default function PublicidadPanelPage() {
           </div>
           <div className="cc-panel-info-box" style={styles.infoBox}>
             <div><strong>Plan:</strong> {selectedPlan.name}</div>
-            <div><strong>Precio prueba:</strong> ARS {selectedPlan.price.toLocaleString('es-AR')}</div>
+            <div><strong>Precio:</strong> ARS {selectedPlan.price.toLocaleString('es-AR')}</div>
             <div><strong>Duración:</strong> {selectedPlan.durationDays} días</div>
             <button type="button" onClick={syncCampaigns} style={styles.syncButton}>{syncing ? 'Sincronizando…' : 'Sync campañas'}</button>
           </div>

@@ -3,9 +3,9 @@ export const AD_PLAN_CONFIG = {
   PRO: { key: 'PRO', label: 'Pro', days: 30, maxListings: 25, maxPremiumListings: 3, maxCampaigns: 0, maxActiveCampaigns: 0, analytics: true, companyPanel: false, revenue: 29 },
   BUSINESS: { key: 'BUSINESS', label: 'Business', days: 30, maxListings: 200, maxPremiumListings: 30, maxCampaigns: 30, maxActiveCampaigns: 30, analytics: true, companyPanel: true, revenue: 99 },
   OWNER_FREE: { key: 'OWNER_FREE', label: 'Owner Free', days: 30, maxListings: 999999, maxPremiumListings: 999999, maxCampaigns: 99, maxActiveCampaigns: 99, analytics: true, companyPanel: true, revenue: 0 },
-  BASICO: { key: 'BASICO', label: 'Básico', days: 7, maxCampaigns: 3, maxActiveCampaigns: 1, revenue: 500 },
-  DESTACADO: { key: 'DESTACADO', label: 'Destacado', days: 15, maxCampaigns: 8, maxActiveCampaigns: 3, revenue: 1000 },
-  PREMIUM: { key: 'PREMIUM', label: 'Premium', days: 30, maxCampaigns: 20, maxActiveCampaigns: 8, revenue: 1500 },
+  BASICO: { key: 'BASICO', label: 'Básico', days: 7, maxCampaigns: 3, maxActiveCampaigns: 1, revenue: 25000 },
+  DESTACADO: { key: 'DESTACADO', label: 'Destacado', days: 15, maxCampaigns: 8, maxActiveCampaigns: 3, revenue: 65000 },
+  PREMIUM: { key: 'PREMIUM', label: 'Premium', days: 30, maxCampaigns: 20, maxActiveCampaigns: 8, revenue: 145000 },
 };
 
 export function normalizePlanKey(value) {
