@@ -61,6 +61,17 @@ function escapeIlike(value = '') {
   return String(value).replace(/[%_,]/g, ' ').trim();
 }
 
+function categoryQueryValues(value = '') {
+  const normalized = normalizeCategory(value);
+  const variants = new Set([normalized, value]);
+  if (normalized === 'Propiedad') variants.add('Propiedades');
+  if (normalized === 'Auto') variants.add('Autos');
+  if (normalized === 'Moto') variants.add('Motos');
+  if (normalized === 'Camión') variants.add('Camiones');
+  if (normalized === 'Servicio') variants.add('Servicios');
+  return [...variants].filter(Boolean);
+}
+
 async function enrichListings(supabase, items = []) {
   const userIds = [...new Set((items || []).map((item) => item?.user_id).filter(Boolean))];
   if (!userIds.length) return (items || []).map((item) => ({ ...item, images: normalizeImages(item.images) }));
@@ -123,7 +134,7 @@ export default async function handler(req, res) {
 
       let query = supabase.from('listings').select(PUBLIC_LISTING_SELECT, { count: 'exact' }).eq('status', 'active');
       if (user_id) query = query.eq('user_id', user_id);
-      if (category) query = query.eq('category', normalizeCategory(category));
+      if (category) query = query.in('category', categoryQueryValues(category));
       if (type) query = query.eq('listing_type', type);
       if (country) query = query.eq('country', country);
       if (state) query = query.eq('state', state);
