@@ -22,6 +22,10 @@ function normalizeImages(images) {
   return [];
 }
 
+function hasListingImages(images) {
+  return normalizeImages(images).some((src) => typeof src === 'string' && src.trim());
+}
+
 function normalizeBasic(value = '') {
   return String(value)
     .normalize('NFD')
@@ -114,6 +118,9 @@ export default async function handler(req, res) {
         const { data, error } = await supabase.from('listings').select(PUBLIC_LISTING_SELECT).eq('id', id).eq('status', 'active').single();
         if (error) throw error;
         const [item] = await enrichListings(supabase, [data]);
+        if (!hasListingImages(item?.images)) {
+          return res.status(404).json({ error: 'No encontrado' });
+        }
         return ok(res, toPublicListingRecord(item, { includeContact: true }));
       }
 
@@ -125,7 +132,8 @@ export default async function handler(req, res) {
       const { data, error, count } = await query;
       if (error) throw error;
       const items = await enrichListings(supabase, data || []);
-      const filtered = items.filter((item) => itemMatches(item, { category, q, country, state, city, type }));
+      const visible = items.filter((item) => hasListingImages(item.images));
+      const filtered = visible.filter((item) => itemMatches(item, { category, q, country, state, city, type }));
       return ok(res, {
         items: filtered.map((item) => toPublicListingRecord(item)),
         page: pagination.page,
@@ -192,6 +200,9 @@ export default async function handler(req, res) {
         chat_messages: Number(body.chat_messages || 0),
         slug: buildListingSlug({ title: body.title, city: body.city, category: body.category }),
       };
+      if (!hasListingImages(payload.images)) {
+        return res.status(400).json({ error: 'Para publicar un anuncio activo agregá al menos una foto.' });
+      }
       let insertResult = await supabase.from('listings').insert(payload).select('*').single();
       if (insertResult.error && String(insertResult.error.message || '').includes('listings_seo_slug_key')) {
         payload.seo_slug = uniqueSlugCandidate(payload.seo_slug || buildListingSlug(payload));
