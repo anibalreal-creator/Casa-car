@@ -249,10 +249,9 @@ export default function Publicar() {
     if (!formData.phone.trim()) missing.push(t("publish_phone", "WhatsApp"));
     if (!formData.contact_email.trim()) missing.push(t("publish_contact_email", "Email de contacto"));
     if (!formData.description.trim()) missing.push(t("publish_description", "Descripcion"));
-    if (!images.length) missing.push(t("images_label", "Fotos multiples"));
     return missing;
-  }, [formData, images.length, t]);
-  const completion = Math.max(12, Math.round(((8 - requiredMissing.length) / 8) * 100));
+  }, [formData, t]);
+  const completion = Math.max(12, Math.round(((7 - requiredMissing.length) / 7) * 100));
   const isRepublishing = Boolean(republishingId);
   const publishTitle = isRepublishing ? 'Republicar anuncio' : t("publish_title", "Publicar anuncio");
   const publishSubmitLabel = isRepublishing ? 'Republicar anuncio' : t("publish_submit", "Publicar");

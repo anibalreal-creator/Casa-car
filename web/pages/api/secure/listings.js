@@ -21,10 +21,6 @@ function normalizeImages(images) {
   return [];
 }
 
-function hasListingImages(images) {
-  return normalizeImages(images).some((src) => typeof src === 'string' && src.trim());
-}
-
 function toNumber(value, fallback = null) {
   if (value === null || value === undefined || value === '') return fallback;
   const parsed = Number(value);
@@ -167,10 +163,6 @@ export default async function handler(req, res) {
       if (!payload.title) {
         return res.status(400).json({ error: 'Falta título' });
       }
-      if (payload.status === 'active' && !hasListingImages(payload.images)) {
-        return res.status(400).json({ error: 'Para publicar un anuncio activo agregá al menos una foto.' });
-      }
-
       const clientRequestId = sanitizeClientRequestId(payload.specs_json?.client_request_id || req.body?.client_request_id);
       if (clientRequestId) {
         payload.specs_json.client_request_id = clientRequestId;
@@ -204,9 +196,6 @@ export default async function handler(req, res) {
       if (!id) return res.status(400).json({ error: 'Falta id' });
 
       const payload = normalizePayload(req.body || {}, currentUser.id);
-      if (payload.status === 'active' && !hasListingImages(payload.images)) {
-        return res.status(400).json({ error: 'Para publicar un anuncio activo agregá al menos una foto.' });
-      }
       if (payload.is_premium || payload.highlighted) {
         const premiumQuota = await enforcePremiumActivationLimit(supabase, currentUser, { excludeListingId: id });
         if (!premiumQuota.canActivatePremium) {
