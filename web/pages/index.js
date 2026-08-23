@@ -9,6 +9,7 @@ import HomeQuickSearches from '../components/HomeQuickSearches';
 import AdsSlot from '../components/AdsSlot';
 import PremiumListingsStrip from '../components/PremiumListingsStrip';
 import CategoryShowcase from '../components/CategoryShowcase';
+import SearchRequestForm from '../components/SearchRequestForm';
 import { useLang } from '../context/LanguageContext';
 import SeoHead from '../components/SeoHead';
 import SeoJsonLd from '../components/SeoJsonLd';
@@ -87,6 +88,7 @@ export default function Home() {
 
         <AdsSlot slot="home_top" title={t('ads_title_top', 'Publicidad premium para empresas')} subtitle={t('ads_subtitle_top', 'Banners destacados para inmobiliarias, concesionarias, turismo y servicios.')} />
         <PremiumListingsStrip />
+        <SearchRequestForm compact />
         <CategoryShowcase />
         <MarketplaceHomeSections />
         <HomeQuickSearches />

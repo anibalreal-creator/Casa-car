@@ -8,6 +8,7 @@ function buildNav(t) {
   return [
     { href: '/', label: t('nav_home', 'Inicio') },
     { href: '/buscar', label: t('nav_search', 'Buscar') },
+    { href: '/pedido', label: t('nav_request', 'Pedido personalizado') },
     { href: '/mis-anuncios', label: t('nav_my_ads', 'Mis anuncios') },
     { href: '/favoritos', label: t('nav_favorites', 'Favoritos') },
     { href: '/publicidad', label: t('nav_ads', 'Publicidad') },
@@ -28,7 +29,7 @@ export default function GlobalHeader() {
     { href: '/', label: t('nav_home', 'Inicio'), mark: 'I' },
     { href: '/buscar', label: t('nav_search', 'Buscar'), mark: 'B' },
     { href: publishHref, label: t('footer_publish', 'Publicar'), mark: '+' },
-    { href: '/favoritos', label: t('nav_favorites', 'Favoritos'), mark: 'F' },
+    { href: '/pedido', label: t('nav_request_short', 'Pedido'), mark: 'P' },
     { href: user ? '/mis-anuncios' : '/login', label: user ? t('nav_my_ads', 'Mis anuncios') : t('nav_login', 'Ingresar'), mark: user ? 'M' : 'E' },
   ], [t, user, publishHref]);
 

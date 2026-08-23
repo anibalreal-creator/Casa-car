@@ -50,6 +50,7 @@ export default function FooterBlueBar() {
             <div style={styles.columnTitle}>{t('footer_info', 'Informacion')}</div>
             <div style={styles.linkGrid}>
               <Link href="/publicar" style={linkStyle}>{t('footer_publish', 'Como publicar')}</Link>
+              <Link href="/pedido" style={linkStyle}>{t('footer_request', 'Pedido personalizado')}</Link>
               <Link href="/publicidad" style={linkStyle}>{t('footer_ads', 'Publicidad para empresas')}</Link>
               <Link href="/panel-empresas" style={linkStyle}>{t('footer_panel', 'Panel de empresas')}</Link>
               {user ? (
