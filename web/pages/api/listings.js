@@ -57,6 +57,10 @@ function itemMatches(item, { category, q, country, state, city, type }) {
   return true;
 }
 
+function escapeIlike(value = '') {
+  return String(value).replace(/[%_,]/g, ' ').trim();
+}
+
 async function enrichListings(supabase, items = []) {
   const userIds = [...new Set((items || []).map((item) => item?.user_id).filter(Boolean))];
   if (!userIds.length) return (items || []).map((item) => ({ ...item, images: normalizeImages(item.images) }));
@@ -119,6 +123,25 @@ export default async function handler(req, res) {
 
       let query = supabase.from('listings').select(PUBLIC_LISTING_SELECT, { count: 'exact' }).eq('status', 'active');
       if (user_id) query = query.eq('user_id', user_id);
+      if (category) query = query.eq('category', normalizeCategory(category));
+      if (type) query = query.eq('listing_type', type);
+      if (country) query = query.eq('country', country);
+      if (state) query = query.eq('state', state);
+      if (city) query = query.eq('city', city);
+      if (q) {
+        const term = escapeIlike(q);
+        if (term) {
+          query = query.or([
+            `title.ilike.%${term}%`,
+            `city.ilike.%${term}%`,
+            `state.ilike.%${term}%`,
+            `country.ilike.%${term}%`,
+            `zone.ilike.%${term}%`,
+            `address.ilike.%${term}%`,
+            `description.ilike.%${term}%`,
+          ].join(','));
+        }
+      }
       const sortDescriptor = parseSort(sort);
       query = query.order('is_premium', { ascending: false }).order('highlighted', { ascending: false }).order(sortDescriptor.column, { ascending: sortDescriptor.ascending }).range(pagination.from, pagination.to);
 
