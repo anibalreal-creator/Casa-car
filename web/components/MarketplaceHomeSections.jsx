@@ -72,7 +72,10 @@ export default function MarketplaceHomeSections({ items = EMPTY_ITEMS }) {
     async function load() {
       try {
         setLoadingRemote(true);
-        const payload = await fetchJsonCached('/api/listings?page=1&pageSize=16&sort=recent', { ttlMs: 30000 });
+        const payload = await fetchJsonCached(`/api/listings?page=1&pageSize=16&sort=recent&_ts=${Date.now()}`, {
+          ttlMs: 0,
+          fetchOptions: { cache: 'no-store' },
+        });
         const rows = Array.isArray(payload) ? payload : payload?.items || [];
         const valid = rows.filter((item) => isUuid(item?.id));
         if (alive) setRemoteItems(valid);

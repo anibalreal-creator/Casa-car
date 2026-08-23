@@ -49,7 +49,10 @@ export default function PremiumListingsStrip() {
     let cancelled = false;
     async function load() {
       try {
-        const data = await fetchJsonCached("/api/listings?page=1&pageSize=12&sort=recent", { ttlMs: 30000 });
+        const data = await fetchJsonCached(`/api/listings?page=1&pageSize=12&sort=recent&_ts=${Date.now()}`, {
+          ttlMs: 0,
+          fetchOptions: { cache: "no-store" },
+        });
         const rows = Array.isArray(data) ? data : data?.items || [];
         if (!cancelled) setItems(rows);
       } catch {

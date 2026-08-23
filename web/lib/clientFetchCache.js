@@ -10,6 +10,7 @@ export function clearClientFetchCache() {
 
 export async function fetchJsonCached(url, options = {}) {
   const { ttlMs = 20000, fetchOptions = {} } = options;
+  const shouldCache = Number(ttlMs) > 0;
 
   if (typeof window === 'undefined') {
     const response = await fetch(url, fetchOptions);
@@ -19,7 +20,7 @@ export async function fetchJsonCached(url, options = {}) {
   const key = String(url);
   const cached = memory.get(key);
   const current = now();
-  if (cached && current - cached.createdAt < ttlMs) {
+  if (shouldCache && cached && current - cached.createdAt < ttlMs) {
     return cached.promise;
   }
 
@@ -39,6 +40,8 @@ export async function fetchJsonCached(url, options = {}) {
       throw error;
     });
 
-  memory.set(key, { createdAt: current, promise });
+  if (shouldCache) {
+    memory.set(key, { createdAt: current, promise });
+  }
   return promise;
 }

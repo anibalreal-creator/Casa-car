@@ -139,7 +139,7 @@ export async function getListingServerSideProps(context, lookup = {}) {
     }
 
     if (result?.error || !result?.data) return { notFound: true };
-    res?.setHeader?.('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600');
+    res?.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     return { props: { initialItem: normalizeListingForSeo(toPublicListingRecord(result.data, { includeContact: true })) } };
   } catch {
     return { notFound: true };
@@ -173,11 +173,17 @@ export default function ListingDetail({ initialItem = null }) {
     if (!routeId) return;
     let alive = true;
     async function hydrate() {
-      const loaded = initialItem || await fetchJsonCached(`/api/listings?id=${routeId}`, { ttlMs: 30000 });
+      const loaded = initialItem || await fetchJsonCached(`/api/listings?id=${routeId}&_ts=${Date.now()}`, {
+        ttlMs: 0,
+        fetchOptions: { cache: 'no-store' },
+      });
       if (!alive) return;
       setItem(loaded || null);
       if (loaded?.category) {
-        fetchJsonCached(`/api/listings?category=${encodeURIComponent(loaded.category)}&pageSize=4`, { ttlMs: 30000 }).then((payload) => {
+        fetchJsonCached(`/api/listings?category=${encodeURIComponent(loaded.category)}&pageSize=4&_ts=${Date.now()}`, {
+          ttlMs: 0,
+          fetchOptions: { cache: 'no-store' },
+        }).then((payload) => {
           const items = Array.isArray(payload) ? payload : payload?.items || [];
           if (alive) setSimilarItems(items.filter((entry) => entry.id !== loaded.id).slice(0, 3));
         }).catch(() => setSimilarItems([]));
