@@ -105,9 +105,9 @@ export default async function handler(req, res) {
       const pagination = parsePagination(req.query || {});
       const isPublicList = !id && !user_id;
       if (isPublicList) {
-        res.setHeader('Cache-Control', 'public, max-age=20, s-maxage=60, stale-while-revalidate=120');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       } else {
-        res.setHeader('Cache-Control', 'private, max-age=10');
+        res.setHeader('Cache-Control', 'private, no-store, max-age=0');
       }
 
       if (id) {

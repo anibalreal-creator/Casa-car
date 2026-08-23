@@ -142,7 +142,7 @@ function pageFromQuery(query = {}) {
 }
 
 export async function getServerSideProps({ query, res }) {
-  res?.setHeader?.('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
+  res?.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   return { props: { initialQuery: query || {} } };
 }
 
@@ -175,9 +175,10 @@ export default function Buscar({ initialQuery = {} }) {
     if (filters.state) query.set('state', filters.state);
     if (filters.city) query.set('city', filters.city);
     if (filters.type) query.set('type', filters.type);
+    query.set('_ts', String(Date.now()));
 
     setLoading(true);
-    fetchJsonCached(`/api/listings?${query.toString()}`, { ttlMs: 12000 })
+    fetchJsonCached(`/api/listings?${query.toString()}`, { ttlMs: 0, fetchOptions: { cache: 'no-store' } })
       .then((payload) => {
         const rows = Array.isArray(payload) ? payload : payload?.items || [];
         setItems(rows);
