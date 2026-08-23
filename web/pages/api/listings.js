@@ -22,6 +22,14 @@ function normalizeImages(images) {
   return [];
 }
 
+function hasRealImage(images) {
+  return normalizeImages(images).some((image) => (
+    typeof image === 'string'
+    && image
+    && !/placeholder|casa-car-logo|data:image/i.test(image)
+  ));
+}
+
 function normalizeBasic(value = '') {
   return String(value)
     .normalize('NFD')
@@ -70,6 +78,35 @@ function categoryQueryValues(value = '') {
   if (normalized === 'Camión') variants.add('Camiones');
   if (normalized === 'Servicio') variants.add('Servicios');
   return [...variants].filter(Boolean);
+}
+
+function compareValues(a, b, ascending) {
+  const left = a ?? '';
+  const right = b ?? '';
+  if (left === right) return 0;
+  if (left === '') return ascending ? -1 : 1;
+  if (right === '') return ascending ? 1 : -1;
+  if (typeof left === 'number' || typeof right === 'number') {
+    return ascending ? Number(left) - Number(right) : Number(right) - Number(left);
+  }
+  return ascending
+    ? String(left).localeCompare(String(right))
+    : String(right).localeCompare(String(left));
+}
+
+function sortPublicListings(items = [], sortDescriptor) {
+  return [...items].sort((a, b) => {
+    const imageDiff = Number(hasRealImage(b.images)) - Number(hasRealImage(a.images));
+    if (imageDiff) return imageDiff;
+
+    const premiumDiff = Number(Boolean(b.is_premium)) - Number(Boolean(a.is_premium));
+    if (premiumDiff) return premiumDiff;
+
+    const highlightedDiff = Number(Boolean(b.highlighted || b.featured)) - Number(Boolean(a.highlighted || a.featured));
+    if (highlightedDiff) return highlightedDiff;
+
+    return compareValues(a?.[sortDescriptor.column], b?.[sortDescriptor.column], sortDescriptor.ascending);
+  });
 }
 
 async function enrichListings(supabase, items = []) {
@@ -134,7 +171,7 @@ export default async function handler(req, res) {
 
       let query = supabase.from('listings').select(PUBLIC_LISTING_SELECT, { count: 'exact' }).eq('status', 'active');
       if (user_id) query = query.eq('user_id', user_id);
-      if (category) query = query.in('category', categoryQueryValues(category));
+      if (category && normalizeCategory(category) !== 'Turismo') query = query.in('category', categoryQueryValues(category));
       if (type) query = query.eq('listing_type', type);
       if (country) query = query.eq('country', country);
       if (state) query = query.eq('state', state);
@@ -154,18 +191,22 @@ export default async function handler(req, res) {
         }
       }
       const sortDescriptor = parseSort(sort);
-      query = query.order('is_premium', { ascending: false }).order('highlighted', { ascending: false }).order(sortDescriptor.column, { ascending: sortDescriptor.ascending }).range(pagination.from, pagination.to);
+      query = query.order('created_at', { ascending: false }).limit(1000);
 
       const { data, error, count } = await query;
       if (error) throw error;
       const items = await enrichListings(supabase, data || []);
-      const filtered = items.filter((item) => itemMatches(item, { category, q, country, state, city, type }));
+      const filtered = sortPublicListings(
+        items.filter((item) => itemMatches(item, { category, q, country, state, city, type })),
+        sortDescriptor
+      );
+      const pagedItems = filtered.slice(pagination.from, pagination.to + 1);
       return ok(res, {
-        items: filtered.map((item) => toPublicListingRecord(item)),
+        items: pagedItems.map((item) => toPublicListingRecord(item)),
         page: pagination.page,
         pageSize: pagination.pageSize,
-        total: Number(count || filtered.length),
-        totalPages: Math.max(1, Math.ceil(Number(count || filtered.length) / pagination.pageSize)),
+        total: Number(filtered.length),
+        totalPages: Math.max(1, Math.ceil(Number(filtered.length) / pagination.pageSize)),
       });
     }
 

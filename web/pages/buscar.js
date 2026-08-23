@@ -266,9 +266,15 @@ export default function Buscar({ initialQuery = {} }) {
 
   const sortedFiltered = useMemo(() => {
     const q = normalizeText(filters.q || '');
+    const hasRealImage = (item) => (item?.images || []).some((image) => (
+      typeof image === 'string'
+      && image
+      && !/placeholder|casa-car-logo|data:image/i.test(image)
+    ));
     const score = (item) => {
       const hay = normalizeText([item?.title, item?.category, item?.subtype, item?.city, item?.state, item?.country, item?.description].filter(Boolean).join(' '));
       let totalScore = 0;
+      if (hasRealImage(item)) totalScore += 100;
       if (item?.is_premium) totalScore += 60;
       if (item?.highlighted || item?.featured) totalScore += 30;
       if (q && hay.includes(q)) totalScore += 25;
