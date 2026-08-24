@@ -55,9 +55,9 @@ export const SLOT_META = {
 };
 
 export const PLAN_META = {
-  basico: { key: 'basico', label: 'Básico', priceLabel: 'ARS 25.000', durationLabel: '7 días' },
-  destacado: { key: 'destacado', label: 'Destacado', priceLabel: 'ARS 65.000', durationLabel: '15 días' },
-  premium: { key: 'premium', label: 'Premium', priceLabel: 'ARS 145.000', durationLabel: '30 días' },
+  basico: { key: 'basico', label: 'Básico', priceLabel: 'ARS 500', durationLabel: '7 días' },
+  destacado: { key: 'destacado', label: 'Destacado', priceLabel: 'ARS 1.000', durationLabel: '15 días' },
+  premium: { key: 'premium', label: 'Premium', priceLabel: 'ARS 1.500', durationLabel: '30 días' },
 };
 
 const SLOT_ALIAS = {

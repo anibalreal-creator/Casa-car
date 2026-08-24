@@ -6,9 +6,9 @@ import { checkRateLimit } from '../../lib/server/rateLimit';
 import { getSupabaseServer } from '../../lib/supabaseServer';
 
 const PLAN_PRICES = {
-  basico: 25000,
-  destacado: 65000,
-  premium: 145000,
+  basico: 500,
+  destacado: 1000,
+  premium: 1500,
 };
 
 const PLAN_DAYS = {
