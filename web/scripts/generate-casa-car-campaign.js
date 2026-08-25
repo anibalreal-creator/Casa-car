@@ -96,7 +96,7 @@ function campaignSvg({ width, height, format }) {
       .reduce(
         (lines, word) => {
           const last = lines[lines.length - 1];
-          const maxChars = isStory ? 38 : format === "landscape" ? 60 : 62;
+          const maxChars = isStory ? 38 : format === "landscape" ? 60 : width <= 1000 ? 46 : 58;
           if ((last + " " + word).length > maxChars) lines.push(word);
           else lines[lines.length - 1] = last ? `${last} ${word}` : word;
           return lines;
@@ -132,6 +132,9 @@ const variants = [
   { name: "casa-car-feed-1080x1350.png", width: 1080, height: 1350, format: "feed" },
   { name: "casa-car-story-1080x1920.png", width: 1080, height: 1920, format: "story" },
   { name: "casa-car-landscape-1200x628.png", width: 1200, height: 628, format: "landscape" },
+  { name: "casa-car-pinterest-pin-1000x1500.png", width: 1000, height: 1500, format: "feed" },
+  { name: "casa-car-square-1200x1200.png", width: 1200, height: 1200, format: "feed" },
+  { name: "casa-car-facebook-cover-1640x924.png", width: 1640, height: 924, format: "landscape" },
 ];
 
 (async () => {
