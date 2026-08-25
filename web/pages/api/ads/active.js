@@ -11,14 +11,18 @@ function shape(items = []) {
 async function registerImpressions(supabase, items = []) {
   const realItems = items.filter((item) => item?.id && !String(item.id).startsWith('house-'));
   await Promise.all(
-    realItems.map((item) =>
-      supabase.rpc('increment_ad_impressions', { campaign_id_input: item.id }).catch(async () => {
+    realItems.map(async (item) => {
+      try {
+        const { error } = await supabase.rpc('increment_ad_impressions', { campaign_id_input: item.id });
+        if (!error) return;
         await supabase
           .from('ad_campaigns')
           .update({ impressions: Number(item.impressions || 0) + 1 })
           .eq('id', item.id);
-      })
-    )
+      } catch {
+        // Impression tracking must never hide a live ad.
+      }
+    })
   );
 }
 
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
     const synced = await syncCampaignStatuses(supabase, Array.isArray(data) ? data : []);
     const campaigns = sortAds(synced.map(normalizeAdRecord)).filter((item) => isCampaignLive(item) && (!normalizedSlot || item.slot_key === normalizedSlot));
     const result = campaigns.length ? campaigns : sortAds(getHouseAds().map(normalizeAdRecord)).filter((item) => !normalizedSlot || item.slot_key === normalizedSlot);
-    await registerImpressions(supabase, result);
+    registerImpressions(supabase, result).catch(() => {});
     return res.status(200).json({ ads: shape(result) });
   } catch {
     const result = sortAds(getHouseAds().map(normalizeAdRecord)).filter((item) => !normalizedSlot || item.slot_key === normalizedSlot);
