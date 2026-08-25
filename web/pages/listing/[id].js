@@ -36,6 +36,7 @@ import { isTourismListing } from '../../lib/tourism';
 import { getListingDetailHref } from '../../lib/listingRoutes';
 import { PUBLIC_LISTING_SELECT, toPublicListingRecord } from '../../lib/publicListings';
 import { getCommercialStatus } from '../../lib/listingBadges';
+import { getListingImages, getListingPrimaryImage } from '../../lib/listingImages';
 
 const SPEC_LABELS = {
   brand: 'Marca', model: 'Modelo', year: 'Año', km: 'Kilómetros', fuel: 'Combustible', transmission: 'Transmisión',
@@ -256,7 +257,13 @@ export default function ListingDetail({ initialItem = null }) {
   const seoLocation = [item.city, item.country].filter(Boolean).join(', ');
   const seoTitle = `${item.title || 'Anuncio'}${seoLocation ? ` en ${seoLocation}` : ''} | Casa-Car`;
   const seoDescription = buildListingDescription(item);
-  const seoImage = item.images?.[0] || '/casa-car-logo.png';
+  const galleryImages = getListingImages(item);
+  const primaryImage = getListingPrimaryImage(item);
+  const orderedImages = [
+    primaryImage,
+    ...galleryImages.filter((image) => image && image !== primaryImage),
+  ].filter(Boolean);
+  const seoImage = primaryImage || '/casa-car-logo.png';
   const seller = {
     display_name: item.seller_name,
     verified: item.seller_verified || item.verified,
@@ -279,7 +286,7 @@ export default function ListingDetail({ initialItem = null }) {
 
       <div className="cc-listing-detail-shell" style={{maxWidth:1200,width:'100%',margin:'0 auto',padding:20,display:'grid',gap:24,boxSizing:'border-box',minWidth:0,overflow:'hidden'}}>
         <Breadcrumbs items={breadcrumbs} />
-        <ImageGallery images={item.images || []} item={item} />
+        <ImageGallery images={orderedImages} item={item} />
 
         <section className="cc-detail-hero" style={styles.heroCard}>
           <div>
@@ -368,7 +375,7 @@ export default function ListingDetail({ initialItem = null }) {
             <div style={styles.similarGrid}>
               {similarItems.map((similar) => (
                 <a key={similar.id} href={getListingDetailHref(similar)} style={styles.similarCard}>
-                  <img src={similar.images?.[0] || 'https://picsum.photos/seed/casacar/900/600'} alt={similar.title} style={styles.similarImg} />
+                  <img src={getListingPrimaryImage(similar)} alt={similar.title} style={styles.similarImg} />
                   <strong>{similar.title}</strong>
                   <span>{similar.currency || 'USD'} {Number(similar.price || 0).toLocaleString('es-AR')}</span>
                 </a>
@@ -469,5 +476,5 @@ const styles = {
   submit:{background:'#2563eb',color:'#fff',border:'none',borderRadius:12,padding:'12px 14px',fontWeight:900,cursor:'pointer'},
   similarGrid:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:14},
   similarCard:{display:'grid',gap:10,textDecoration:'none',color:'#111827',border:'1px solid #e5e7eb',borderRadius:14,padding:12},
-  similarImg:{width:'100%',height:160,objectFit:'cover',borderRadius:12,background:'#eef2f7'}
+  similarImg:{width:'100%',height:160,objectFit:'contain',borderRadius:12,background:'#f8fafc'}
 };

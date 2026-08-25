@@ -165,7 +165,7 @@ export default function LoginPage() {
   function getSubmitLabel() {
     if (loading) return t("login_processing", "Procesando...");
     if (modo === "registro") return t("signup_submit", "Crear cuenta");
-    if (modo === "recuperar") return "Enviar código";
+    if (modo === "recuperar") return "Enviar recuperación";
     if (modo === "reset") return "Guardar nueva contraseña";
     return t("login_submit", "Entrar");
   }
@@ -247,7 +247,7 @@ export default function LoginPage() {
         ) : null}
         {modo === "reset" ? (
           <p style={styles.help}>
-            Ingresá el código recibido por email. Si abriste el enlace del correo, el código puede no ser necesario.
+            Ingresá el código o abrí el enlace recibido por email. Si no llega, usá la recuperación asistida por WhatsApp.
           </p>
         ) : null}
 

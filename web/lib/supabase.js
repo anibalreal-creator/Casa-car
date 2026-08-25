@@ -1,15 +1,27 @@
+import { createClient } from "@supabase/supabase-js";
+import { assertSupabaseBrowserEnv } from "./runtimeConfig";
 
-import { createClient } from "@supabase/supabase-js"
+let client = null;
 
-export const supabase=createClient(
-process.env.NEXT_PUBLIC_SUPABASE_URL,
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-{
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: "pkce",
-  },
+function getSupabaseClient() {
+  if (client) return client;
+  const { url, anonKey } = assertSupabaseBrowserEnv();
+  client = createClient(url, anonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      flowType: "pkce",
+    },
+  });
+  return client;
 }
-)
+
+export const supabase = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      return getSupabaseClient()[prop];
+    },
+  }
+);

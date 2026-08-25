@@ -4,77 +4,8 @@ import { useLang } from "../context/LanguageContext";
 import { getAmenityLabels, getTourismSpecs, isTourismListing, tourismText } from "../lib/tourism";
 import { getListingDetailHref } from "../lib/listingRoutes";
 import { getCommercialStatus, isExampleListing } from "../lib/listingBadges";
+import { getListingPrimaryImage } from "../lib/listingImages";
 import SafeListingImage from "./SafeListingImage";
-
-function safeJsonArray(value) {
-  if (!value) return [];
-  if (Array.isArray(value)) return value;
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-function normalizeArrayImageEntry(entry) {
-  if (!entry) return "";
-  if (typeof entry === "string") return entry;
-  if (typeof entry === "object") {
-    return (
-      entry.url ||
-      entry.src ||
-      entry.path ||
-      entry.secure_url ||
-      entry.publicUrl ||
-      ""
-    );
-  }
-  return "";
-}
-
-function getImage(item) {
-  if (!item) return "/placeholder-property.jpg";
-
-  const direct = [
-    item.image_url,
-    item.imageUrl,
-    item.image,
-    item.cover_image,
-    item.coverImage,
-    item.cover,
-    item.main_image,
-    item.mainImage,
-    item.thumbnail,
-    item.thumbnail_url,
-    item.photo_url,
-    item.photo,
-    item.banner,
-    item.hero_image,
-  ].find(Boolean);
-
-  if (direct) return direct;
-
-  const arrays = [
-    safeJsonArray(item.images),
-    safeJsonArray(item.photos),
-    safeJsonArray(item.gallery),
-    safeJsonArray(item.media),
-    safeJsonArray(item.files),
-  ];
-
-  for (const arr of arrays) {
-    if (Array.isArray(arr) && arr.length > 0) {
-      const first = normalizeArrayImageEntry(arr[0]);
-      if (first) return first;
-    }
-  }
-
-  return "/placeholder-property.jpg";
-}
 
 function formatPrice(value, currency, t) {
   if (value === null || value === undefined || value === "") return t("card_price_on_request", "Consultar");
@@ -89,7 +20,7 @@ export default function ListingCard(props) {
   const isFavorite = Boolean(props?.isFavorite);
   const onToggleFavorite = props?.onToggleFavorite;
 
-  const image = getImage(item);
+  const image = getListingPrimaryImage(item);
   const title = item.title || item.name || item.titulo || t("card_no_title", "Publicación");
   const location =
     item.location ||

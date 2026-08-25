@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { supabase } from "../../lib/supabase"
 import { getListingEditHref } from "../../lib/listingRoutes"
+import { getListingImages, getListingPrimaryImage } from "../../lib/listingImages"
 import SafeListingImage from "../../components/SafeListingImage"
 
 export default function Anuncio() {
@@ -22,8 +23,16 @@ export default function Anuncio() {
     async function cargar() {
       const res = await fetch(`/api/listings?id=${id}`, { cache: "no-store" })
       const data = await res.json()
-      setItem(res.ok ? data : null)
-      setFotoActiva(0)
+      if (res.ok && data) {
+        const images = getListingImages(data)
+        const primary = getListingPrimaryImage(data)
+        const primaryIndex = images.findIndex((image) => image === primary)
+        setItem(data)
+        setFotoActiva(primaryIndex >= 0 ? primaryIndex : 0)
+      } else {
+        setItem(null)
+        setFotoActiva(0)
+      }
     }
     cargar()
   }, [id])
@@ -57,12 +66,13 @@ export default function Anuncio() {
     )
   }
 
-  const fotos = Array.isArray(item.photos) ? item.photos.filter(Boolean) : []
+  const fotos = getListingImages(item).filter(Boolean)
   const fotoPrincipal = fotos.length > 0 ? obtenerImagen(fotos[fotoActiva]) : null
-  const telefono = item?.telefono ? String(item.telefono).replace(/\D/g, "") : null
-  const tipo = item?.tipo || ""
-  const subtipo = item?.subtipo || ""
-  const operacion = item?.operacion || ""
+  const telefonoRaw = item?.telefono || item?.phone || item?.whatsapp || item?.contact_phone || ""
+  const telefono = telefonoRaw ? String(telefonoRaw).replace(/\D/g, "") : null
+  const tipo = item?.tipo || item?.category || ""
+  const subtipo = item?.subtipo || item?.subtype || ""
+  const operacion = item?.operacion || item?.listing_type || ""
   const ciudad = item?.ciudad || item?.city || ""
   const esMio = Boolean(session?.user?.id && item.user_id === session.user.id)
 
@@ -102,7 +112,12 @@ export default function Anuncio() {
 
           {fotoPrincipal ? (
             <div>
-              <SafeListingImage src={fotoPrincipal} alt={item?.titulo || item?.title || "Anuncio"} style={styles.mainImage} />
+              <SafeListingImage
+                src={fotoPrincipal}
+                alt={item?.titulo || item?.title || "Anuncio"}
+                style={styles.mainImage}
+                imageStyle={{ objectFit: "contain", objectPosition: "center center" }}
+              />
               {fotos.length > 1 && (
                 <div style={styles.gallery}>
                   {fotos.map((foto, i) => {

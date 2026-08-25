@@ -61,22 +61,8 @@ export default async function handler(req, res) {
     const rawFolder = String(req.body?.folder || req.body?.purpose || 'publicar').toLowerCase();
     const folder = ['ads', 'publicar', 'listings'].includes(rawFolder) ? rawFolder : 'publicar';
     const path = `${folder}/${user.id}/${Date.now()}-${randomUUID()}.${ext}`;
-    let error = null;
-
-    try {
-      const supabase = getSupabaseServer();
-      ({ error } = await uploadToListingsBucket(supabase, path, buffer, contentType));
-    } catch (serverError) {
-      error = serverError;
-    }
-
-    if (error && (isPolicyError(error) || isServerClientConfigError(error))) {
-      const token = readBearer(req);
-      if (token) {
-        const userSupabase = getSupabaseUserClient(token);
-        ({ error } = await uploadToListingsBucket(userSupabase, path, buffer, contentType));
-      }
-    }
+    const supabase = getSupabaseServer();
+    const { error } = await uploadToListingsBucket(supabase, path, buffer, contentType);
 
     if (error) throw error;
 
@@ -84,8 +70,11 @@ export default async function handler(req, res) {
     const { data } = publicClient.storage.from('listings').getPublicUrl(path);
     return res.status(201).json({ path, publicUrl: data?.publicUrl || '' });
   } catch (error) {
+    if (isServerClientConfigError(error)) {
+      return res.status(500).json({ error: 'Falta configurar correctamente la clave segura de Supabase en el servidor.' });
+    }
     if (isPolicyError(error)) {
-      return res.status(403).json({ error: 'No se pudo subir la imagen por permisos de seguridad. Inicia sesion de nuevo y reintenta.' });
+      return res.status(403).json({ error: 'No se pudo subir la imagen por permisos de seguridad del bucket listings.' });
     }
     return res.status(500).json({ error: error.message || 'No se pudo subir la imagen' });
   }
