@@ -31,7 +31,7 @@ export function isEmailRateLimitError(error) {
 
 export function getAuthErrorMessage(error) {
   if (isEmailRateLimitError(error)) {
-    return "El envio de correos de verificacion esta pausado por unos minutos por seguridad. Espera un momento antes de volver a intentar o ingresa con Google.";
+    return "El envio de correos esta pausado por Supabase. La creacion de cuentas ya no usa verificacion por email; intenta registrarte de nuevo o ingresa con Google.";
   }
 
   const message = String(error?.message || "").trim();
@@ -63,23 +63,35 @@ export async function signUpWithEmail(supabaseClient, { email, password }) {
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
   if (!normalizedEmail || !password) throw new Error("Completa email y contraseña.");
 
-  assertEmailSendCooldown("signup", normalizedEmail);
+  const response = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: normalizedEmail,
+      password,
+    }),
+  });
 
-  const { data, error } = await supabaseClient.auth.signUp({
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error || "No se pudo crear la cuenta.");
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: normalizedEmail,
     password,
-    options: {
-      emailRedirectTo: getAuthRedirectUrl(),
-    },
   });
 
   if (error) {
-    if (isEmailRateLimitError(error)) rememberEmailSend("signup", normalizedEmail);
     throw new Error(getAuthErrorMessage(error));
   }
 
-  rememberEmailSend("signup", normalizedEmail);
-  return data;
+  return {
+    ...data,
+    signup: payload,
+  };
 }
 
 export async function resendSignupConfirmationEmail(supabaseClient, email) {

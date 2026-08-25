@@ -78,7 +78,8 @@ export default function Dashboard() {
     setMsg("");
     try {
       await signUpWithEmail(supabase, { email, password: pass });
-      setMsg("✅ Cuenta creada. Te enviamos un correo de confirmación. Revisá también Spam/Correo no deseado.");
+      setMsg("Cuenta creada correctamente. Ya podes usar Casa-Car.");
+      window.location.reload();
     } catch (e) {
       setMsg(`❌ ${getAuthErrorMessage(e)}`);
     }
