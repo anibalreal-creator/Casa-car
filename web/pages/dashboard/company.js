@@ -128,6 +128,15 @@ export default function CompanyDashboardPage() {
         <p style={styles.subtitle}>{t('dashboard_company_subtitle', 'Control rapido para campanas, banners, cobros y slots publicitarios.')}</p>
 
         {!user ? <div style={styles.notice}>{t('signin_notice_campaigns', 'Inicia sesion para ver tus campanas publicitarias.')}</div> : null}
+        {ownerMode ? (
+          <section style={styles.ownerShortcut}>
+            <div>
+              <strong>Panel de dueño</strong>
+              <span> Cuentas creadas, visitas diarias, usuarios online, ingresos y actividad general.</span>
+            </div>
+            <a href="/dashboard/saas" style={styles.ownerShortcutButton}>Ver clientes y visitas</a>
+          </section>
+        ) : null}
 
         <section style={styles.statsGrid}>
           <StatCard label={t('campaigns', 'Campanas')} value={loading ? '...' : stats.total} />
@@ -221,6 +230,8 @@ const styles = {
   title: { fontSize: 44, margin: '8px 0 0 0' },
   subtitle: { margin: 0, color: '#64748b', fontSize: 18 },
   notice: { background: '#fff7ed', border: '1px solid #fdba74', color: '#9a3412', padding: 16, borderRadius: 16, fontWeight: 800 },
+  ownerShortcut: { background: '#eef2ff', border: '1px solid #c7d2fe', color: '#1e1b4b', padding: 16, borderRadius: 18, fontWeight: 700, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' },
+  ownerShortcutButton: { textDecoration: 'none', background: '#1d4ed8', color: '#fff', padding: '12px 16px', borderRadius: 12, fontWeight: 900, boxShadow: '0 10px 22px rgba(29,78,216,.2)' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 },
   planGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginTop: 16 },
   statCard: { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 18, padding: 18, display: 'grid', gap: 8 },

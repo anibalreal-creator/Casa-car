@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { supabaseBrowser } from '../lib/supabaseBrowser';
 import { useLang } from '../context/LanguageContext';
 import { clearFavoriteState, setFavoriteUser } from '../lib/favorites';
+import { isOwnerEmail } from '../lib/owner';
 
-function buildNav(t) {
-  return [
+function buildNav(t, isOwner = false) {
+  const nav = [
     { href: '/', label: t('nav_home', 'Inicio') },
     { href: '/buscar', label: t('nav_search', 'Buscar') },
     { href: '/pedido', label: t('nav_request', 'Pedido personalizado') },
+    ...(isOwner ? [{ href: '/dashboard/saas', label: 'Clientes' }] : []),
     { href: '/mis-anuncios', label: t('nav_my_ads', 'Mis anuncios') },
     { href: '/favoritos', label: t('nav_favorites', 'Favoritos') },
     { href: '/publicidad', label: t('nav_ads', 'Publicidad') },
@@ -17,21 +19,23 @@ function buildNav(t) {
     { href: '/panel-empresas', label: t('nav_company_panel', 'Panel empresas') },
     { href: '/dashboard/company', label: t('nav_company_dashboard', 'Dashboard empresa') },
   ];
+  return nav;
 }
 
 export default function GlobalHeader() {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { language, setLanguage, t, languages } = useLang();
-  const navItems = useMemo(() => buildNav(t), [t]);
+  const isOwner = isOwnerEmail(user?.email || '');
+  const navItems = useMemo(() => buildNav(t, isOwner), [t, isOwner]);
   const publishHref = user ? '/publicar' : '/login?next=/publicar';
   const mobileBottomItems = useMemo(() => [
     { href: '/', label: t('nav_home', 'Inicio'), mark: 'I' },
     { href: '/buscar', label: t('nav_search', 'Buscar'), mark: 'B' },
     { href: publishHref, label: t('footer_publish', 'Publicar'), mark: '+' },
-    { href: '/pedido', label: t('nav_request_short', 'Pedido'), mark: 'P' },
+    isOwner ? { href: '/dashboard/saas', label: 'Clientes', mark: 'C' } : { href: '/pedido', label: t('nav_request_short', 'Pedido'), mark: 'P' },
     { href: user ? '/mis-anuncios' : '/login', label: user ? t('nav_my_ads', 'Mis anuncios') : t('nav_login', 'Ingresar'), mark: user ? 'M' : 'E' },
-  ], [t, user, publishHref]);
+  ], [t, user, publishHref, isOwner]);
 
   useEffect(() => {
     let mounted = true;

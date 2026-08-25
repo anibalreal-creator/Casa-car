@@ -4,6 +4,7 @@ import Link from "next/link"
 import { supabase } from "../lib/supabase"
 import {
   getAuthErrorMessage,
+  resendSignupConfirmationEmail,
   sendPasswordRecoveryEmail,
   signInWithEmail,
   signUpWithEmail,
@@ -38,6 +39,7 @@ export default function LoginPage() {
   const [repeatPassword, setRepeatPassword] = useState("")
   const [recoveryCode, setRecoveryCode] = useState("")
   const [recoveryVerified, setRecoveryVerified] = useState(false)
+  const [lastSignupEmail, setLastSignupEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [notice, setNotice] = useState("")
   const nextPath = safeNextPath(router.query.next);
@@ -91,6 +93,7 @@ export default function LoginPage() {
           email,
           password
         })
+        setLastSignupEmail(String(email || "").trim().toLowerCase());
         setNotice(t("signup_created", "Cuenta creada. Te enviamos un correo de confirmacion. Revisa tambien Spam/Correo no deseado."));
       } else if (modo === "recuperar") {
         await sendPasswordRecoveryEmail(supabase, email);
@@ -120,6 +123,22 @@ export default function LoginPage() {
       setNotice(err?.message || getAuthErrorMessage(err) || t("auth_error", "Error de autenticacion"))
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function resendVerification() {
+    const targetEmail = lastSignupEmail || email;
+    setLoading(true);
+    setNotice("");
+
+    try {
+      await resendSignupConfirmationEmail(supabase, targetEmail);
+      setLastSignupEmail(String(targetEmail || "").trim().toLowerCase());
+      setNotice("Te reenviamos el correo de verificacion. Revisa Bandeja de entrada, Spam y Promociones.");
+    } catch (err) {
+      setNotice(err?.message || getAuthErrorMessage(err) || "No se pudo reenviar la verificacion.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -237,6 +256,16 @@ export default function LoginPage() {
           <p style={styles.help}>
             El correo puede tardar unos minutos. Si no llega, revisa Spam y evita reenviar muchas veces seguidas.
           </p>
+        ) : null}
+        {(modo === "registro" || lastSignupEmail) ? (
+          <button
+            type="button"
+            onClick={resendVerification}
+            style={styles.secondaryBtn}
+            disabled={loading || !(lastSignupEmail || email)}
+          >
+            Reenviar correo de verificacion
+          </button>
         ) : null}
         {modo === "recuperar" ? (
           <p style={styles.help}>

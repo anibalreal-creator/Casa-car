@@ -1,4 +1,4 @@
-const EMAIL_SEND_COOLDOWN_MS = 60 * 1000;
+const EMAIL_SEND_COOLDOWN_MS = 5 * 60 * 1000;
 
 function cleanEmail(email) {
   return String(email || "").trim().toLowerCase();
@@ -31,7 +31,7 @@ export function isEmailRateLimitError(error) {
 
 export function getAuthErrorMessage(error) {
   if (isEmailRateLimitError(error)) {
-    return "Supabase limito el envio de emails por seguridad. Espera unos minutos y no sigas reintentando. Para produccion hay que configurar SMTP propio en Supabase Auth.";
+    return "El envio de correos de verificacion esta pausado por unos minutos por seguridad. Espera un momento antes de volver a intentar o ingresa con Google.";
   }
 
   const message = String(error?.message || "").trim();
@@ -68,6 +68,30 @@ export async function signUpWithEmail(supabaseClient, { email, password }) {
   const { data, error } = await supabaseClient.auth.signUp({
     email: normalizedEmail,
     password,
+    options: {
+      emailRedirectTo: getAuthRedirectUrl(),
+    },
+  });
+
+  if (error) {
+    if (isEmailRateLimitError(error)) rememberEmailSend("signup", normalizedEmail);
+    throw new Error(getAuthErrorMessage(error));
+  }
+
+  rememberEmailSend("signup", normalizedEmail);
+  return data;
+}
+
+export async function resendSignupConfirmationEmail(supabaseClient, email) {
+  const normalizedEmail = cleanEmail(email);
+  if (!supabaseClient) throw new Error("Supabase no esta configurado.");
+  if (!normalizedEmail) throw new Error("Completa el email para reenviar la verificacion.");
+
+  assertEmailSendCooldown("signup", normalizedEmail);
+
+  const { data, error } = await supabaseClient.auth.resend({
+    type: "signup",
+    email: normalizedEmail,
     options: {
       emailRedirectTo: getAuthRedirectUrl(),
     },

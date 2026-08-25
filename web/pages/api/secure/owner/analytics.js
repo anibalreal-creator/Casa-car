@@ -34,6 +34,68 @@ function buildMonthKeys(now, length = 12) {
   }).reverse();
 }
 
+function countUserDateField(users, field, now) {
+  const todayKey = dateKey(now);
+  const currentMonthKey = monthKey(now);
+  const sevenDaysAgo = now.getTime() - 6 * MS_PER_DAY;
+  const thirtyDaysAgo = now.getTime() - 29 * MS_PER_DAY;
+  let today = 0;
+  let thisMonth = 0;
+  let last7Days = 0;
+  let last30Days = 0;
+
+  users.forEach((authUser) => {
+    const raw = authUser?.[field];
+    const date = raw ? new Date(raw) : null;
+    if (!date || Number.isNaN(date.getTime())) return;
+    const day = dateKey(date);
+    const month = day.slice(0, 7);
+    const time = date.getTime();
+    if (day === todayKey) today += 1;
+    if (month === currentMonthKey) thisMonth += 1;
+    if (time >= sevenDaysAgo) last7Days += 1;
+    if (time >= thirtyDaysAgo) last30Days += 1;
+  });
+
+  return { today, thisMonth, last7Days, last30Days };
+}
+
+function buildPresenceSeries(rows = [], now) {
+  const dayKeys = buildDayKeys(now, 30);
+  const monthKeys = buildMonthKeys(now, 12);
+  const dailyVisitors = Object.fromEntries(dayKeys.map((key) => [key, new Set()]));
+  const dailyUsers = Object.fromEntries(dayKeys.map((key) => [key, new Set()]));
+  const monthlyVisitors = Object.fromEntries(monthKeys.map((key) => [key, new Set()]));
+  const monthlyUsers = Object.fromEntries(monthKeys.map((key) => [key, new Set()]));
+
+  rows.forEach((row) => {
+    const rawDate = row?.last_seen_at;
+    if (!rawDate) return;
+    const day = dateKey(rawDate);
+    const month = day.slice(0, 7);
+    const visitorKey = row?.session_key || row?.user_id;
+    const userKey = row?.user_id;
+
+    if (visitorKey && dailyVisitors[day]) dailyVisitors[day].add(visitorKey);
+    if (userKey && dailyUsers[day]) dailyUsers[day].add(userKey);
+    if (visitorKey && monthlyVisitors[month]) monthlyVisitors[month].add(visitorKey);
+    if (userKey && monthlyUsers[month]) monthlyUsers[month].add(userKey);
+  });
+
+  return {
+    dailyLast30: dayKeys.map((day) => ({
+      day,
+      visitors: dailyVisitors[day]?.size || 0,
+      users: dailyUsers[day]?.size || 0,
+    })),
+    monthlyLast12: monthKeys.map((month) => ({
+      month,
+      visitors: monthlyVisitors[month]?.size || 0,
+      users: monthlyUsers[month]?.size || 0,
+    })),
+  };
+}
+
 function maskEmail(email = '') {
   const [name, domain] = String(email || '').split('@');
   if (!name || !domain) return '';
@@ -108,6 +170,7 @@ async function getRegistrationStats(supabase, now) {
     thisMonth,
     last7Days,
     last30Days,
+    logins: countUserDateField(users, 'last_sign_in_at', now),
     dailyLast30: dayKeys.map((day) => ({ day, count: dailyMap[day] || 0 })),
     monthlyLast12: monthKeys.map((month) => ({ month, count: monthlyMap[month] || 0 })),
     recent,
@@ -128,22 +191,36 @@ export default async function handler(req, res) {
     const onlineFrom = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
     const dayStart = new Date(now);
     dayStart.setUTCHours(0, 0, 0, 0);
+    const weekStart = new Date(now.getTime() - 6 * MS_PER_DAY).toISOString();
+    const monthStart = new Date(now.getTime() - 29 * MS_PER_DAY).toISOString();
+    const yearStart = new Date(now.getTime() - 364 * MS_PER_DAY).toISOString();
 
-    const [onlineRes, dailyRes, registrationStats] = await Promise.all([
+    const [onlineRes, dailyRes, weeklyRes, monthlyRes, yearlyRes, registrationStats] = await Promise.all([
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', onlineFrom),
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', dayStart.toISOString()),
+      supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', weekStart),
+      supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', monthStart),
+      supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', yearStart),
       getRegistrationStats(supabase, now),
     ]);
 
     const onlineRows = onlineRes.data || [];
     const dailyRows = dailyRes.data || [];
+    const weeklyRows = weeklyRes.data || [];
+    const monthlyRows = monthlyRes.data || [];
+    const yearlyRows = yearlyRes.data || [];
     const unique = (rows, mapper) => Array.from(new Set(rows.map(mapper).filter(Boolean)));
+    const visits = buildPresenceSeries(yearlyRows, now);
 
     const stats = {
       online_now: unique(onlineRows, (row) => row.user_id || row.session_key).length,
       authenticated_online_now: unique(onlineRows.filter((row) => row.is_authenticated), (row) => row.user_id || row.session_key).length,
       unique_visitors_today: unique(dailyRows, (row) => row.session_key).length,
       unique_users_today: unique(dailyRows.filter((row) => row.user_id), (row) => row.user_id).length,
+      unique_visitors_last7_days: unique(weeklyRows, (row) => row.session_key).length,
+      unique_visitors_last30_days: unique(monthlyRows, (row) => row.session_key).length,
+      unique_users_last7_days: unique(weeklyRows.filter((row) => row.user_id), (row) => row.user_id).length,
+      unique_users_last30_days: unique(monthlyRows.filter((row) => row.user_id), (row) => row.user_id).length,
       heartbeat_window_minutes: 5,
     };
 
@@ -155,8 +232,15 @@ export default async function handler(req, res) {
       onlineAuthenticatedNow: stats.authenticated_online_now,
       dailyUniqueVisitors: stats.unique_visitors_today,
       dailyUniqueUsers: stats.unique_users_today,
+      weeklyUniqueVisitors: stats.unique_visitors_last7_days,
+      monthlyUniqueVisitors: stats.unique_visitors_last30_days,
+      weeklyUniqueUsers: stats.unique_users_last7_days,
+      monthlyUniqueUsers: stats.unique_users_last30_days,
+      customerLogins: registrationStats.logins,
       registrations: registrationStats,
+      visits,
       newUsersToday: registrationStats.today,
+      newUsersLast7Days: registrationStats.last7Days,
       newUsersThisMonth: registrationStats.thisMonth,
       totalRegisteredUsers: registrationStats.total,
     });

@@ -24,8 +24,27 @@ Referencias oficiales:
    - Redirect URLs: `https://www.casa-car.com/auth/callback`
 7. En `Authentication` > `Rate Limits`, subir el limite de envio de emails segun el SMTP contratado.
 
+## Configuracion por API
+
+Tambien se puede aplicar por API si estan disponibles estos datos:
+
+- `SUPABASE_ACCESS_TOKEN`: token personal de Supabase Dashboard.
+- `SUPABASE_PROJECT_REF`: `cdmlyrjccdxakvbmbbpp`.
+- `SMTP_ADMIN_EMAIL`: remitente, por ejemplo `no-reply@casa-car.com`.
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_SENDER_NAME`: por ejemplo `Casa-Car`.
+
+Con esos valores cargados como variables de entorno, ejecutar:
+
+```bash
+node scripts/configure-supabase-smtp.mjs
+```
+
 ## Cambios de app
 
 - Registro y magic link ahora usan `emailRedirectTo` hacia `/auth/callback`.
-- La UI evita reintentos inmediatos por 60 segundos para no quemar el rate limit.
-- El error de limite se muestra con una explicacion clara.
+- La UI evita reintentos inmediatos por 5 minutos para no quemar el rate limit.
+- El error de limite se muestra con una explicacion clara para usuarios, sin detalles tecnicos.
