@@ -128,3 +128,29 @@ Antes de pagar hay que definir:
 - Si se segmenta solo Santa Fe o tambien otras ciudades.
 
 Recomendacion inicial: probar 7 dias con presupuesto bajo, medir registros/anuncios creados y despues duplicar lo que funcione.
+
+## Configuracion Elegida Para Lanzamiento Bajo Presupuesto
+
+Datos de verificacion y contacto:
+
+- Telefono: 543424073042
+- Email: anibalreal@hotmail.com
+
+Campania inicial recomendada:
+
+- Canal principal: Meta Ads, Facebook e Instagram.
+- Objetivo: Trafico a sitio web.
+- Destino: https://www.casa-car.com
+- Zona inicial: Santa Fe capital y alrededores.
+- Duracion: 7 dias.
+- Presupuesto bajo sugerido: ARS 3.000 por dia, tope total ARS 21.000.
+- Publico: inmobiliarias, corredores, martilleros, concesionarias, vendedores de autos y emprendedores locales.
+- Creatividades: usar primero `casa-car-feed-1080x1350.png`, `casa-car-story-1080x1920.png` y `casa-car-landscape-1200x628.png`.
+
+Pinterest y otros canales:
+
+- Pinterest: publicar pin organico con `casa-car-pinterest-pin-1000x1500.png` y link a https://www.casa-car.com.
+- LinkedIn: publicar organico orientado a inmobiliarias, corredores y concesionarias.
+- Google Perfil de Empresa: publicar novedad semanal con link a la home.
+
+No confirmar pagos automaticamente sin revisar el monto final en pantalla. Si la plataforma pide codigo por SMS o email, usar los datos anteriores y completar el codigo recibido por el dueno.
