@@ -4,6 +4,7 @@ import Link from "next/link"
 import { supabase } from "../lib/supabase"
 import {
   getAuthErrorMessage,
+  getPasswordRecoveryWhatsAppUrl,
   sendPasswordRecoveryEmail,
   signInWithEmail,
   signUpWithEmail,
@@ -96,7 +97,7 @@ export default function LoginPage() {
       } else if (modo === "recuperar") {
         await sendPasswordRecoveryEmail(supabase, email);
         setModo("reset");
-        setNotice("Te enviamos un correo con código de verificación y enlace de recuperación. Revisá también Spam/Correo no deseado.");
+        setNotice("Si el proveedor de correo lo permite, vas a recibir un enlace seguro para cambiar la contraseña. Revisá también Spam/Correo no deseado.");
       } else if (modo === "reset") {
         validateRepeatedPassword();
         if (!recoveryVerified) {
@@ -241,7 +242,7 @@ export default function LoginPage() {
         ) : null}
         {modo === "recuperar" ? (
           <p style={styles.help}>
-            Te enviaremos un código de verificación y un enlace seguro. No reenvíes muchas veces seguidas para evitar el límite de Supabase.
+            Si el email no llega, no sigas reintentando: Supabase puede bloquear los envíos. Usá la recuperación asistida por WhatsApp.
           </p>
         ) : null}
         {modo === "reset" ? (
@@ -280,6 +281,17 @@ export default function LoginPage() {
           >
             Ya tengo código
           </button>
+        ) : null}
+
+        {modo === "recuperar" || modo === "reset" ? (
+          <a
+            href={getPasswordRecoveryWhatsAppUrl(email)}
+            target="_blank"
+            rel="noreferrer"
+            style={styles.whatsappRecovery}
+          >
+            Recuperar por WhatsApp
+          </a>
         ) : null}
 
         <button
@@ -390,6 +402,21 @@ const styles = {
     padding: 12,
     cursor: "pointer",
     fontWeight: 700
+  },
+  whatsappRecovery: {
+    width: "100%",
+    marginTop: 12,
+    border: "none",
+    background: "#22c55e",
+    color: "#fff",
+    borderRadius: 12,
+    padding: 13,
+    cursor: "pointer",
+    fontWeight: 800,
+    textDecoration: "none",
+    display: "block",
+    textAlign: "center",
+    boxSizing: "border-box"
   },
   help: {
     color: "#4b5563",

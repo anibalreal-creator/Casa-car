@@ -1,4 +1,5 @@
 const EMAIL_SEND_COOLDOWN_MS = 5 * 60 * 1000;
+export const PASSWORD_RECOVERY_WHATSAPP_NUMBER = "5493424073042";
 
 function cleanEmail(email) {
   return String(email || "").trim().toLowerCase();
@@ -31,7 +32,7 @@ export function isEmailRateLimitError(error) {
 
 export function getAuthErrorMessage(error) {
   if (isEmailRateLimitError(error)) {
-    return "El envio de correos esta pausado por Supabase. La creacion de cuentas ya no usa verificacion por email; intenta registrarte de nuevo o ingresa con Google.";
+    return "Supabase limito el envio de correos. Crear cuenta ya no necesita verificacion por email; para recuperar contraseña usa la recuperacion asistida por WhatsApp.";
   }
 
   const message = String(error?.message || "").trim();
@@ -94,6 +95,15 @@ export async function signUpWithEmail(supabaseClient, { email, password }) {
   };
 }
 
+export function getPasswordRecoveryWhatsAppUrl(email) {
+  const normalizedEmail = cleanEmail(email);
+  const message = normalizedEmail
+    ? `Hola, necesito recuperar mi contraseña de Casa-Car. Mi email de cuenta es ${normalizedEmail}.`
+    : "Hola, necesito recuperar mi contraseña de Casa-Car.";
+
+  return `https://wa.me/${PASSWORD_RECOVERY_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
 export async function resendSignupConfirmationEmail(supabaseClient, email) {
   const normalizedEmail = cleanEmail(email);
   if (!supabaseClient) throw new Error("Supabase no esta configurado.");
@@ -131,7 +141,11 @@ export async function sendPasswordRecoveryEmail(supabaseClient, email) {
 
   if (error) {
     if (isEmailRateLimitError(error)) rememberEmailSend("password-recovery", normalizedEmail);
-    throw new Error(getAuthErrorMessage(error));
+    throw new Error(
+      isEmailRateLimitError(error)
+        ? "Supabase no pudo enviar el correo de recuperacion por limite del proveedor. Usa el boton de WhatsApp y verificamos la cuenta manualmente."
+        : getAuthErrorMessage(error)
+    );
   }
 
   rememberEmailSend("password-recovery", normalizedEmail);
