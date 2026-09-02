@@ -96,6 +96,39 @@ function buildPresenceSeries(rows = [], now) {
   };
 }
 
+function buildSearchStats(rows = [], now) {
+  const dayKeys = buildDayKeys(now, 30);
+  const monthKeys = buildMonthKeys(now, 12);
+  const daily = Object.fromEntries(dayKeys.map((key) => [key, { attempts: 0, completed: 0 }]));
+  const monthly = Object.fromEntries(monthKeys.map((key) => [key, { attempts: 0, completed: 0 }]));
+
+  rows.forEach((row) => {
+    const day = dateKey(row?.created_at);
+    if (!day) return;
+    const month = day.slice(0, 7);
+    const key = row?.event_name === 'search_completed' ? 'completed' : 'attempts';
+    if (daily[day]) daily[day][key] += 1;
+    if (monthly[month]) monthly[month][key] += 1;
+  });
+
+  const since = (days) => {
+    const allowed = new Set(buildDayKeys(now, days));
+    return rows.filter((row) => allowed.has(dateKey(row?.created_at)));
+  };
+  const summarize = (list) => ({
+    attempts: list.filter((row) => row.event_name === 'search_registration_gate').length,
+    completed: list.filter((row) => row.event_name === 'search_completed').length,
+  });
+
+  return {
+    today: summarize(rows.filter((row) => dateKey(row?.created_at) === dateKey(now))),
+    last7Days: summarize(since(7)),
+    last30Days: summarize(since(30)),
+    dailyLast30: dayKeys.map((day) => ({ day, ...daily[day] })),
+    monthlyLast12: monthKeys.map((month) => ({ month, ...monthly[month] })),
+  };
+}
+
 function maskEmail(email = '') {
   const [name, domain] = String(email || '').split('@');
   if (!name || !domain) return '';
@@ -195,12 +228,13 @@ export default async function handler(req, res) {
     const monthStart = new Date(now.getTime() - 29 * MS_PER_DAY).toISOString();
     const yearStart = new Date(now.getTime() - 364 * MS_PER_DAY).toISOString();
 
-    const [onlineRes, dailyRes, weeklyRes, monthlyRes, yearlyRes, registrationStats] = await Promise.all([
+    const [onlineRes, dailyRes, weeklyRes, monthlyRes, yearlyRes, searchEventsRes, registrationStats] = await Promise.all([
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', onlineFrom),
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', dayStart.toISOString()),
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', weekStart),
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', monthStart),
       supabase.from('presence_heartbeats').select('session_key,user_id,is_authenticated,last_seen_at').gte('last_seen_at', yearStart),
+      supabase.from('analytics_events').select('event_name,created_at').in('event_name', ['search_registration_gate', 'search_completed']).gte('created_at', yearStart),
       getRegistrationStats(supabase, now),
     ]);
 
@@ -211,6 +245,7 @@ export default async function handler(req, res) {
     const yearlyRows = yearlyRes.data || [];
     const unique = (rows, mapper) => Array.from(new Set(rows.map(mapper).filter(Boolean)));
     const visits = buildPresenceSeries(yearlyRows, now);
+    const searches = buildSearchStats(searchEventsRes.data || [], now);
 
     const stats = {
       online_now: unique(onlineRows, (row) => row.user_id || row.session_key).length,
@@ -239,6 +274,7 @@ export default async function handler(req, res) {
       customerLogins: registrationStats.logins,
       registrations: registrationStats,
       visits,
+      searches,
       newUsersToday: registrationStats.today,
       newUsersLast7Days: registrationStats.last7Days,
       newUsersThisMonth: registrationStats.thisMonth,

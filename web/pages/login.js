@@ -45,6 +45,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (router.query.mode === "registro") setModo("registro");
     const isRecoveryRedirect = router.query.recover === "1" || router.query.recover === "true";
     const authNotice = getAuthQueryMessage(router.query.auth_error || router.query.error_description || router.query.error);
     if (authNotice) setNotice(authNotice);

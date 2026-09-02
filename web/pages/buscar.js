@@ -18,6 +18,7 @@ import { secureFetch } from '../lib/secureClient';
 import { buildItemListJsonLd, buildOrganizationJsonLd } from '../lib/seo';
 import { fetchJsonCached } from '../lib/clientFetchCache';
 import { calculateNights, getTourismSpecs, hasBlockedDates, isTourismListing } from '../lib/tourism';
+import { supabaseBrowser } from '../lib/supabaseBrowser';
 
 const defaults = {
   q: '', category: '', country: '', state: '', city: '', type: '', min: '', max: '', sort: 'recent',
@@ -319,15 +320,34 @@ export default function Buscar({ initialQuery = {} }) {
     }
   }
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
     const query = {};
     Object.entries(filters).forEach(([k, v]) => {
       if (typeof v === 'boolean') { if (v) query[k] = '1'; return; }
       if (String(v || '').trim()) query[k] = k === 'category' ? normalizeCategory(v) : v;
     });
+    const nextQuery = { ...query, page: 1 };
+    const destination = `/buscar?${new URLSearchParams(nextQuery).toString()}`;
+    const { data } = await supabaseBrowser.auth.getSession();
+
+    if (!data?.session) {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_name: 'search_registration_gate', entity_type: 'search', meta: { source: 'results' } }),
+      }).catch(() => {});
+      router.push({ pathname: '/login', query: { next: destination, mode: 'registro' } });
+      return;
+    }
+
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_name: 'search_completed', entity_type: 'search', meta: { source: 'results' } }),
+    }).catch(() => {});
     setPage(1);
-    router.replace({ pathname: '/buscar', query: { ...query, page: 1 } }, undefined, { shallow: true });
+    router.replace({ pathname: '/buscar', query: nextQuery }, undefined, { shallow: true });
   }
 
   function onClear() {

@@ -126,6 +126,7 @@ export default function SaasDashboard() {
   const ownerAnalytics = data?.ownerAnalytics || {};
   const registrations = ownerAnalytics.registrations || {};
   const visits = ownerAnalytics.visits || {};
+  const searches = ownerAnalytics.searches || {};
   const logins = registrations.logins || data?.ownerAnalytics?.customerLogins || {};
   const cards = [
     { label: 'Clientes nuevos hoy', value: registrations.today ?? '-' },
@@ -137,6 +138,9 @@ export default function SaasDashboard() {
     { label: 'Visitantes unicos hoy', value: ownerAnalytics.dailyUniqueVisitors ?? '-' },
     { label: 'Visitantes unicos semana', value: ownerAnalytics.weeklyUniqueVisitors ?? '-' },
     { label: 'Visitantes unicos mes', value: ownerAnalytics.monthlyUniqueVisitors ?? '-' },
+    { label: 'Busquedas pedidas hoy', value: searches.today?.attempts ?? 0 },
+    { label: 'Busquedas de usuarios hoy', value: searches.today?.completed ?? 0 },
+    { label: 'Busquedas pedidas mes', value: searches.last30Days?.attempts ?? 0 },
     { label: 'Usuarios online ahora', value: ownerAnalytics.onlineNow ?? '-' },
     { label: 'Campañas activas', value: data?.campaigns?.active ?? 0 },
     { label: 'Publicaciones activas', value: data?.listings?.active ?? 0 },
@@ -169,6 +173,14 @@ export default function SaasDashboard() {
         </section>
 
         <section style={styles.twoCol}>
+          <MetricsTable
+            title="Busquedas por dia"
+            rows={searches.dailyLast30 || []}
+            columns={[
+              { key: 'attempts', label: 'Pidieron registrarse' },
+              { key: 'completed', label: 'Usuarios registrados' },
+            ]}
+          />
           <MetricsTable
             title="Visitas por dia"
             rows={visits.dailyLast30 || []}

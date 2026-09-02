@@ -14,6 +14,7 @@ import { useLang } from '../context/LanguageContext';
 import SeoHead from '../components/SeoHead';
 import SeoJsonLd from '../components/SeoJsonLd';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '../lib/seo';
+import { supabaseBrowser } from '../lib/supabaseBrowser';
 
 function HeroPromoCard() {
   const { t } = useLang();
@@ -47,7 +48,7 @@ export default function Home() {
   const [listingType, setListingType] = useState('');
   const { t } = useLang();
 
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
     const query = {};
     if (search) query.q = search;
@@ -56,7 +57,26 @@ export default function Home() {
     if (city) query.city = city;
     if (category) query.category = category;
     if (listingType) query.type = listingType;
-    router.push({ pathname: '/buscar', query });
+    const searchParams = new URLSearchParams(query).toString();
+    const destination = `/buscar${searchParams ? `?${searchParams}` : ''}`;
+    const { data } = await supabaseBrowser.auth.getSession();
+
+    if (!data?.session) {
+      fetch('/api/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_name: 'search_registration_gate', entity_type: 'search', meta: { source: 'home' } }),
+      }).catch(() => {});
+      router.push({ pathname: '/login', query: { next: destination, mode: 'registro' } });
+      return;
+    }
+
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_name: 'search_completed', entity_type: 'search', meta: { source: 'home' } }),
+    }).catch(() => {});
+    router.push(destination);
   }
 
   return (
