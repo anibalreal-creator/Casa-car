@@ -15,9 +15,12 @@ import SeoHead from '../components/SeoHead';
 import SeoJsonLd from '../components/SeoJsonLd';
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from '../lib/seo';
 import { supabaseBrowser } from '../lib/supabaseBrowser';
+import { getSupabaseServer } from '../lib/supabaseServer';
 
-function HeroPromoCard() {
+function HeroPromoCard({ activeListingsCount }) {
   const { t } = useLang();
+  const activeListingsLabel = t('home_badge_active', '25 anuncios activos')
+    .replace(/^\d[\d.,]*/, Number(activeListingsCount || 0).toLocaleString('es-AR'));
 
   return (
     <aside style={styles.heroPromoUltra}>
@@ -26,7 +29,7 @@ function HeroPromoCard() {
       <p style={styles.heroSubtitleUltra}>{t('home_left_subtitle', 'Propiedades, autos y oportunidades reales en un solo lugar.')}</p>
 
       <div style={styles.heroBadges}>
-        <span style={styles.heroBadge}>{t('home_badge_active', '25 anuncios activos')}</span>
+        <span style={styles.heroBadge}>{activeListingsLabel}</span>
         <span style={styles.heroBadgeAlt}>{t('home_badge_global', 'Marketplace global')}</span>
       </div>
 
@@ -38,7 +41,7 @@ function HeroPromoCard() {
   );
 }
 
-export default function Home() {
+export default function Home({ activeListingsCount = 0 }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [country, setCountry] = useState('');
@@ -92,7 +95,7 @@ export default function Home() {
       <GlobalHeader />
       <div className="cc-home-wrap" style={styles.wrap}>
         <section className="cc-home-hero-wrap" style={styles.heroWrap}>
-          <HeroPromoCard />
+          <HeroPromoCard activeListingsCount={activeListingsCount} />
           <div style={styles.heroCard}>
             <SearchMarketplaceHero
               search={search} setSearch={setSearch}
@@ -130,6 +133,31 @@ export default function Home() {
       `}</style>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  try {
+    const supabase = getSupabaseServer();
+    const { count, error } = await supabase
+      .from('listings')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'active');
+
+    if (error) throw error;
+
+    return {
+      props: {
+        activeListingsCount: Number(count || 0),
+      },
+    };
+  } catch (error) {
+    console.error('No se pudo obtener el total de anuncios activos:', error);
+    return {
+      props: {
+        activeListingsCount: 0,
+      },
+    };
+  }
 }
 
 const styles = {
